@@ -1,11 +1,18 @@
 <!doctype html>
 <title>Code.MD</title>
-<link rel=stylesheet type=text/css href="{{ url_for('static', filename='style.css') }}">
+
 <script src="{{ url_for('static', filename='./bower_components/jquery/dist/jquery.min.js') }}"></script>
-<!-- <script src="{{ url_for('static', filename='./bower_components/bootstrap/dist/js/bootstrap.min.js') }}"></script> -->
-<script src="{{ url_for('static', filename='./bower_components/d3/d3.min.js') }}"></script>
-<script src="{{ url_for('static', filename='main.js') }}"></script>
-<!-- <link href={{ url_for('static', filename='./bower_components/bootstrap/dist/css/bootstrap.min.css') }} rel="stylesheet" media="screen"> -->
+<script src="{{ url_for('static', filename='./bower_components/bootstrap/dist/js/bootstrap.min.js') }}"></script>
+<script src="{{ url_for('static', filename='./bower_components/d3/d3.js') }}"></script>
+<script src="{{ url_for('static', filename='./bower_components/crossfilter/crossfilter.js') }}"></script>
+<script src="{{ url_for('static', filename='./bower_components/dcjs/dc.js') }}"></script>
+
+<link href="{{ url_for('static', filename='./bower_components/bootstrap/dist/css/bootstrap.min.css') }}" rel="stylesheet" media="screen">
+<link href="{{ url_for('static', filename='./bower_components/keen-dashboards/dist/keen-dashboards.css') }}" rel="stylesheet">
+<link href="{{ url_for('static', filename='./bower_components/dcjs/dc.css') }}" rel="stylesheet">
+
+<link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
+
 <div class=page>
     <h1>Code.MD</h1>
     {% for message in get_flashed_messages() %}

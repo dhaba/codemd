@@ -1,10 +1,8 @@
 {% extends "layout.html" %}
 {% block body %}
-<ul class=entries>
-  {% for entry in entries %}
-  <li>{{ entry }}
-    {% else %}
-  <li><em>Unbelievable.  No entries here so far</em>
-    {% endfor %}
-</ul>
+<form action="{{ url_for('fetchdata') }}" method=post>
+  Enter a git repository (.git URL not github URL)<br>
+  <input type="text" name="git_url" value="git://github.com/dhaba/git-pandas.git">
+  <input type="submit" value="Submit form">
+</form>
 {% endblock %}
