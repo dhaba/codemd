@@ -20,6 +20,7 @@ class CodemdRepository(Repository):
     # def __init__(self, working_dir=None, verbose=False):
     #     super(CodemdRepository, self).__init__(working_dir=working_dir, verbose=verbose)
 
+
     def commits_files_history(self, branch='master'):
         """
         Iterates through commit history and returns two dataframes: one containing
@@ -61,6 +62,6 @@ class CodemdRepository(Repository):
         # Create pandas dataframes
         commits_df, files_df = pd.DataFrame(commits_dict), pd.DataFrame(files_dict)
         commits_df.date = pd.to_datetime(commits_df.date.map(datetime.datetime.fromtimestamp))
-        commits_df.set_index(keys=['date'], drop=True, inplace=True)
+        # commits_df.set_index(keys=['date'], drop=True, inplace=True)
 
         return commits_df, files_df
