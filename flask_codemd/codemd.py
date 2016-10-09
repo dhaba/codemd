@@ -1,9 +1,10 @@
 from flask.ext.pymongo import PyMongo
 from flask import Flask, request, session, g, redirect, url_for, abort, \
      render_template, flash, jsonify
-from git_extraction import CodemdRepository, persist_git_metrics, fetch_dfs_from_collection
+# from git_extraction import CodemdRepository, persist_git_metrics, fetch_dfs_from_collection
 
-from analyze_repo import AnalyzeRepo
+from repo_analyser import RepoAnalyser
+from bson import json_util
 
 # Create app instance
 app = Flask(__name__)
@@ -27,41 +28,38 @@ def show_home():
 # Main page for circle packing visualizations
 @app.route("/viz/<project_name>")
 def show_viz(project_name):
-
-    if "git_url" not in session.keys():
-        print "No git url specified from home page...redicting to index"
-        return redirect(url_for('show_home'))
-
-    # Build dataframes from pickles; store in session
-    print "(inside show_viz) Extracting pickles, to df..."
-    commits_df, files_df = fetch_dfs_from_collection(session['git_url'], mongo.db.git_repos)
-
-    print "(inside show_viz) Converting dfs to json..."
-    commits_json, files_json = commits_df.to_json(), files_df.to_json()
-
-    return commits_json
-
-    return render_template("viz.html", commits_json = commits_json, \
-                           files_json = files_json)
+    return render_template("viz.html", project_name = project_name)
 
 # Route to fetch necessary data from github
-@app.route("/fetchdata", methods = ['POST'])
-def fetchdata():
-    git_repos = mongo.db.git_repos
-    git_url = request.form['git_url'] # TODO -- validate git url
-    session['git_url'] = request.form['git_url']
-    pretty_name = git_url.split('/')[-1][0:-4]
-    desired_doc = git_repos.find_one({'git_url': git_url})
+@app.route("/data", methods = ['POST', 'GET'])
+def data():
+    if request.method == "POST":
+        # POST from homepage, extract data if necessary and redirect to viz
+        git_url = request.form['git_url'] # TODO -- validate git url
+        project_name = git_url.split('/')[-1][0:-4]
+        repo = RepoAnalyser(project_name, mongo, working_dir=git_url)
 
-    if not desired_doc:
-        # Start process of cloning repo and extracting data...
-        print "Data for git url ", git_url, " not found. Fetching data..."
-        persist_git_metrics(git_url, pretty_name, git_repos)
+        # Check if we have the data on this repo already, if not clone and extract
+        if project_name not in mongo.db.collection_names():
+            print "Data for project ", project_name, " not found. Fetching data..."
+            repo = RepoAnalyser(project_name, mongo, verbose=True, working_dir = git_url)
+            repo.persist_vcs_data()
+        else:
+            print "Data for git project ", project_name, " found."
+
+        return redirect(url_for('show_viz', project_name = project_name))
     else:
-        print "Data found for git url ", git_url
+        # Else, return JSON for project
+        project_name = request.args.get('project_name')
+        if project_name not in mongo.db.collection_names():
+            print "Data for project: ", project_name, " not found. Go to homepage and enter git repo"
+            return None
 
-    return redirect(url_for('show_viz', project_name = pretty_name))
-
+        # Query data from Mongo DB into json...
+        print "data found for project: ", project_name
+        commits = mongo.db[project_name].find({'revision_id': { '$exists': True}}, {'message': 0, '_id': 0})
+        data = json_util.dumps(commits, default=json_util.default)
+        return jsonify(data)
 
 
 # Test route for Circle Packing Hotspot viz

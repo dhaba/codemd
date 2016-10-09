@@ -2,12 +2,16 @@
 
 {% block body %}
 
-<script src="{{ url_for('static', filename='./graphs.js') }}">
-$(function() {
-  console.log("jquery up in dis bitch");
-  commits = '{{commits_json}}'
-  files = '{{files_json}}'
-  buildGraphs('{{commits_json}}', '{{files_json}}');
+<script src="{{ url_for('static', filename='./graphs.js') }}"></script>
+<script>
+$(function(){
+  console.log("document is ready is ready")
+  var projectName = '{{ project_name }}';
+  var requestUrl = "/data?project_name=" + projectName;
+
+  $.getJSON(requestUrl, function(data) {
+    buildGraphs(data);
+  });
 });
 </script>
 
@@ -15,12 +19,14 @@ $(function() {
 <div class="col-sm-12">
   <div class="chart-wrapper">
     <div class="chart-title">
-      Commits by Day Biiiiiitch
+      Commits Timeline
     </div>
     <div class="chart-stage">
       <div id="time-chart"></div>
     </div>
   </div>
 </div>
+
+<div id="json-data"></div>
 
 {% endblock %}
