@@ -1,11 +1,12 @@
 from repository import Repository
+import tempfile
 import sys
 from collections import defaultdict
 import datetime
-import pandas as pd
+
 from git import Repo
 
-class RepoAnalyser(Repository):
+class RepoAnalyser(object):
         """
         This class extends the Repository class and provides an API for extracting
         metrics and storing them in MongoDB for use by CodeMD's web application.

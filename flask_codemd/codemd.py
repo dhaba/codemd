@@ -1,10 +1,12 @@
 from flask.ext.pymongo import PyMongo
 from flask import Flask, request, session, g, redirect, url_for, abort, \
      render_template, flash, jsonify
-# from git_extraction import CodemdRepository, persist_git_metrics, fetch_dfs_from_collection
 
 from repo_analyser import RepoAnalyser
+
 from bson import json_util
+import os
+import logging
 
 # Create app instance
 app = Flask(__name__)
@@ -15,14 +17,20 @@ app.config['MONGO_DBNAME'] = 'codemd'
 
 # Create db instance
 mongo = PyMongo(app)
-# git_repos = mongo.db.git_repos
+
+# Setup logging
+logger = logging.getLogger('codemd')
+file_handler, stream_handler = logging.FileHandler('codemd_log.log'), logging.StreamHandler()
+formatter = logging.Formatter('%(asctime)s %(name)-5s %(levelname)-8s %(message)s')
+file_handler.setFormatter(formatter)
+stream_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
+logger.addHandler(stream_handler)
 
 
 # Home page
 @app.route("/")
 def show_home():
-    # entries = mongo.db.codemd.find()
-    # return render_template('show_home.html', entries=entries)
     return render_template('show_home.html')
 
 # Main page for circle packing visualizations
@@ -66,13 +74,3 @@ def data():
 @app.route("/hotspots")
 def hotspots():
     return render_template("hotspots.html")
-
-# Test route for D3 viz
-# @app.route("/d3")
-# def test_d3():
-#     return render_template('test_d3.html')
-
-# Test route to get stock data
-# @app.route("/data")
-# def data():
-#     return jsonify(get_data())
