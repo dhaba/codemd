@@ -14,9 +14,7 @@
 <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
 
 <div class=page>
-    <h1>Code.MD</h1>
-    {% for message in get_flashed_messages() %}
+    <h1>Code.MD</h1> {% for message in get_flashed_messages() %}
     <div class=flash>{{ message }}</div>
-    {% endfor %}
-    {% block body %}{% endblock %}
+    {% endfor %} {% block body %}{% endblock %}
 </div>
