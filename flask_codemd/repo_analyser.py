@@ -7,7 +7,6 @@ import fnmatch
 import datetime
 
 from git import Repo
-from pymongo.errors import BulkWriteError
 
 # Dictionary of hard-coded paths to include/exclude for known projects
 paths = {"scikit-learn": {"include":["sklearn/*"], "exclude":["README"]} }
@@ -106,8 +105,7 @@ class RepoAnalyser(object):
                     file_mods = c.stats.files[file_name]
                     files_modified.append({'filename': file_name, \
                                          'insertions':file_mods['insertions'], \
-                                         'deletions':file_mods['deletions'],
-                                         'lines':file_mods['lines']})
+                                         'deletions':file_mods['deletions']})
 
                 # Build row which includes high level commit data and files modified
                 revision_id = c.name_rev.split()[0]

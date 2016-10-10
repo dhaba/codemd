@@ -6,6 +6,7 @@ from flask import Flask, request, session, g, redirect, url_for, abort, \
      render_template, flash, jsonify
 
 from repo_analyser import RepoAnalyser
+from metrics_builder import MetricsBuilder
 
 
 # Create app instance
@@ -58,7 +59,6 @@ def fetchdata():
     else:
         log.info("Data for git project " + project_name + " found.")
 
-    return "Success!" # debug line
     return redirect(url_for('show_viz', project_name = project_name))
     # else:
     #     # Else, return JSON for project
@@ -73,6 +73,18 @@ def fetchdata():
     #     json_data = json_util.dumps(commits, default=json_util.default)
     #     return jsonify(json_data)
 
+
+# Return JSON for views
+@app.route("/data")
+def data():
+    project_name = request.args.get('project_name')
+    if project_name not in mongo.db.collection_names():
+        log.error("Data for project: %s not found. Go to homepage and \
+                  enter git repo", project_name)
+        return redirect(url_for('show_home'))
+
+    metrics = MetricsBuilder(mongo.db[project_name])
+    return jsonify(metrics.commits())
 
 # Test route for Circle Packing Hotspot viz
 @app.route("/hotspots")

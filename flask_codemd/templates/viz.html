@@ -1,5 +1,11 @@
 {% extends "layout.html" %} {% block body %}
 
+<link href="{{ url_for('static', filename='./bower_components/keen-dashboards/dist/keen-dashboards.css') }}" rel="stylesheet">
+<link href="{{ url_for('static', filename='./bower_components/dcjs/dc.css') }}" rel="stylesheet">
+<script src="{{ url_for('static', filename='./bower_components/d3/d3.js') }}"></script>
+<script src="{{ url_for('static', filename='./bower_components/crossfilter/crossfilter.js') }}"></script>
+<script src="{{ url_for('static', filename='./bower_components/dcjs/dc.js') }}"></script>
+
 <script src="{{ url_for('static', filename='./graphs.js') }}"></script>
 <script>
     $(function() {
@@ -13,14 +19,19 @@
     });
 </script>
 
-<!-- Time Chart -->
-<div class="col-sm-12">
-    <div class="chart-wrapper">
-        <div class="chart-title">
-            Commits Timeline
-        </div>
-        <div class="chart-stage">
-            <div id="time-chart"></div>
+<div class="container-fluid">
+
+    <!-- Time Chart -->
+    <div class="row">
+        <div class="col-sm-12">
+            <div class="chart-wrapper">
+                <div class="chart-title">
+                    Commits Timeline
+                </div>
+                <div class="chart-stage">
+                    <div id="time-chart"></div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
