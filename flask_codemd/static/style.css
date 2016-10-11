@@ -1,0 +1,30 @@
+h1 {
+    text-align: center;
+    position: relative;
+}
+
+html, body, .container-fluid {
+    height: 100%;
+}
+
+.container-fluid {
+    height: 100%;
+    /*-moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;*/
+}
+
+#toprow {
+    /*height:30%; */
+    /*display: block;*/
+    /*background: red;*/
+}
+
+#bottomrow {
+    /*height: 500px;
+    background: blue;*/
+}
+
+#commits-timeline {
+    /*width: 100%;*/
+}

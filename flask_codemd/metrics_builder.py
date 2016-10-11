@@ -22,4 +22,5 @@ class MetricsBuilder(object):
                            "deletions": 1, "author": 1}}
         ])
 
+        # return list(cursor)
         return [doc for doc in cursor]

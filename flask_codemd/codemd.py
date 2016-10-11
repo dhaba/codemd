@@ -47,7 +47,7 @@ def show_viz(project_name):
 # Route to fetch necessary data from github
 @app.route("/fetchdata", methods = ['POST'])
 def fetchdata():
-    # POST from homepage, extract data if necessary and redirect to viz
+    # POST from homepage form, extract data if necessary and redirect to viz
     git_url = request.form['git_url'] # TODO -- validate git url
     project_name = RepoAnalyser.short_name(git_url)
 
@@ -60,31 +60,23 @@ def fetchdata():
         log.info("Data for git project " + project_name + " found.")
 
     return redirect(url_for('show_viz', project_name = project_name))
-    # else:
-    #     # Else, return JSON for project
-    #     project_name = request.args.get('project_name')
-    #     if project_name not in mongo.db.collection_names():
-    #         print "Data for project: ", project_name, " not found. Go to homepage and enter git repo"
-    #         return None
-    #
-    #     # Query data from Mongo DB into json...
-    #     print "data found for project: ", project_name
-    #     commits = mongo.db[project_name].find({'revision_id': { '$exists': True}}, {'message': 0, '_id': 0})
-    #     json_data = json_util.dumps(commits, default=json_util.default)
-    #     return jsonify(json_data)
 
 
-# Return JSON for views
-@app.route("/data")
-def data():
+# Return commits JSON for views
+@app.route("/commits")
+def commits():
     project_name = request.args.get('project_name')
+
+    # Safety check to make sure we have the data in disk
     if project_name not in mongo.db.collection_names():
         log.error("Data for project: %s not found. Go to homepage and \
                   enter git repo", project_name)
         return redirect(url_for('show_home'))
 
     metrics = MetricsBuilder(mongo.db[project_name])
-    return jsonify(metrics.commits())
+    commits_data = json_util.dumps(metrics.commits())
+    log.debug("Metrics extracted from mongo db: %s", commits_data)
+    return jsonify(commits_data)
 
 # Test route for Circle Packing Hotspot viz
 @app.route("/hotspots")

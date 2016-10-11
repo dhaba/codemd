@@ -2,39 +2,119 @@
 
 <link href="{{ url_for('static', filename='./bower_components/keen-dashboards/dist/keen-dashboards.css') }}" rel="stylesheet">
 <link href="{{ url_for('static', filename='./bower_components/dcjs/dc.css') }}" rel="stylesheet">
+
 <script src="{{ url_for('static', filename='./bower_components/d3/d3.js') }}"></script>
 <script src="{{ url_for('static', filename='./bower_components/crossfilter/crossfilter.js') }}"></script>
+<script src="{{ url_for('static', filename='./bower_components/reductio/reductio.js') }}"></script>
 <script src="{{ url_for('static', filename='./bower_components/dcjs/dc.js') }}"></script>
+<script src="{{ url_for('static', filename='./holderjs/holder.js') }}"></script>
 
-<script src="{{ url_for('static', filename='./graphs.js') }}"></script>
+<script src="{{ url_for('static', filename='./dashboards.js') }}"></script>
 <script>
     $(function() {
-        console.log("document is ready is ready")
+        console.log("document is ready is ready");
+
+        // TODO -- remove this debug line
+        Holder.add_theme("white", {
+            background: "#fff",
+            foreground: "#a7a7a7",
+            size: 10
+        });
         var projectName = '{{ project_name }}';
-        var requestUrl = "/data?project_name=" + projectName;
+        if (projectName === null) {
+            projectName = this.pathname.split('/').pop();
+            alert("project name was null. Setting it to " + projectName); // TODO -- remove this debug line
+        }
+        var requestUrl = "/commits?project_name=" + projectName;
 
         $.getJSON(requestUrl, function(data) {
-            buildGraphs(data);
+            // alert("Got data back from JSON query: " + data)
+            buildDashboards(data);
         });
     });
 </script>
 
 <div class="container-fluid">
 
-    <!-- Time Chart -->
-    <div class="row">
-        <div class="col-sm-12">
+    <div class="row" id="toprow">
+        <div class="col-md-2">
             <div class="chart-wrapper">
                 <div class="chart-title">
-                    Commits Timeline
+                    Left Control
                 </div>
                 <div class="chart-stage">
-                    <div id="time-chart"></div>
+                    <img data-src="holder.js/100%x100/white/text:#grid-1-1">
+                </div>
+            </div>
+        </div>
+        <!-- Commits Timeline -->
+        <div class="col-md-8">
+            <div class="chart-wrapper">
+                <div class="chart-title">
+                    <!-- Commits Timeline -->
+                </div>
+                <div class="chart-stage">
+                    <div id="commits-timeline"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="chart-wrapper">
+                <div class="chart-title">
+                    Right Control
+                </div>
+                <div class="chart-stage">
+                    <img data-src="holder.js/100%x100/white/text:#grid-1-3">
                 </div>
             </div>
         </div>
     </div>
+
+    <div class="row" id="bottomrow">
+        <div class="col-md-4">
+            <div class="chart-wrapper">
+                <div class="chart-title">
+                    Bug Distribution
+                </div>
+                <div class="chart-stage">
+                    <img data-src="holder.js/100%x180/white/text:#grid-2-1">
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="chart-wrapper">
+                <div class="chart-title">
+                    Code Churn
+                </div>
+                <div class="chart-stage">
+                    <div id="code-churn"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="chart-wrapper">
+                <div class="chart-title">
+                    Top Contributors
+                </div>
+                <div class="chart-stage">
+                    <img data-src="holder.js/100%x180/white/text:#grid-2-3">
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
+
+<table class='table table-hover' id='data-table'>
+    <thead>
+        <tr class='header'>
+            <th>insertions</th>
+            <th>deletions</th>
+            <th>author</th>
+            <th>date</th>
+        </tr>
+    </thead>
+</table>
 
 <div id="json-data"></div>
 

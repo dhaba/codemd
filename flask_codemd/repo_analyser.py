@@ -9,7 +9,8 @@ import datetime
 from git import Repo
 
 # Dictionary of hard-coded paths to include/exclude for known projects
-paths = {"scikit-learn": {"include":["sklearn/*"], "exclude":["README"]} }
+paths = {"scikit-learn": {"include":["sklearn/*"], "exclude":["README"]},
+         "django":       {"include":["django/*"],  "exclude":[]} }
 
 class RepoAnalyser(object):
     """
