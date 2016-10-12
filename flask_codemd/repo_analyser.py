@@ -11,7 +11,8 @@ from git import Repo
 
 # Dictionary of hard-coded paths to include/exclude for known projects
 paths = {"scikit-learn": {"include":["sklearn/*"], "exclude":["README"]},
-         "django":       {"include":["django/*"],  "exclude":[]},
+         "django":       {"include":["django/*", "tests/*"],
+                          "exclude":['*.md', '*.txt', '*.yml', '*.mo', '*.po']},
          "sass":         {"include":["lib/*"],  "exclude":[]},
          "rails":        {"include":["actioncable/*",	"actionmailer/*", "actionpack/*",
          	              "actionview/*",	"activejob/*",	 "activemodel/*",
@@ -19,8 +20,10 @@ paths = {"scikit-learn": {"include":["sklearn/*"], "exclude":["README"]},
                           "tasks/*", "tools/*"],
                           "exclude":["*.md", "*.yml", "MIT-LICENSE", "*.gemspec",
                           "*.rdoc", "*.gitkeep", "*.json", "*.gitignore"]},
-         "node":         {"include":["lib/*", "deps/*", "tools/*", "src/*", "benchmark/*", "test/*"],  "exclude":['*.md']},
-         "pandas":       {"include":["asv_bench/*", "bench/*", "pandas/*", "scripts/*"],  "exclude":['*.md', 'doc/*']},
+         "node":         {"include":["lib/*", "deps/*", "tools/*", "src/*", "benchmark/*", "test/*"],
+                          "exclude":['*.md', "*.yml", "*.txt"]},
+         "pandas":       {"include":["asv_bench/*", "bench/*", "pandas/*", "scripts/*"],
+                          "exclude":['*.md', 'doc/*']},
          "numpy":        {"include":["numpy/*", "tools/*"],  "exclude":['numpy/doc/*', '*.md', '*.txt, *.yml']} }
 
 class RepoAnalyser(object):
@@ -146,7 +149,6 @@ class RepoAnalyser(object):
         Checks if the git_url is of valid form (starts with git://.. and ends with
         .git)
         """
-
         components = git_url.split('/')
         return ((components[0] == 'git:') and (components[-1][-4:] == '.git'))
 
@@ -197,5 +199,7 @@ class RepoAnalyser(object):
                         include_count += 1
             if exclude_count == 0 and include_count >= 1:
                 filtered_files.append(f)
+            # else:
+            #     self.log.debug("Ignoring file: %s", f)
 
         return filtered_files

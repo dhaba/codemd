@@ -69,7 +69,7 @@
 
     var pack = d3.layout.pack()
         .padding(2)
-        .size(innerDiameter, innerDiameter)
+        .size([innerDiameter, innerDiameter])
         .value(function(d) {
             if ((typeof d.loc === undefined) || (d.loc !== d.loc)) {
                 console.log('yet another problem, d.loc is broken!');
@@ -89,7 +89,10 @@
 
         root = JSON.parse(root);
 
+        $("#debug-div").html("hahaha some test text");
+
         console.log(root);
+
 
         var focus = root,
             nodes = pack.nodes(root);
@@ -182,5 +185,6 @@
     d3.select(self.frameElement).style("height", outerDiameter + "px");
 </script>
 
+<div id="debug-div"></div>
 
 {% endblock %}
