@@ -10,7 +10,17 @@ from git import Repo
 
 # Dictionary of hard-coded paths to include/exclude for known projects
 paths = {"scikit-learn": {"include":["sklearn/*"], "exclude":["README"]},
-         "django":       {"include":["django/*"],  "exclude":[]} }
+         "django":       {"include":["django/*"],  "exclude":[]},
+         "sass":         {"include":["lib/*"],  "exclude":[]},
+         "rails":        {"include":["actioncable",	"actionmailer", "actionpack",
+         	              "actionview",	"activejob",	 "activemodel",
+                          "activerecord", "activesupport", "railties",
+                          "tasks", "tools"],
+                          "exclude":["*.md", "*.yml", "MIT-LICENSE", "*.gemspec",
+                          "*.rdoc", "*.gitkeep", "*.json", "*.gitignore"]},
+         "node":         {"include":["lib", "deps", "tools", "src", "benchmark", "test"],  "exclude":['*.md']},
+         "pandas":       {"include":["asv_bench", "bench", "pandas", "scripts"],  "exclude":['*.md']},
+         "numpy":        {"include":["numpy", "tools"],  "exclude":['*.md', '*.txt, *.yml']} }
 
 class RepoAnalyser(object):
     """
@@ -85,7 +95,7 @@ class RepoAnalyser(object):
             count = 0
             # END DEBUG
             self.log.info("Starting iteration over commits...")
-            for c in self.repo.iter_commits(self.branch, max_count=sys.maxsize):
+            for c in self.commits_iterator():
                 # DEBUG CODE
                 count += 1
                 if count % INCREMENT == 0:
@@ -132,6 +142,7 @@ class RepoAnalyser(object):
         Checks if the git_url is of valid form (starts with git://.. and ends with
         .git)
         """
+
         components = git_url.split('/')
         return ((components[0] == 'git:') and (components[-1][-4:] == '.git'))
 
@@ -145,6 +156,19 @@ class RepoAnalyser(object):
         return git_url.split('/')[-1][0:-4]
 
 
+    def commits_iterator(self):
+        """
+        Return a pointer to iterator self.repo.iter_commits(...)
+        This method is necessary because we should only specify the 'path' keyword
+        arg if we have values in self.include_paths
+        """
+
+        if (self.include_paths == None or len(self.include_paths) == 0):
+            return self.repo.iter_commits(self.branch, max_count=sys.maxsize)
+        else:
+            return self.repo.iter_commits(self.branch, paths=self.include_paths, max_count=sys.maxsize)
+
+
     def __check_file_paths(self, files):
         """
         Internal method to filter a list of file changes by extensions and paths.
@@ -153,25 +177,14 @@ class RepoAnalyser(object):
         :return: List of filtered file names
         """
 
-        if self.include_paths == None and self.exclude_paths == None:
+        if self.exclude_paths == None or len(self.exclude_paths) == 0:
             return files
-
-        if self.include_paths is None or self.include_paths == []:
-            self.include_paths = ['*']
 
         filtered_files = []
         for f in files:
-            # count up the number of patterns in the ignore paths list that match
-            if self.exclude_paths is not None:
-                count_exclude = sum([1 if fnmatch.fnmatch(f, path) else 0 for path in self.exclude_paths])
-            else:
-                count_exclude = 0
-
-            # count up the number of patterns in the include globs list that match
-            count_include = sum([1 if fnmatch.fnmatch(f, path) else 0 for path in self.include_paths])
-
-            # if we have one vote or more to include and none to exclude, then we use the file.
-            if count_include > 0 and count_exclude == 0:
-                filtered_files.append(f)
+            for path in self.exclude_paths:
+                if fnmatch.fnmatch(f, path):
+                    continue
+            filtered_files.append(f)
 
         return filtered_files

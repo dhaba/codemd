@@ -93,7 +93,7 @@ function buildDashboards(data) {
     // Commits timeline
     var commitsTimeline = dc.barChart("#commits-timeline");
     commitsTimeline
-        .width(750)
+        .width(600)
         .height(200)
         .margins({
             top: 10,

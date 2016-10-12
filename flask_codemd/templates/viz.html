@@ -25,7 +25,7 @@
             projectName = this.pathname.split('/').pop();
             alert("project name was null. Setting it to " + projectName); // TODO -- remove this debug line
         }
-        var requestUrl = "/commits?project_name=" + projectName;
+        var requestUrl = "/api/commits?project_name=" + projectName;
 
         $.getJSON(requestUrl, function(data) {
             // alert("Got data back from JSON query: " + data)

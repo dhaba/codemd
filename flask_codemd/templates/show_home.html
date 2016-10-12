@@ -1,8 +1,7 @@
-{% extends "layout.html" %}
-{% block body %}
+{% extends "layout.html" %} {% block body %}
 <form action="{{ url_for('fetchdata') }}" method=post>
-  Enter a git repository (.git URL not github URL)<br>
-  <input type="text" name="git_url" value="git://github.com/dhaba/git-pandas.git">
-  <input type="submit" value="Submit form">
+    Enter a git repository (.git URL not github URL)<br>
+    <input type="text" name="git_url" value="git://github.com/dhaba/git-pandas.git" style="width:700px;">
+    <input type="submit" value="Submit form">
 </form>
 {% endblock %}
