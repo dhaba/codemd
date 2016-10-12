@@ -1,7 +1,10 @@
 import re
-import json
 import math
+import pymongo
+import fnmatch
+import logging
 
+import repo_analyser
 
 class MetricsBuilder(object):
     """
@@ -10,6 +13,7 @@ class MetricsBuilder(object):
 
     def __init__(self, mongo_collection):
         self.collection = mongo_collection
+        self.log = logging.getLogger('codemd.MetricsBuilder')
 
 
     def commits(self):
@@ -37,6 +41,8 @@ class MetricsBuilder(object):
         TODO -- Add docstring
         """
 
+        self.log.debug("Building hotspots information...")
+
         if end_date == None:
             last_entry = list(self.collection.find(
                         {'revision_id': { '$exists': True }}).sort('date', -1))[0]
@@ -60,6 +66,14 @@ class MetricsBuilder(object):
             f['loc'] += mod_file['insertions'] - mod_file['deletions']
             f['last_modified'] = mod_file['date']
 
+            # HACK -- remove this debug line below
+            # if f['loc'] <= 0:
+            #     self.log.error("!!! PROBLEM: negative loc for file: %s", mod_file)
+            #     f['loc'] = 0
+            #     files.pop(mod_file['filename'], None)
+            #     self.log.error("Ok, that should of popped it. Keys in files:\n%s\n", files.keys())
+
+
             # Check commit message for bug fixes
             if regex.match(mod_file['message']) != None:
                 f['bug_dates'].append(mod_file['date']) # just or debugging really
@@ -72,7 +86,7 @@ class MetricsBuilder(object):
                                 (end_date - f['creation_date']))
                 f['score'] += 1 / (1 + math.exp(-12 * norm_time + 12))
 
-        return self.__build_filetree(files, attributes=['score', 'loc'])
+        return {"name": "root", "children":self.__build_filetree(files, attributes=['score', 'loc'])}
 
 
     def file_history(self, start_date=None, end_date=None):
@@ -137,6 +151,44 @@ class MetricsBuilder(object):
                         current_node = new_node['children']
 
         return tree
+
+    def fix_fuckups(self, collection_name):
+        # Dirty hack to alter previously created documents and filter things I
+        # should of filtered, and also index the date
+        paths = repo_analyser.paths[collection_name]
+        include_paths = paths['include']
+        exclude_paths = paths['exclude']
+
+        print "Fixing mistakes."
+        print "Include paths: " + str(include_paths)
+        print "Exclude paths: " + str(exclude_paths)
+
+        def check_file_path(f):
+            include_count = 0
+            for path in exclude_paths:
+                if fnmatch.fnmatch(f, path):
+                    return False
+            for path in include_paths:
+                if fnmatch.fnmatch(f, path):
+                    include_count += 1
+            if include_count == 0:
+                return False
+            return True
+
+        self.collection.create_index([("date", pymongo.ASCENDING)])
+        docs = self.collection.find({'revision_id': { '$exists': True }})
+        for doc in docs:
+            updated_files = []
+            files_mod = doc['files_modified']
+            for f in files_mod:
+                if check_file_path(f['filename']):
+                    updated_files.append(f)
+                else:
+                    print "Removing file: " + f['filename']
+            if len(updated_files) != len(files_mod):
+                self.collection.update_one({'date': doc['date']}, {'$set' : {'files_modified':updated_files}})
+
+
 
 
 # min = col.find({'revision_id': { '$exists': True }}).sort('date', 1)

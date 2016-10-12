@@ -1,3 +1,4 @@
 .idea
 *.pyc
 flask_codemd/*.pyc
+*.log
