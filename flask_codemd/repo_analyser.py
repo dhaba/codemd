@@ -5,22 +5,26 @@ import os
 import shutil
 import fnmatch
 import datetime
+import pymongo
 
 from git import Repo
 
 # Dictionary of hard-coded paths to include/exclude for known projects
 paths = {"scikit-learn": {"include":["sklearn/*"], "exclude":["README"]},
-         "django":       {"include":["django/*"],  "exclude":[]},
+         "django":       {"include":["django/*", "tests/*"],
+                          "exclude":['*.md', '*.txt', '*.yml', '*.mo', '*.po']},
          "sass":         {"include":["lib/*"],  "exclude":[]},
-         "rails":        {"include":["actioncable",	"actionmailer", "actionpack",
-         	              "actionview",	"activejob",	 "activemodel",
-                          "activerecord", "activesupport", "railties",
-                          "tasks", "tools"],
+         "rails":        {"include":["actioncable/*",	"actionmailer/*", "actionpack/*",
+         	              "actionview/*",	"activejob/*",	 "activemodel/*",
+                          "activerecord/*", "activesupport/*", "railties/*",
+                          "tasks/*", "tools/*"],
                           "exclude":["*.md", "*.yml", "MIT-LICENSE", "*.gemspec",
                           "*.rdoc", "*.gitkeep", "*.json", "*.gitignore"]},
-         "node":         {"include":["lib", "deps", "tools", "src", "benchmark", "test"],  "exclude":['*.md']},
-         "pandas":       {"include":["asv_bench", "bench", "pandas", "scripts"],  "exclude":['*.md']},
-         "numpy":        {"include":["numpy", "tools"],  "exclude":['*.md', '*.txt, *.yml']} }
+         "node":         {"include":["lib/*", "deps/*", "tools/*", "src/*", "benchmark/*", "test/*"],
+                          "exclude":['*.md', "*.yml", "*.txt"]},
+         "pandas":       {"include":["asv_bench/*", "bench/*", "pandas/*", "scripts/*"],
+                          "exclude":['*.md', 'doc/*']},
+         "numpy":        {"include":["numpy/*", "tools/*"],  "exclude":['numpy/doc/*', '*.md', '*.txt, *.yml']} }
 
 class RepoAnalyser(object):
     """
@@ -38,7 +42,7 @@ class RepoAnalyser(object):
     :return:
     """
 
-    def __init__(self, git_url, mongo_instance, include_paths=None, exclude_paths=None):
+    def __init__(self, git_url, mongo_instance, include_paths=[], exclude_paths=[]):
         self.log = logging.getLogger('codemd.RepoAnalyser')
         self.project_name = self.short_name(git_url)
         self.mongo = mongo_instance.db
@@ -46,7 +50,7 @@ class RepoAnalyser(object):
         self.exclude_paths = exclude_paths
 
         # Check for hard-coded paths if none specified
-        if (include_paths == None) and (exclude_paths == None) and (self.project_name in paths.keys()):
+        if (len(include_paths) == 0) and (len(exclude_paths) == 0) and (self.project_name in paths.keys()):
             project_paths = paths[self.project_name]
             self.include_paths = project_paths["include"]
             self.exclude_paths = project_paths["exclude"]
@@ -130,8 +134,11 @@ class RepoAnalyser(object):
                        self.project_name)
 
         collection = self.mongo[self.project_name]
+        collection.create_index([("date", pymongo.ASCENDING)])
         collection.insert_one({'date_updated': datetime.datetime.now(), \
                                'branch': self.branch})
+
+
         collection.insert_many(doc for doc in gen_commit_docs())
         self.log.info("Finished inserting documents into Mongo")
 
@@ -142,7 +149,6 @@ class RepoAnalyser(object):
         Checks if the git_url is of valid form (starts with git://.. and ends with
         .git)
         """
-
         components = git_url.split('/')
         return ((components[0] == 'git:') and (components[-1][-4:] == '.git'))
 
@@ -172,19 +178,28 @@ class RepoAnalyser(object):
     def __check_file_paths(self, files):
         """
         Internal method to filter a list of file changes by extensions and paths.
+        If a file is NOT in the include path, we treat it as if it's in the ignore
+        path also.
 
         :param files: List of filenames to filter by self.include_paths and self.exclude_paths
         :return: List of filtered file names
         """
 
-        if self.exclude_paths == None or len(self.exclude_paths) == 0:
-            return files
-
         filtered_files = []
         for f in files:
+            exclude_count, include_count = 0, 0
             for path in self.exclude_paths:
                 if fnmatch.fnmatch(f, path):
-                    continue
-            filtered_files.append(f)
+                    exclude_count += 1
+            if len(self.include_paths) == 0:
+                include_count = 1
+            else:
+                for path in self.include_paths:
+                    if fnmatch.fnmatch(f, path):
+                        include_count += 1
+            if exclude_count == 0 and include_count >= 1:
+                filtered_files.append(f)
+            # else:
+            #     self.log.debug("Ignoring file: %s", f)
 
         return filtered_files

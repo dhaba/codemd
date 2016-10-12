@@ -1,4 +1,4 @@
-{% extends "layout.html" %} {% block body %}
+<!doctype html> {% extends "layout.html" %} {% block body %}
 
 <link href="{{ url_for('static', filename='./bower_components/keen-dashboards/dist/keen-dashboards.css') }}" rel="stylesheet">
 <link href="{{ url_for('static', filename='./bower_components/dcjs/dc.css') }}" rel="stylesheet">
@@ -17,116 +17,158 @@
         cursor: pointer;
     }
 
-    .circle {
-        fill-opacity: .25;
-    }
-
     .node:hover {
         stroke: #000;
         stroke-width: 1.5px;
     }
 
+    .node--root {
+        stroke: #777;
+        stroke-width: 2px;
+    }
+
     .node--leaf {
         fill: white;
+        stroke: #777;
+        stroke-width: 1px;
     }
 
     .label {
         font: 14px "Helvetica Neue", Helvetica, Arial, sans-serif;
         text-anchor: middle;
-        text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, -1px 0 0 #fff, 0 -1px 0 #fff;
-    }
-
-    .label,
-    .node--root,
-    .node--leaf {
-        pointer-events: none;
+        fill: black; //text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, -1px 0 0 #fff, 0 -1px 0 #fff; } .label, .node--root, .node--leaf { pointer-events: none; }
     }
 </style>
 
 <script>
     console.log('script inside hotspots.html is running!');
 
-    var margin = 20,
-        diameter = 960;
+    var projectName = '{{ project_name }}';
+    if (projectName === null) {
+        projectName = this.pathname.split('/').pop();
+        alert("project name was null. Setting it to " + projectName); // TODO -- remove this debug line
+    }
+    var requestUrl = "/api/hotspots?project_name=" + projectName;
+
+    console.log('request url: ' + requestUrl);
+
+    var margin = 5,
+        outerDiameter = 1500,
+        innerDiameter = outerDiameter - margin - margin;
+
+    var x = d3.scale.linear()
+        .range([0, innerDiameter]);
+
+    var y = d3.scale.linear()
+        .range([0, innerDiameter]);
 
     var color = d3.scale.linear()
         .domain([-1, 5])
-        .range(["hsl(152,80%,80%)", "hsl(228,30%,40%)"])
+        .range(["hsl(185,60%,99%)", "hsl(187,40%,70%)"])
         .interpolate(d3.interpolateHcl);
 
     var pack = d3.layout.pack()
         .padding(2)
-        .size([diameter - margin, diameter - margin])
+        .size([innerDiameter, innerDiameter])
         .value(function(d) {
-            return d.size;
-        })
+            if ((typeof d.loc === undefined) || (d.loc !== d.loc)) {
+                console.log('yet another problem, d.loc is broken!');
+            }
+            return d.loc;
+        });
 
     var svg = d3.select("body").append("svg")
-        .attr("width", diameter)
-        .attr("height", diameter)
+        .attr("width", outerDiameter)
+        .attr("height", outerDiameter)
         .append("g")
-        .attr("transform", "translate(" + diameter / 2 + "," + diameter / 2 + ")");
+        .attr("transform", "translate(" + margin + "," + margin + ")");
 
-    d3.json("{{ url_for('static', filename='sklearn_2016_data.json') }}", function(error, root) {
-        if (error) throw error;
+    d3.json(requestUrl, function(error, root) {
+
+        console.log('scriptt inside d3.json');
+
+        root = JSON.parse(root);
+
+        $("#debug-div").html("hahaha some test text");
+
+        console.log(root);
+
 
         var focus = root,
-            nodes = pack.nodes(root),
-            view;
+            nodes = pack.nodes(root);
 
-        var circle = svg.selectAll("circle")
+        svg.append("g").selectAll("circle")
             .data(nodes)
             .enter().append("circle")
             .attr("class", function(d) {
                 return d.parent ? d.children ? "node" : "node node--leaf" : "node node--root";
             })
+            .attr("transform", function(d) {
+                return "translate(" + d.x + "," + d.y + ")";
+            })
+            .attr("r", function(d) {
+                var r = d.r;
+                if ((typeof r === undefined) || (r !== r)) {
+                    console.log('we got a problem chief');
+                }
+                return r;
+            })
             .style("fill", function(d) {
-                return d.children ? color(d.depth) : null;
+                return d.score > 0.0 ? "darkred" :
+                    d.children ? color(d.depth) : "WhiteSmoke";
+            })
+            .style("fill-opacity", function(d) {
+                return d.score;
             })
             .on("click", function(d) {
-                if (focus !== d) zoom(d), d3.event.stopPropagation();
+                return zoom(focus == d ? root : d);
             });
 
-        var text = svg.selectAll("text")
+        svg.append("g").selectAll("text")
             .data(nodes)
             .enter().append("text")
             .attr("class", "label")
+            .attr("transform", function(d) {
+                return "translate(" + d.x + "," + d.y + ")";
+            })
             .style("fill-opacity", function(d) {
                 return d.parent === root ? 1 : 0;
             })
             .style("display", function(d) {
-                return d.parent === root ? "inline" : "none";
+                return d.parent === root ? null : "none";
             })
             .text(function(d) {
                 return d.name;
             });
 
-        var node = svg.selectAll("circle,text");
-
-        d3.select("body")
-            .style("background", color(-1))
+        d3.select(window)
             .on("click", function() {
                 zoom(root);
             });
 
-        zoomTo([root.x, root.y, root.r * 2 + margin]);
-
-        function zoom(d) {
+        function zoom(d, i) {
             var focus0 = focus;
             focus = d;
 
-            var transition = d3.transition()
+            var k = innerDiameter / d.r / 2;
+            x.domain([d.x - d.r, d.x + d.r]);
+            y.domain([d.y - d.r, d.y + d.r]);
+            d3.event.stopPropagation();
+
+            var transition = d3.selectAll("text,circle").transition()
                 .duration(d3.event.altKey ? 7500 : 750)
-                .tween("zoom", function(d) {
-                    var i = d3.interpolateZoom(view, [focus.x, focus.y, focus.r * 2 + margin]);
-                    return function(t) {
-                        zoomTo(i(t));
-                    };
+                .attr("transform", function(d) {
+                    return "translate(" + x(d.x) + "," + y(d.y) + ")";
                 });
 
-            transition.selectAll("text")
+            transition.filter("circle")
+                .attr("r", function(d) {
+                    return k * d.r;
+                });
+
+            transition.filter("text")
                 .filter(function(d) {
-                    return d.parent === focus || this.style.display === "inline";
+                    return d.parent === focus || d.parent === focus0;
                 })
                 .style("fill-opacity", function(d) {
                     return d.parent === focus ? 1 : 0;
@@ -138,19 +180,11 @@
                     if (d.parent !== focus) this.style.display = "none";
                 });
         }
-
-        function zoomTo(v) {
-            var k = diameter / v[2];
-            view = v;
-            node.attr("transform", function(d) {
-                return "translate(" + (d.x - v[0]) * k + "," + (d.y - v[1]) * k + ")";
-            });
-            circle.attr("r", function(d) {
-                return d.r * k;
-            });
-        }
     });
 
-    d3.select(self.frameElement).style("height", diameter + "px");
+    d3.select(self.frameElement).style("height", outerDiameter + "px");
 </script>
+
+<div id="debug-div"></div>
+
 {% endblock %}

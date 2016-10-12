@@ -1,7 +1,10 @@
 import re
-import json
 import math
+import pymongo
+import fnmatch
+import logging
 
+import repo_analyser
 
 class MetricsBuilder(object):
     """
@@ -10,6 +13,7 @@ class MetricsBuilder(object):
 
     def __init__(self, mongo_collection):
         self.collection = mongo_collection
+        self.log = logging.getLogger('codemd.MetricsBuilder')
 
 
     def commits(self):
@@ -37,6 +41,8 @@ class MetricsBuilder(object):
         TODO -- Add docstring
         """
 
+        self.log.debug("Building hotspots information...")
+
         if end_date == None:
             last_entry = list(self.collection.find(
                         {'revision_id': { '$exists': True }}).sort('date', -1))[0]
@@ -51,6 +57,7 @@ class MetricsBuilder(object):
         # {'file_1': {'creation_date': xx, 'last_modified': xx, 'loc': 50,
         #              'bug_dates': [ first_bug_date, ... , last_bug_date ]}}
         files = {}
+        max_score = 0
         for mod_file in self.file_history(start_date=None, end_date=end_date):
             if mod_file['filename'] not in files.keys():
                 files[mod_file['filename']] = {'creation_date' : mod_file['date'],
@@ -60,6 +67,11 @@ class MetricsBuilder(object):
             f['loc'] += mod_file['insertions'] - mod_file['deletions']
             f['last_modified'] = mod_file['date']
 
+            if f['loc'] <= 0:
+                # self.log.error("!!! PROBLEM: negative loc for file: %s. Info: \n%s\n-------------", f_name, f_info )
+                files.pop(mod_file['filename'], None)
+                continue
+
             # Check commit message for bug fixes
             if regex.match(mod_file['message']) != None:
                 f['bug_dates'].append(mod_file['date']) # just or debugging really
@@ -68,11 +80,22 @@ class MetricsBuilder(object):
                 # Add score to each file. Scoring function based on research from Chris
                 # Lewis and Rong Ou
                 fix_date = mod_file['date']
-                norm_time = 1 - (float(end_date - fix_date) /
-                                (end_date - f['creation_date']))
+                time_delta = end_date - f['creation_date']
+                if time_delta <= 0:
+                    time_delta = 1e-100
+                norm_time = 1 - (float(end_date - fix_date) / time_delta)
                 f['score'] += 1 / (1 + math.exp(-12 * norm_time + 12))
 
-        return self.__build_filetree(files, attributes=['score', 'loc'])
+                if f['score'] > max_score:
+                    max_score = f['score']
+
+            # Normalize scores
+            if max_score != 0:
+                for f_name, f_info in files.iteritems():
+                    f_info['score'] /= max_score
+
+
+        return {"name": "root", "children":self.__build_filetree(files, attributes=['score', 'loc'])}
 
 
     def file_history(self, start_date=None, end_date=None):
@@ -126,17 +149,55 @@ class MetricsBuilder(object):
                 # If I couldn't find item in list of children, create one
                 if last_node == current_node:
                     new_node = {'name': wanted_node}
+                    new_node['children'] = []
                     # If this is the terminal node, add the info. Otherwise add children
                     if wanted_node == components[-1]:
                         for attr in attributes:
                             new_node[attr] = file_info[attr]
                         current_node.append(new_node)
                     else:
-                        new_node['children'] = []
                         current_node.append(new_node)
                         current_node = new_node['children']
 
         return tree
+
+    def fix_fuckups(self, collection_name):
+        # Dirty hack to alter previously created documents and filter things I
+        # should of filtered in the first place, and also index the date
+        paths = repo_analyser.paths[collection_name]
+        include_paths = paths['include']
+        exclude_paths = paths['exclude']
+
+        print "Fixing mistakes."
+        print "Include paths: " + str(include_paths)
+        print "Exclude paths: " + str(exclude_paths)
+
+        def check_file_path(f):
+            include_count = 0
+            for path in exclude_paths:
+                if fnmatch.fnmatch(f, path):
+                    return False
+            for path in include_paths:
+                if fnmatch.fnmatch(f, path):
+                    include_count += 1
+            if include_count == 0:
+                return False
+            return True
+
+        self.collection.create_index([("date", pymongo.ASCENDING)])
+        docs = self.collection.find({'revision_id': { '$exists': True }})
+        for doc in docs:
+            updated_files = []
+            files_mod = doc['files_modified']
+            for f in files_mod:
+                if check_file_path(f['filename']):
+                    updated_files.append(f)
+                else:
+                    print "Removing file: " + f['filename']
+            if len(updated_files) != len(files_mod):
+                self.collection.update_one({'date': doc['date']}, {'$set' : {'files_modified':updated_files}})
+
+
 
 
 # min = col.find({'revision_id': { '$exists': True }}).sort('date', 1)
