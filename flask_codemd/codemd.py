@@ -69,7 +69,8 @@ def fetchdata():
 def get_commits():
     project_name = request.args.get('project_name')
 
-    # Safety check to make sure we have the data in disk
+    # Safety check to make sure we have the data in mongo
+    # TODO -- write helper function so i'm not copy pasting this every time
     if project_name not in mongo.db.collection_names():
         log.error("Data for project: %s not found. Go to homepage and \
                   enter git repo", project_name)
@@ -84,12 +85,16 @@ def get_commits():
 @app.route("/api/hotspots")
 def get_hotspots():
     project_name = request.args.get('project_name')
-
-    # Safety check to make sure we have the data in disk
+    # Safety check to make sure we have the data in mongo
     if project_name not in mongo.db.collection_names():
         log.error("Data for project: %s not found. Go to homepage and \
                   enter git repo", project_name)
         return redirect(url_for('show_home'))
+
+    metrics = MetricsBuilder(mongo.db[project_name])
+    hotspots_data = json_util.dumps(metrics.hotspots())
+
+    return jsonify(hotspots_data)
 
 # Test route for Circle Packing Hotspot viz
 @app.route("/hotspots/<project_name>")
