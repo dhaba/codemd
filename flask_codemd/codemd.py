@@ -98,5 +98,5 @@ def get_hotspots():
 
 # Test route for Circle Packing Hotspot viz
 @app.route("/hotspots/<project_name>")
-def hotspots():
+def hotspots(project_name):
     return render_template("hotspots.html")
