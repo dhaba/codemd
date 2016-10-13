@@ -33,27 +33,27 @@ function buildDashboards(data) {
       return d.insertions;
     })
 
-    var weeklyRollingChurnGroup = weekDim.group().reduce(
-        /* callback for when data is added to the current filter results */
-        function(p, v) {
-            ++p.count;
-            p.rollingInsertions += v.insertions;
-            return p;
-        },
-        /* callback for when data is removed from the current filter results */
-        function(p, v) {
-            --p.count;
-            p.rollingInsertions -= v.insertions;
-            return p;
-        },
-        /* initialize p */
-        function() {
-            return {
-                count: 0,
-                rollingInsertions: 0
-            };
-        }
-    );
+    // var weeklyRollingChurnGroup = commits.groupAll().reduce(
+    //     /* callback for when data is added to the current filter results */
+    //     function(p, v) {
+    //         ++p.count;
+    //         p.rollingInsertions += v.insertions;
+    //         return p;
+    //     },
+    //     /* callback for when data is removed from the current filter results */
+    //     function(p, v) {
+    //         --p.count;
+    //         p.rollingInsertions -= v.insertions;
+    //         return p;
+    //     },
+    //     /* initialize p */
+    //     function() {
+    //         return {
+    //             count: 0,
+    //             rollingInsertions: 0
+    //         };
+    //     }
+    // );
 
     // Grouped/aggregated metrics
     // var numCommitsByWeek = dateDim.group(function(d) { return d3.time.week(d);  });
@@ -118,6 +118,9 @@ function buildDashboards(data) {
         .round(d3.time.week.round)
         .dimension(weekDim)
         .group(insertionsByWeekGroup)
+        // .valueAccessor(function (p) {
+        //     return p.value.rollingInsertions;
+        // })
         .rangeChart(commitsTimeline)
         .elasticY(true)
         .renderHorizontalGridLines(true)

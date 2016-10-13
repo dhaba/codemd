@@ -6,6 +6,7 @@ import logging
 
 import repo_analyser
 
+
 class MetricsBuilder(object):
     """
     Docstring
@@ -14,29 +15,49 @@ class MetricsBuilder(object):
     def __init__(self, mongo_collection):
         self.collection = mongo_collection
         self.log = logging.getLogger('codemd.MetricsBuilder')
-
+        self.regex = re.compile(r'\b(fix(es|ed)?|close(s|d)?)\b')
+        # TODO -- filter these found bugs using Github issues or some external
+        # source
 
     def commits(self):
         """
         TODO -- Add docstring
         """
-        cursor = self.collection.aggregate([ \
-            { "$match" : {'revision_id': { '$exists': True }}},
-            { "$unwind": "$files_modified" },
-            { "$group": {
-                "_id": "$date",
-                "author": { "$first": "$author"},
-                "insertions": { "$sum": "$files_modified.insertions"},
-                "deletions":  { "$sum": "$files_modified.deletions"}
-            }},
-            { "$sort": {"_id":1}}, # _id is the date at this point
-            { "$project": {"date":"$_id", "_id": 0, "insertions": 1,
-                           "deletions": 1, "author": 1}}
-        ])
+        self.log.debug("Fetching commits info from db...")
 
-        return [doc for doc in cursor]
+        cursor = self.collection.aggregate([
+                {"$match": {'revision_id': {'$exists': True}}},
+                {"$unwind": "$files_modified"},
+                {"$group": {
+                    "_id": "$revision_id",
+                    "date": {"$first": "$date"},
+                    "message": {"$first": "$message"},
+                    "author": {"$first": "$author"},
+                    "insertions": {"$sum": "$files_modified.insertions"},
+                    "deletions":  {"$sum": "$files_modified.deletions"}
+                }},
+                {"$sort": {"_id": 1}},  # _id is the date at this point
+                {"$project": {"date": 1, "_id": 0, "insertions": 1,
+                               "deletions": 1, "author": 1, "message": 1}}
+            ])
 
-    def hotspots(self, end_date = None):
+        self.log.debug("Finished fetching commits. Building list /w appropriate"
+                        "metrics...")
+
+        docs = []
+        total_insertions, total_deletions = 0, 0
+        for doc in cursor:
+            total_insertions += doc['insertions']
+            total_deletions += doc['deletions']
+            docs.append({'bug': self.is_bug(doc['message']), 'date': doc['date'],
+                         'insertions': doc['insertions'], 'total_insertions': total_insertions,
+                         'deletions': doc['deletions'], 'total_deletions': total_deletions,
+                         'author': doc['author']})
+
+        return docs
+
+
+    def hotspots(self, end_date=None):
         """
         TODO -- Add docstring
         """
@@ -45,12 +66,8 @@ class MetricsBuilder(object):
 
         if end_date == None:
             last_entry = list(self.collection.find(
-                        {'revision_id': { '$exists': True }}).sort('date', -1))[0]
+                        {'revision_id': {'$exists': True}}).sort('date', -1))[0]
             end_date = last_entry['date']
-
-        # Regular expression to find commits containg "fixes/fixed or closes/closed"
-        regex = re.compile(r'\b(fix(es|ed)?|close(s|d)?)\b')
-        # TODO -- filter these found bugs using Github issues or some external source
 
         # Iterate over each modified file and build a dict of dicts, with a key
         # for each filename, and a value containing file info. Structure:
@@ -60,21 +77,23 @@ class MetricsBuilder(object):
         max_score = 0
         for mod_file in self.file_history(start_date=None, end_date=end_date):
             if mod_file['filename'] not in files.keys():
-                files[mod_file['filename']] = {'creation_date' : mod_file['date'],
+                files[mod_file['filename']] = {'creation_date': mod_file['date'],
                                                     'bug_dates': [], 'bug_messages': [],
-                                                    'loc': 0, 'score': 0 }
+                                                    'loc': 0, 'score': 0}
             f = files[mod_file['filename']]
             f['loc'] += mod_file['insertions'] - mod_file['deletions']
             f['last_modified'] = mod_file['date']
 
             if f['loc'] <= 0:
-                # self.log.error("!!! PROBLEM: negative loc for file: %s. Info: \n%s\n-------------", f_name, f_info )
+                # self.log.error("!!! PROBLEM: negative loc for file: %s. Info:
+                # \n%s\n-------------", f_name, f_info )
                 files.pop(mod_file['filename'], None)
                 continue
 
             # Check commit message for bug fixes
-            if regex.match(mod_file['message']) != None:
-                f['bug_dates'].append(mod_file['date']) # just or debugging really
+            if self.is_bug(mod_file['message']):
+                # just or debugging really
+                f['bug_dates'].append(mod_file['date'])
                 f['bug_messages'].append(mod_file['message'])
 
                 # Add score to each file. Scoring function based on research from Chris
@@ -92,6 +111,7 @@ class MetricsBuilder(object):
 
         self.log.info("Highest score: %s", max_score)
 
+        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         # TODO -- filter out duplicate files that were moved around (only choose
         # the one that was most recently modified)
 
@@ -100,22 +120,17 @@ class MetricsBuilder(object):
             for f_name, f_info in files.iteritems():
                 # DEBUG TODO -- remove
                 if math.isnan(f_info['score']) or math.isnan(f_info['loc']):
-                    self.log.error("Got nan score/loc for file %s, with info: %s", f_name, f_info)
+                    self.log.error(
+                        "Got nan score/loc for file %s, with info: %s", f_name, f_info)
                 if f_info['score'] == max_score:
                     self.log.info("Highest score was %s for file %s with info:\n%s",
                                                         max_score, f_name, f_info)
 
                 f_info['score'] /= max_score
 
+        return {"name": "root", "children": self.__build_filetree(files, attributes=['score', 'loc'])}
 
-        return {"name": "root", "children":self.__build_filetree(files, attributes=['score', 'loc'])}
-
-
-    def author_contribution(self, end_date = None):
-        """
-        TODO -- add docstring
-        """
-
+    # def author_contribution(self, end_date = None):
 
 
 
@@ -181,6 +196,12 @@ class MetricsBuilder(object):
                         current_node = new_node['children']
 
         return tree
+
+    def is_bug(self, message):
+        """
+        DOCSTRING
+        """
+        return self.regex.match(message) != None
 
 
     def fix_fuckups(self, collection_name):

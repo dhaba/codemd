@@ -77,9 +77,13 @@ def get_commits():
         return redirect(url_for('show_home'))
 
     metrics = MetricsBuilder(mongo.db[project_name])
-    commits_data = json_util.dumps(metrics.commits())
-    # log.debug("Metrics extracted from mongo db: %s", commits_data)
-    return jsonify(commits_data)
+    commits_data = metrics.commits()
+    log.info("Extracted %s rows of commits data for project %s", len(commits_data),
+             project_name)
+    commits_json = json_util.dumps(commits_data)
+    log.info("Length after dumping to json: %s", len(commits_json))
+
+    return jsonify(commits_json)
 
 # Return file tree with scores and complexity for hotspots viz
 @app.route("/api/hotspots")
