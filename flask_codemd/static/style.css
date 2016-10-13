@@ -3,34 +3,26 @@ h1 {
     position: relative;
 }
 
-html, body, .container-fluid {
+
+/*html, body, .container-fluid {
     height: 100%;
 }
 
 .container-fluid {
     height: 100%;
-    /*-moz-box-sizing: border-box;
+    -moz-box-sizing: border-box;
     -webkit-box-sizing: border-box;
-    box-sizing: border-box;*/
+    box-sizing: border-box;
+}*/
+
+#commits-timeline g.y {
+    display: none;
 }
 
-.chart {
-    display: inline-block;
-    height: 151px;
-    margin-bottom: 20px;
-}
-
-#toprow {
-    /*height:30%; */
-    /*display: block;*/
-    /*background: red;*/
-}
-
-#bottomrow {
-    /*height: 500px;
-    background: blue;*/
-}
-
-#commits-timeline {
-    /*width: 100%;*/
+.dc-chart {
+    float: none !important;
+    text-align: center;
+    /*display: inline-block;*/
+    /*height: 151px;
+    margin-bottom: 20px;*/
 }

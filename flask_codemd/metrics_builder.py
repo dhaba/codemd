@@ -92,6 +92,9 @@ class MetricsBuilder(object):
 
         self.log.info("Highest score: %s", max_score)
 
+        # TODO -- filter out duplicate files that were moved around (only choose
+        # the one that was most recently modified)
+
         # Normalize scores
         if max_score > 0:
             for f_name, f_info in files.iteritems():
