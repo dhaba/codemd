@@ -23,7 +23,7 @@ paths = {"scikit-learn": {"include":["sklearn/*"], "exclude":["README"]},
          "node":         {"include":["lib/*", "deps/*", "tools/*", "src/*", "benchmark/*", "test/*"],
                           "exclude":['*.md', "*.yml", "*.txt"]},
          "pandas":       {"include":["asv_bench/*", "bench/*", "pandas/*", "scripts/*"],
-                          "exclude":['*.md', 'doc/*']},
+                          "exclude":['*.md', 'doc/*', '*.rst', '*.svg', '*.png']},
          "numpy":        {"include":["numpy/*", "tools/*"],  "exclude":['numpy/doc/*', '*.md', '*.txt, *.yml']} }
 
 class RepoAnalyser(object):

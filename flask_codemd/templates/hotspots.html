@@ -53,7 +53,7 @@
     console.log('request url: ' + requestUrl);
 
     var margin = 5,
-        outerDiameter = 1500,
+        outerDiameter = 1000,
         innerDiameter = outerDiameter - margin - margin;
 
     var x = d3.scale.linear()
@@ -71,9 +71,6 @@
         .padding(2)
         .size([innerDiameter, innerDiameter])
         .value(function(d) {
-            if ((typeof d.loc === undefined) || (d.loc !== d.loc)) {
-                console.log('yet another problem, d.loc is broken!');
-            }
             return d.loc;
         });
 
@@ -84,16 +81,8 @@
         .attr("transform", "translate(" + margin + "," + margin + ")");
 
     d3.json(requestUrl, function(error, root) {
-
-        console.log('scriptt inside d3.json');
-
         root = JSON.parse(root);
-
-        $("#debug-div").html("hahaha some test text");
-
-        console.log(root);
-
-
+        // console.log(root);
         var focus = root,
             nodes = pack.nodes(root);
 
@@ -107,11 +96,7 @@
                 return "translate(" + d.x + "," + d.y + ")";
             })
             .attr("r", function(d) {
-                var r = d.r;
-                if ((typeof r === undefined) || (r !== r)) {
-                    console.log('we got a problem chief');
-                }
-                return r;
+                return d.r;
             })
             .style("fill", function(d) {
                 return d.score > 0.0 ? "darkred" :

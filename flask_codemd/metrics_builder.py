@@ -82,20 +82,38 @@ class MetricsBuilder(object):
                 fix_date = mod_file['date']
                 time_delta = end_date - f['creation_date']
                 if time_delta <= 0:
-                    time_delta = 1e-100
-                norm_time = 1 - (float(end_date - fix_date) / time_delta)
+                    norm_time = 1.0
+                else:
+                    norm_time = 1 - (float(end_date - fix_date) / (time_delta))
                 f['score'] += 1 / (1 + math.exp(-12 * norm_time + 12))
 
                 if f['score'] > max_score:
                     max_score = f['score']
 
-            # Normalize scores
-            if max_score != 0:
-                for f_name, f_info in files.iteritems():
-                    f_info['score'] /= max_score
+        self.log.info("Highest score: %s", max_score)
+
+        # Normalize scores
+        if max_score > 0:
+            for f_name, f_info in files.iteritems():
+                # DEBUG TODO -- remove
+                if math.isnan(f_info['score']) or math.isnan(f_info['loc']):
+                    self.log.error("Got nan score/loc for file %s, with info: %s", f_name, f_info)
+                if f_info['score'] == max_score:
+                    self.log.info("Highest score was %s for file %s with info:\n%s",
+                                                        max_score, f_name, f_info)
+
+                f_info['score'] /= max_score
 
 
         return {"name": "root", "children":self.__build_filetree(files, attributes=['score', 'loc'])}
+
+
+    def author_contribution(self, end_date = None):
+        """
+        TODO -- add docstring
+        """
+
+
 
 
     def file_history(self, start_date=None, end_date=None):
@@ -112,7 +130,7 @@ class MetricsBuilder(object):
                           "insertions": "$files_modified.insertions",
                           "deletions": "$files_modified.deletions",
                           "message": 1, "author": 1, "date": 1, "_id": 0 }},
-            { "$sort": {"date": 1} } ])
+            { "$sort": {"date": 1} } ], allowDiskUse=True)
 
 
     def __build_filetree(self, files, attributes=[], component_delim="/"):
@@ -161,6 +179,7 @@ class MetricsBuilder(object):
 
         return tree
 
+
     def fix_fuckups(self, collection_name):
         # Dirty hack to alter previously created documents and filter things I
         # should of filtered in the first place, and also index the date
@@ -196,17 +215,3 @@ class MetricsBuilder(object):
                     print "Removing file: " + f['filename']
             if len(updated_files) != len(files_mod):
                 self.collection.update_one({'date': doc['date']}, {'$set' : {'files_modified':updated_files}})
-
-
-
-
-# min = col.find({'revision_id': { '$exists': True }}).sort('date', 1)
-
-# cursor = col.aggregate([ \
-#     { "$match" : {'revision_id': { '$exists': True }}},
-#     { "$unwind": "$files_modified" },
-#     { "$project":{"filename": "$files_modified.filename",
-#                   "insertions": "$files_modified.insertions",
-#                   "deletions": "$files_modified.deletions",
-#                   "message": 1, "author": 1, "date": 1, "_id": 0 }},
-#     { "$sort": {"date": 1} } ])
