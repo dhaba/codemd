@@ -12,25 +12,48 @@ function buildDashboards(data) {
     commits_json.forEach(function(d) {
         d.date = new Date(d.date * 1000);
     });
-
-
     var commits = crossfilter(commits_json);
-    // Define dimensions
+
+    // Date dimensions
     var dateDim = commits.dimension(function(d) { return d.date; });
+    var dayDim =  commits.dimension(function(d) { return d3.time.day(d.date); });
     var weekDim = commits.dimension(function(d) { return d3.time.week(d.date); });
 
+    // Churn metric dimensions
     var deletionsDim = commits.dimension(function(d) { return d.deletions; });
     var insertionsDim = commits.dimension(function(d) { return d.insertions; });
-    var netLinesDim = commits.dimension(function(d) { return d.insertions - d.deletions; })
+    var netLinesDim = commits.dimension(function(d) { return d.insertions - d.deletions; });
 
     // Groups and Aggregates
     var weekGroup = weekDim.group()
     var insertionsByWeekGroup = weekDim.group().reduceSum(function (d) {
       return d.insertions;
     })
-    var insertionsByDateGroup = dateDim.group().reduceSum(function (d) {
+    var insertionsByDayGroup = dayDim.group().reduceSum(function (d) {
       return d.insertions;
     })
+
+    var weeklyRollingChurnGroup = weekDim.group().reduce(
+        /* callback for when data is added to the current filter results */
+        function(p, v) {
+            ++p.count;
+            p.rollingInsertions += v.insertions;
+            return p;
+        },
+        /* callback for when data is removed from the current filter results */
+        function(p, v) {
+            --p.count;
+            p.rollingInsertions -= v.insertions;
+            return p;
+        },
+        /* initialize p */
+        function() {
+            return {
+                count: 0,
+                rollingInsertions: 0
+            };
+        }
+    );
 
     // Grouped/aggregated metrics
     // var numCommitsByWeek = dateDim.group(function(d) { return d3.time.week(d);  });
@@ -46,13 +69,18 @@ function buildDashboards(data) {
 
     //Define values (to be used in charts) TODO -- i can just elastic scale??
     var dateRange = {
+      minDay: dayDim.bottom(1)[0].date,
+      maxDay: dayDim.top(1)[0].date,
       minWeek: weekDim.bottom(1)[0].date,
-      maxWeek: weekDim.top(1)[0].date
+      maxWeek: weekDim.top(1)[0].date,
+      minDate: dateDim.bottom(1)[0].date,
+      maxDate: dateDim.top(1)[0].date
     };
-    var minWeek = weekDim.bottom(1)[0].date;
-    var maxWeek = weekDim.top(1)[0].date;
-    console.log('min week date: ' + minWeek);
-    console.log('max week date ' + maxWeek);
+
+    console.log('min date: ' + dateRange.minDate);
+    console.log('max date ' + dateRange.maxDate);
+    console.log('\nmin week date: ' + dateRange.minWeek);
+    console.log('max week date ' + dateRange.maxWeek);
 
     // Commits timeline
     var commitsTimeline = dc.barChart("#commits-timeline");
@@ -76,23 +104,24 @@ function buildDashboards(data) {
     // Rolling insertions
     var rollingInsertions = dc.lineChart("#rolling-insertions");
     rollingInsertions
-      .width(990)
-      .height(150)
-      .margins({
-          top: 0,
-          right: 50,
-          bottom: 20,
-          left: 50
-      })
-      .x(d3.time.scale().domain([dateRange.minWeek, dateRange.maxWeek]))
-      .xUnits(d3.time.weeks)
-      .round(d3.time.week.round)
-      .dimension(weekDim)
-      .group(insertionsByWeekGroup)
-      .rangeChart(commitsTimeline)
-      .elasticY(true)
-      .renderHorizontalGridLines(true)
-      .brushOn(false)
+        .width(990)
+        .height(150)
+        .margins({
+            top: 0,
+            right: 50,
+            bottom: 20,
+            left: 50
+        })
+        // .x(d3.time.scale().domain([dateRange.minDay, dateRange.maxDay]))
+        .x(d3.time.scale().domain([dateRange.minWeek, dateRange.maxWeek]))
+        .xUnits(d3.time.weeks)
+        .round(d3.time.week.round)
+        .dimension(weekDim)
+        .group(insertionsByWeekGroup)
+        .rangeChart(commitsTimeline)
+        .elasticY(true)
+        .renderHorizontalGridLines(true)
+        .brushOn(false)
 
     // Code Churn
 
