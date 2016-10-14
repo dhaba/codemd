@@ -7,13 +7,13 @@ h1 {
 /*html, body, .container-fluid {
     height: 100%;
 }
-
 .container-fluid {
     height: 100%;
     -moz-box-sizing: border-box;
     -webkit-box-sizing: border-box;
     box-sizing: border-box;
-}*/
+}
+*/
 
 #commits-timeline g.y {
     display: none;
@@ -25,4 +25,8 @@ h1 {
     /*display: inline-block;*/
     /*height: 151px;
     margin-bottom: 20px;*/
+}
+
+.chart-title {
+    text-align: center;
 }

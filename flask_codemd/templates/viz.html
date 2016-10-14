@@ -36,6 +36,7 @@
 
 <div class="container-fluid">
 
+    <!-- ROW 1 - Commits Timeline -->
     <div class="row" id="first-row">
         <div class="col-md-1">
             <div class="chart-wrapper">
@@ -47,11 +48,10 @@
                 </div>
             </div>
         </div>
-        <!-- Commits Timeline -->
         <div class="col-md-10">
             <div class="chart-wrapper">
                 <div class="chart-title">
-                    <!-- Commits Timeline -->
+                    Commits By Week
                 </div>
                 <div class="chart-stage">
                     <div id="commits-timeline"></div>
@@ -70,7 +70,42 @@
         </div>
     </div>
 
+    <!-- ROW 2 - Bugs Distribution -->
     <div class="row" id="second-row">
+        <div class="col-md-1">
+            <div class="chart-wrapper">
+                <div class="chart-title">
+                    Left Overview
+                </div>
+                <div class="chart-stage">
+
+                </div>
+            </div>
+        </div>
+        <div class="col-md-10">
+            <div class="chart-wrapper">
+                <div class="chart-title">
+                    Distribution of Defects
+                </div>
+                <div class="chart-stage">
+                    <div id="defects-distribution"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-1">
+            <div class="chart-wrapper">
+                <div class="chart-title">
+                    Right Overview
+                </div>
+                <div class="chart-stage">
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ROW 3 - Churn / Deleted (Velocity of Feature Development) -->
+    <div class="row" id="third-row">
         <div class="col-md-1">
             <div class="chart-wrapper">
                 <div class="chart-title">
@@ -80,14 +115,12 @@
                 </div>
             </div>
         </div>
-        <!-- Commits Timeline -->
         <div class="col-md-10">
             <div class="chart-wrapper">
                 <div class="chart-title">
-                    <!-- Commits Timeline -->
                 </div>
                 <div class="chart-stage">
-                    <div id="rolling-insertions"></div>
+                    <div id="churn-over-del"></div>
                 </div>
             </div>
         </div>
@@ -102,6 +135,38 @@
         </div>
     </div>
 
+    <!-- ROW 4 - Churned / Total (high = likely bugs) -->
+    <div class="row" id="third-row">
+        <div class="col-md-1">
+            <div class="chart-wrapper">
+                <div class="chart-title">
+                    Left Overview
+                </div>
+                <div class="chart-stage">
+                </div>
+            </div>
+        </div>
+        <div class="col-md-10">
+            <div class="chart-wrapper">
+                <div class="chart-title">
+                </div>
+                <div class="chart-stage">
+                    <div id="churn-over-total"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-1">
+            <div class="chart-wrapper">
+                <div class="chart-title">
+                    Right Overview
+                </div>
+                <div class="chart-stage">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Row 4 (TODO put stuff in here) -->
     <div class="row" id="bottomrow">
         <div class="col-md-4">
             <div class="chart-wrapper">

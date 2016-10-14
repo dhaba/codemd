@@ -36,7 +36,7 @@ class MetricsBuilder(object):
                     "insertions": {"$sum": "$files_modified.insertions"},
                     "deletions":  {"$sum": "$files_modified.deletions"}
                 }},
-                {"$sort": {"_id": 1}},  # _id is the date at this point
+                {"$sort": {"date": 1}},  # _id is the date at this point
                 {"$project": {"date": 1, "_id": 0, "insertions": 1,
                                "deletions": 1, "author": 1, "message": 1}}
             ])
@@ -129,8 +129,6 @@ class MetricsBuilder(object):
                 f_info['score'] /= max_score
 
         return {"name": "root", "children": self.__build_filetree(files, attributes=['score', 'loc'])}
-
-    # def author_contribution(self, end_date = None):
 
 
 

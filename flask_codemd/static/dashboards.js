@@ -21,51 +21,26 @@ function buildDashboards(data) {
 
     // Churn metric dimensions
     var deletionsDim = commits.dimension(function(d) { return d.deletions; });
+    var totalDeletionsDim = commits.dimension(function(d) { return d.total_deletions; });
+
     var insertionsDim = commits.dimension(function(d) { return d.insertions; });
+    var totalInsertionsDim = commits.dimension(function(d) { return d.total_insertions; });
+
     var netLinesDim = commits.dimension(function(d) { return d.insertions - d.deletions; });
+    var totalLocDim = commits.dimension(function(d) { return d.total_insertions - d.total_deletions; });
 
     // Groups and Aggregates
     var weekGroup = weekDim.group()
-    var insertionsByWeekGroup = weekDim.group().reduceSum(function (d) {
-      return d.insertions;
-    })
-    var insertionsByDayGroup = dayDim.group().reduceSum(function (d) {
-      return d.insertions;
+    var bugsByWeekGroup = weekDim.group().reduceSum( function (d) {
+      return d.bug ? 1 : 0;
     })
 
-    // var weeklyRollingChurnGroup = commits.groupAll().reduce(
-    //     /* callback for when data is added to the current filter results */
-    //     function(p, v) {
-    //         ++p.count;
-    //         p.rollingInsertions += v.insertions;
-    //         return p;
-    //     },
-    //     /* callback for when data is removed from the current filter results */
-    //     function(p, v) {
-    //         --p.count;
-    //         p.rollingInsertions -= v.insertions;
-    //         return p;
-    //     },
-    //     /* initialize p */
-    //     function() {
-    //         return {
-    //             count: 0,
-    //             rollingInsertions: 0
-    //         };
-    //     }
-    // );
+    var reducer = reductio()
+    reducer.value("insertions").max(function(d) { return d.total_insertions; })
+    reducer.value("deletions").max(function(d) { return d.total_deletions; })
 
-    // Grouped/aggregated metrics
-    // var numCommitsByWeek = dateDim.group(function(d) { return d3.time.week(d);  });
-    // var aggregatedLines = insertionsDim.group().reduce(reduceAdd, reduceRemove, reduceInitial);
-
-    // console.log(aggregatedLines.all());
-
-    // reduceRunningTotal(aggregatedLines);
-
-    // var deletionsToDate = reduceRunningTotal(dateDim.group());
-    // var insertionsToDate = reduceRunningTotal(dateDim.group());
-
+    var totalInsertionsByWeekGroup = weekDim.group();
+    reducer(totalInsertionsByWeekGroup)
 
     //Define values (to be used in charts) TODO -- i can just elastic scale??
     var dateRange = {
@@ -88,10 +63,10 @@ function buildDashboards(data) {
         .width(990)
         .height(50)
         .margins({
-            top: 0,
-            right: 50,
+            top: 15,
+            right: 0,
             bottom: 20,
-            left: 50
+            left: 0
         })
         .dimension(weekDim)
         .group(weekGroup)
@@ -101,32 +76,78 @@ function buildDashboards(data) {
         .gap(1)
         .centerBar(true)
 
-    // Rolling insertions
-    var rollingInsertions = dc.lineChart("#rolling-insertions");
-    rollingInsertions
+    // Defects Distribution
+    var defectsDistribution = dc.barChart("#defects-distribution");
+    defectsDistribution
+        .width(990)
+        .height(75)
+        .margins({
+            top: 0,
+            right: 0,
+            bottom: 20,
+            left: 0
+        })
+        .dimension(weekDim)
+        .group(bugsByWeekGroup)
+        .x(d3.time.scale().domain([dateRange.minWeek, dateRange.maxWeek]))
+        .xUnits(d3.time.weeks)
+        .round(d3.time.week.round)
+        .centerBar(true)
+
+    // M7 - Churned/Deleted (Development Velocity)
+    var churnOverDeletions = dc.lineChart("#churn-over-del");
+    churnOverDeletions
         .width(990)
         .height(150)
         .margins({
-            top: 0,
-            right: 50,
-            bottom: 20,
-            left: 50
+            top: 30,
+            right: 0,
+            bottom: 40,
+            left: 0
         })
-        // .x(d3.time.scale().domain([dateRange.minDay, dateRange.maxDay]))
         .x(d3.time.scale().domain([dateRange.minWeek, dateRange.maxWeek]))
         .xUnits(d3.time.weeks)
         .round(d3.time.week.round)
         .dimension(weekDim)
-        .group(insertionsByWeekGroup)
-        // .valueAccessor(function (p) {
-        //     return p.value.rollingInsertions;
-        // })
+        .group(totalInsertionsByWeekGroup)
+        .valueAccessor(function(p) {
+            return (p.value.insertions.max + p.value.deletions.max) / p.value.deletions.max;
+        })
         .rangeChart(commitsTimeline)
         .elasticY(true)
         .renderHorizontalGridLines(true)
+        .xAxisLabel("Churned LOC / Deleted LOC")
         .brushOn(false)
+        .yAxisPadding(0.1)
 
-    // Code Churn
+      // M1 - Churned/Total (Indicative of Defects)
+      var churnOverTotal = dc.lineChart("#churn-over-total");
+      churnOverTotal
+          .width(990)
+          .height(150)
+          .margins({
+              top: 30,
+              right: 0,
+              bottom: 40,
+              left: 0
+          })
+          .x(d3.time.scale().domain([dateRange.minWeek, dateRange.maxWeek]))
+          .xUnits(d3.time.weeks)
+          .round(d3.time.week.round)
+          .dimension(weekDim)
+          .group(totalInsertionsByWeekGroup)
+          .valueAccessor(function(p) {
+              return (p.value.insertions.max + p.value.deletions.max) / p.value.deletions.max;
+          })
+          .rangeChart(commitsTimeline)
+          .elasticY(true)
+          .renderHorizontalGridLines(true)
+          .xAxisLabel("Churned LOC / Deleted LOC")
+          .brushOn(false)
+          .yAxisPadding(0.1)
+
+
+
 
     // var codeChurn = dc.compositeChart("#code-churn");
     // codeChurn
@@ -173,6 +194,40 @@ function buildDashboards(data) {
     //   ])
     //   .sortBy(function(d) { return d.date; })
     //   .order(d3.descending);
+
+    // var weeklyRollingChurnGroup = commits.groupAll().reduce(
+    //     /* callback for when data is added to the current filter results */
+    //     function(p, v) {
+    //         ++p.count;
+    //         p.rollingInsertions += v.insertions;
+    //         return p;
+    //     },
+    //     /* callback for when data is removed from the current filter results */
+    //     function(p, v) {
+    //         --p.count;
+    //         p.rollingInsertions -= v.insertions;
+    //         return p;
+    //     },
+    //     /* initialize p */
+    //     function() {
+    //         return {
+    //             count: 0,
+    //             rollingInsertions: 0
+    //         };
+    //     }
+    // );
+
+    // Grouped/aggregated metrics
+    // var numCommitsByWeek = dateDim.group(function(d) { return d3.time.week(d);  });
+    // var aggregatedLines = insertionsDim.group().reduce(reduceAdd, reduceRemove, reduceInitial);
+
+    // console.log(aggregatedLines.all());
+
+    // reduceRunningTotal(aggregatedLines);
+
+    // var deletionsToDate = reduceRunningTotal(dateDim.group());
+    // var insertionsToDate = reduceRunningTotal(dateDim.group());
+
 
     dc.renderAll();
 }
