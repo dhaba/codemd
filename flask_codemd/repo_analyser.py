@@ -10,7 +10,7 @@ import pymongo
 from git import Repo
 
 # Dictionary of hard-coded paths to include/exclude for known projects
-paths = {"scikit-learn": {"include":["sklearn/*"], "exclude":["README"]},
+paths = {"scikit-learn": {"include":["sklearn/*"], "exclude":['README', '*.md', '*.txt', '*.yml']},
          "django":       {"include":["django/*", "tests/*"],
                           "exclude":['*.md', '*.txt', '*.yml', '*.mo', '*.po']},
          "sass":         {"include":["lib/*"],  "exclude":[]},
@@ -19,7 +19,7 @@ paths = {"scikit-learn": {"include":["sklearn/*"], "exclude":["README"]},
                           "activerecord/*", "activesupport/*", "railties/*",
                           "tasks/*", "tools/*"],
                           "exclude":["*.md", "*.yml", "MIT-LICENSE", "*.gemspec",
-                          "*.rdoc", "*.gitkeep", "*.json", "*.gitignore"]},
+                          "*.rdoc", "*.gitkeep", "*.json", "*.gitignore", "*.txt"]},
          "node":         {"include":["lib/*", "deps/*", "tools/*", "src/*", "benchmark/*", "test/*"],
                           "exclude":['*.md', "*.yml", "*.txt"]},
          "pandas":       {"include":["asv_bench/*", "bench/*", "pandas/*", "scripts/*"],
@@ -29,6 +29,11 @@ paths = {"scikit-learn": {"include":["sklearn/*"], "exclude":["README"]},
                                     'initfs/etc/*', 'kernel/*', 'liballoc_malloc/*',
                                     'liballoc_system/*', 'setup/*'],
                           "exclude":['*.md', "*.yml", "*.txt"]} }
+
+# Always exclude these paths
+always_exclude = ["*.md", "*.yml", "MIT-LICENSE", "*.gemspec", "Gemfile", ".bower",
+"*.rdoc", "*.gitkeep", "*.json", "*.gitignore", "*.txt", ".json", ".git", ".png",
+".gif", ".jpg", "README.*", "*.dat", "LICENSE"]
 
 class RepoAnalyser(object):
     """
@@ -58,6 +63,8 @@ class RepoAnalyser(object):
             project_paths = paths[self.project_name]
             self.include_paths = project_paths["include"]
             self.exclude_paths = project_paths["exclude"]
+
+        self.exclude_paths = list(set(self.exclude_paths + always_exclude))
 
         self.log.info('cloning repository url: %s into a temporary location...', git_url)
         self.log.debug('Included paths: %s', self.include_paths)
@@ -104,6 +111,10 @@ class RepoAnalyser(object):
             # END DEBUG
             self.log.info("Starting iteration over commits...")
             for c in self.commits_iterator():
+                # Ignoring merges, as all the info will be contained in upstream
+                if len(c.parents) > 1:
+                    continue
+
                 # DEBUG CODE
                 count += 1
                 if count % INCREMENT == 0:

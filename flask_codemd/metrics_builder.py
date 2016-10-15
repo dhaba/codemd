@@ -85,8 +85,7 @@ class MetricsBuilder(object):
             f['last_modified'] = mod_file['date']
 
             if f['loc'] <= 0:
-                # self.log.error("!!! PROBLEM: negative loc for file: %s. Info:
-                # \n%s\n-------------", f_name, f_info )
+                #self.log.error("!!! PROBLEM: negative loc for file: %s", mod_file['filename'])
                 files.pop(mod_file['filename'], None)
                 continue
 
@@ -153,11 +152,11 @@ class MetricsBuilder(object):
         """
         Takes a dictionary (files) with keys corresponding to file paths, and builds a
         tree from the file path with the leaves having attributes selected from
-        the value dictionary of param files. .
+        the value dictionary of param files.
 
-        Each non-leaf has keys 'name' and 'children'.
-        Each leaf has keys 'name', and whatever else is specified in the attributes
-        parameter
+        Every node has keys 'name' and 'children'.
+        Each leaf i also has whatever properties from files.values()[i]
+        which are specified in the attributes parameter
 
         This algorithm is general enough for any number of nested components. It works
         by splitting file's name into path components, traversing the tree top-down,

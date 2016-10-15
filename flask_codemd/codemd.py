@@ -16,6 +16,7 @@ app.secret_key = "sillycats123"
 
 # Set db configuration options
 app.config['MONGO_DBNAME'] = 'codemd'
+# app.config['MONGO_URI'] = 'mongodb://default:hireme@ds021434.mlab.com:21434/codemd'
 
 # Create db instance
 mongo = PyMongo(app)
@@ -100,8 +101,14 @@ def get_hotspots():
 
     return jsonify(hotspots_data)
 
-# Test route for Circle Packing Hotspot viz
+
+# Test route for Circle Packing Hotspot viz TODO remove this
 @app.route("/hotspots/<project_name>")
 def hotspots(project_name):
     log.debug("Getting info for project name: %s", project_name)
     return render_template("hotspots.html", project_name=project_name)
+
+
+if __name__ == "__main__":
+    app.debug = True
+    app.run()

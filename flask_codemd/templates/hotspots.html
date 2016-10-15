@@ -107,6 +107,9 @@
             })
             .on("click", function(d) {
                 return zoom(focus == d ? root : d);
+            })
+            .append("title").text(function(d) {
+                return d.name;
             });
 
         svg.append("g").selectAll("text")
