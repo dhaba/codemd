@@ -34,20 +34,3 @@ h1 {
 .chart-title {
     text-align: center;
 }
-
-
-/* bullshit below */
-
-svg {
-    font: 10px sans-serif;
-}
-
-path {
-    fill: steelblue;
-}
-
-.axis path, .axis line {
-    fill: none;
-    stroke: #000;
-    shape-rendering: crispEdges;
-}

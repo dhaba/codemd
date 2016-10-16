@@ -16,8 +16,10 @@ class MetricsBuilder(object):
         self.collection = mongo_collection
         self.log = logging.getLogger('codemd.MetricsBuilder')
         self.regex = re.compile(r'\b(fix(es|ed)?|close(s|d)?)\b')
-        # TODO -- filter these found bugs using Github issues or some external
-        # source
+
+        # minimum lines of code to be considered in hotspots analysis
+        self.LENGTH_THRESH = 10
+
 
     def commits(self):
         """
@@ -61,6 +63,8 @@ class MetricsBuilder(object):
         """
         TODO -- Add docstring
         """
+
+        THRESHOLD = 20 # do not include files less than this many lines
 
         self.log.debug("Building hotspots information...")
 
@@ -110,9 +114,8 @@ class MetricsBuilder(object):
 
         self.log.info("Highest score: %s", max_score)
 
-        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        # TODO -- filter out duplicate files that were moved around (only choose
-        # the one that was most recently modified)
+
+        files_to_filter = []
 
         # Normalize scores
         if max_score > 0:
@@ -124,8 +127,14 @@ class MetricsBuilder(object):
                 if f_info['score'] == max_score:
                     self.log.info("Highest score was %s for file %s with info:\n%s",
                                                         max_score, f_name, f_info)
+                if f_info['loc'] < THRESHOLD:
+                    files_to_filter.append(f_name)
 
                 f_info['score'] /= max_score
+
+        for f in files_to_filter:
+            self.log.debug("Removing file %s because it only had %s lines", f, files[f]['loc'])
+            files.pop(f, None)
 
         return {"name": "root", "children": self.__build_filetree(files, attributes=['score', 'loc'])}
 

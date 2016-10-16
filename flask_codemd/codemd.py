@@ -1,6 +1,8 @@
 from bson import json_util
 import logging
 import time
+import os.path
+import json
 
 from flask_pymongo import PyMongo
 from flask import Flask, request, session, g, redirect, url_for, abort, \
@@ -12,7 +14,8 @@ from metrics_builder import MetricsBuilder
 
 # Create app instance
 app = Flask(__name__)
-app.secret_key = "sillycats123"
+app.secret_key = "somesupersecretkeythatnoonewilleverguess"
+
 
 # Set db configuration options
 app.config['MONGO_DBNAME'] = 'codemd'
@@ -77,12 +80,25 @@ def get_commits():
                   enter git repo", project_name)
         return redirect(url_for('show_home'))
 
+    # Check if we have JSON already
+    file_path = "./json_data/" + project_name
+    if os.path.isfile(file_path):
+        log.debug("Found file for commits data at path at %s. \
+                   Serving to page...", file_path)
+        commits_json = json_util.loads(file_path)
+        return jsonify(commits_json)
+
+    log.debug("File not found at path %s. Extracting from db...", file_path)
     metrics = MetricsBuilder(mongo.db[project_name])
     commits_data = metrics.commits()
-    log.info("Extracted %s rows of commits data for project %s", len(commits_data),
-             project_name)
+    log.info("Extracted %s rows of commits data for project %s",
+              len(commits_data), project_name)
     commits_json = json_util.dumps(commits_data)
     log.info("Length after dumping to json: %s", len(commits_json))
+
+    # log.info("Saving file to path: %s", file_path)
+    # with open(file_path, 'w') as outfile:
+    #     json.dump(commits_json, url_for('static', outfile))
 
     return jsonify(commits_json)
 
