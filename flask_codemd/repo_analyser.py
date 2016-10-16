@@ -28,12 +28,14 @@ paths = {"scikit-learn": {"include":["sklearn/*"], "exclude":['README', '*.md', 
          "redox":        {"include":['crates/*', 'drivers/*' ,'filesystem/*',
                                     'initfs/etc/*', 'kernel/*', 'liballoc_malloc/*',
                                     'liballoc_system/*', 'setup/*'],
+                          "exclude":['*.md', "*.yml", "*.txt"]},
+         "hibernate-orm":{"include":["*"],
                           "exclude":['*.md', "*.yml", "*.txt"]} }
 
 # Always exclude these paths
 always_exclude = ["*.md", "*.yml", "MIT-LICENSE", "*.gemspec", "Gemfile", ".bower",
 "*.rdoc", "*.gitkeep", "*.json", "*.gitignore", "*.txt", ".json", ".git", ".png",
-".gif", ".jpg", "README.*", "*.dat", "LICENSE", "*.log", "*.pdf"]
+".gif", ".jpg", "README.*", "*.dat", "LICENSE", "*.log", "*.pdf", "*.adoc" ]
 
 class RepoAnalyser(object):
     """

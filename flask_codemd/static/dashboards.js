@@ -2,16 +2,17 @@
 // Scripts to build live dashboards on /viz page
 //
 
-var ROW_LIM = 25000 // any more than this and we will have to bin by weeks
+var ROW_LIM = 7000 // any more than this and we will have to bin by weeks
 
 function buildDashboards(data) {
     console.log('Building dashboards...');
     var commits_json = JSON.parse(data);
 
     if (Object.keys(commits_json).length < ROW_LIM) {
+      console.log("Binning by days...");
       var useWeeks = false;
     } else {
-      console.log("Data over row limit. Binning by weeks.")
+      console.log("Data over row limit. Binning by weeks.");
       var useWeeks = true;
     }
 
@@ -25,29 +26,21 @@ function buildDashboards(data) {
 
     // Date dimensions TODO -- add scalers also, as this will only work for weeks atm
     if (useWeeks) {
-        var dateDim = commits.dimension(function(d) {
-            return d3.time.week(d.date);
-        });
+        var dateDim = commits.dimension(function(d) { return d3.time.week(d.date); });
         var units = d3.time.weeks;
         var rounder = d3.time.week.round;
     } else { // Use days
-        var dateDim = commits.dimension(function(d) {
-            return d3.time.day(d.date);
-        });
+        var dateDim = commits.dimension(function(d) { return d3.time.day(d.date); });
         var units = d3.time.days;
         var rounder = d3.time.week.round;
     }
 
     // Churn metric dimensions
     // var deletionsDim = commits.dimension(function(d) { return d.deletions; });
-    var totalDeletionsDim = commits.dimension(function(d) {
-        return d.total_deletions;
-    });
+    var totalDeletionsDim = commits.dimension(function(d) { return d.total_deletions; });
+    var totalInsertionsDim = commits.dimension(function(d) { return d.total_insertions; });
 
-    // var insertionsDim = commits.dimension(function(d) { return d.insertions; });
-    var totalInsertionsDim = commits.dimension(function(d) {
-        return d.total_insertions;
-    });
+    var authorsDim = commits.dimension(function(d) { return d.author;})
 
     // Groups and Aggregates
     var dateGroup = dateDim.group()
@@ -64,9 +57,9 @@ function buildDashboards(data) {
         return d.deletions;
     });
 
-    var authorsByDateGroup = dateDim.group(function(d) { return d.author; }
-    var authorCommitsByDateGroup = authorsByDateGroup.reduceSum();
-    var authorLinesByDateGroup = authorsByDateGroup.reduceSum(function(d) {
+    var authorsGroup = authorsDim.group();
+    var authorCommitsGroup = authorsGroup.reduceSum();
+    var authorLinesGroup = authorsGroup.reduceSum(function(d) {
       return d.insertions + d.deletions;
     })
 
@@ -87,21 +80,19 @@ function buildDashboards(data) {
 
     // Compute sums and local optima for insertions and deletions
     var maxReducer = reductio();
-    maxReducer.value("insertions").max(function(d) {
-        return d.total_insertions;
-    })
-    maxReducer.value("deletions").max(function(d) {
-        return d.total_deletions;
-    })
-    maxReducer(totalChurnByDateGroup)
+    maxReducer.value("insertions").max(function(d) { return d.total_insertions; })
+    maxReducer.value("deletions").max(function(d) { return d.total_deletions; })
+    maxReducer(totalChurnByDateGroup);
 
     var aggReducer = reductio();
-    aggReducer.value("insertions").max(function(d) {
-        return d.insertions;
-    })
-    aggReducer.value("deletions").max(function(d) {
-        return d.deletions;
-    })
+    aggReducer.value("insertions")
+      // .count(true)
+      // .max(function(d) { return d.insertions; })
+      .sum(function(d) { return d.insertions; });
+    aggReducer.value("deletions")
+      // .count(true)
+      // .max(function(d) { return d.deletions; })
+      .sum(function(d) { return d.deletions; });
     aggReducer(churnByDateGroup);
 
 
@@ -128,15 +119,25 @@ function buildDashboards(data) {
         .interpolate("basis")
         .renderlet(function(chart) {
             console.log('render let called inside of commitsTimesLine')
-            chart.svg().selectAll('.chart-body').attr('clip-path', null);
-            startInsertions = dateDim.bottom(1)[0].total_insertions;
-            startDeletions = dateDim.bottom(1)[0].total_deletions;
-            // churnOverDeletions.focus(chart.filters());
-        })
+            // chart.svg().selectAll('.chart-body').attr('clip-path', null);
+            bottom = dateDim.bottom(1)[0];
+            if (typeof bottom !== "undefined") {
+              startInsertions = bottom.total_insertions;
+              startDeletions = bottom.total_deletions;
+            } else {
+              startInsertions = 0;
+              startDeletions = 0;
+            }
+
+            churnOverDeletions.redraw()
+            //
+            //  console.log("(inside adjustVals) min total inserts: " + startInsertions);
+            //  console.log("(inside adjustVals) min total deletes: " + startDeletions);
+        });
 
     commitsTimeline.on('filtered', function(chart) {
-        console.log('commits timeline filtered!!!. Filtering churn chart')
-        churnOverDeletions.focus(chart.filters())
+        console.log('commits timeline filtered!!!')
+        // churnOverDeletions.focus(chart.filters())
             // churnOverDeletions.redraw()
             // startInsertions = dateDim.bottom(1)[0].total_insertions;
             // startDeletions = dateDim.bottom(1)[0].total_deletions;
@@ -183,7 +184,7 @@ function buildDashboards(data) {
             maxDeletions = 1;
         } // to prevent 0 division
         var val = (maxInsertions + maxDeletions) / maxDeletions;
-        if (isNaN(val)) {
+        if (isNaN(val) || val < 0) {
             console.log("something has gone terribly wrong lol...");
         }
         return val;
@@ -205,15 +206,17 @@ function buildDashboards(data) {
         .round(rounder)
         .dimension(dateDim)
         .group(totalChurnByDateGroup)
-        .valueAccessor(function(p) {
-            inserts = p.value.insertions.max;
-            deletions = p.value.deletions.max;
-            if (deletions == 0) {
-                deletions += 1;
-            }
-            return (inserts + deletions) / deletions
-        })
-        // .valueAccessor(adjustValues)
+        // .group(churnByDateGroup)
+        // .valueAccessor(function(p) {
+        //   // Change this to get average?
+        //     inserts = p.value.insertions.sum;
+        //     deletions = p.value.deletions.sum;
+        //     if (deletions == 0) {
+        //         deletions += 1;
+        //     }
+        //     return (inserts + deletions) / deletions
+        // })
+        .valueAccessor(adjustValues)
         .rangeChart(commitsTimeline)
         .elasticY(true)
         .renderHorizontalGridLines(true)
@@ -287,11 +290,42 @@ function buildDashboards(data) {
         return this;
     };
 
+
+    churnOverDeletions.on('preRedraw', function(chart) {
+        console.log('preRedraw called');
+        // startInsertions = dateDim.bottom(1)[0].total_insertions;
+        // startDeletions = dateDim.bottom(1)[0].total_deletions;
+         console.log("(inside adjustVals) min total inserts: " + startInsertions);
+         console.log("(inside adjustVals) min total deletes: " + startDeletions);
+    });
+
+    churnOverDeletions.on('preRender', function(chart) {
+        console.log('preRender called');
+    });
+    churnOverDeletions.on('renderlet', function(chart) {
+        console.log('renderlet called');
+    });
+    churnOverDeletions.on('postRedraw', function(chart) {
+        console.log('postRedraw called');
+    });
+    churnOverDeletions.on('filtered', function(chart, zoom) {
+        console.log('(CHURN OVER DEL) filtered called');
+    });
+
     var topAuthors = dc.rowChart('#top-authors');
     topAuthors
-      .height(600)
-      .width(400)
-      .dimension()
+      .height(400)
+      .width(250)
+      .dimension(authorsGroup)
+      .group(authorCommitsGroup, "commits")
+      .ordering(function(t){return t.commits;})
+      .cap(8)
+      .elasticX(true)
+      .colors(d3.scale.category20b())
+      .renderlet(function(chart) {
+        chart.svg().selectAll('g.row text').style('fill', 'black');
+      })
+      .xAxis().ticks(5)
 
     commitsTimeline.focusCharts([codeFreq, churnOverDeletions]);
     dc.renderAll();
