@@ -280,7 +280,11 @@ class HotspotsUtil(object):
 
         # Local Variables to track metrics
         self.intervals = intervals
-        self.workingData = {}
+        self.working_data = {} # high level file info
+
+        # For temporal coupling analysis
+        self.working_couples = {}
+        self.working_rev_counts = {}
 
         # working data will be appended after an interval is popped
         self.completedData = []
@@ -289,16 +293,94 @@ class HotspotsUtil(object):
         self.max_bug_score = 0
 
 
-    def feed_file_info(file_info):
+    def feed_file(self, f):
         """
         Accepts a file from MetricsBuilder and extracts it into various metrics
         as needed
         """
 
+        # Sanity check
+        if len(self.intervals) == 0:
+            self.log.error("Error -- passed file_info even though object has \
+                            no more intervals left to parse! File info: %s", file_info)
+            return
+
+        files = self.workingData
+        start_scope, end_scope = self.intervals[0], self.intervals[1]
+        # Check if file info passed is out of range
+        if (f['date'] <= start_scope or f['date'] >= end_scope)
+            self.log.info("Interval out of range for file %s\n\nCopying data and \
+                           starting next interval (if any).", f)
+            self.__post_process_data()
+
+        # Now actually deal with parsing the required metrics
+        self.__process_general_info(f)
+        self.__process_bug_info(f)
+        self.__process_temporal_info(f)
 
 
+    def __process_general_info(self, f):
+        """
+        Extract high level information like file size, name, ect.
+        """
+        pass
 
-    def is_bug(self, message):
+
+    def __process_bug_info(self, f):
+        """
+        Responsible for parsing bug score related information out of the file
+        """
+        pass
+
+
+    def __process_temporal_info(self, f):
+        """
+        Responsible for handling temporal coupling metrics
+        """
+        pass
+
+
+    def __process_contribution_info(self, f):
+        """
+        Responsible for extracting information pertaining to developer contributions
+        and knowledge map
+        """
+        pass
+
+
+    def __process_age_info(self, f):
+        """
+        Responsible for calculating code age
+        """
+        pass
+
+
+    def __post_process_data(self):
+        """
+        Invoked when we finish up an interval
+        """
+        # Create a new COPY of the data for next interval.
+        self.log.debug("Beging postprocess. Copying data...")
+        new_data = self.working_data.copy()
+        self.__reset_working_data()
+
+        # Normalize bug scores
+
+        # Algorithm for temporal frequency
+
+        # Add data to self.completedData, pop an interval off
+
+        self.working_data = new_data
+
+
+    def __reset_working_data(self):
+        # Reset appropriate params on self.working_data
+        # Be mindful to keep bug information, but reset temporal coupling
+        # TODO -- implement
+        self.log.debug("Reseting working data...")
+
+
+    def __is_bug(self, message):
         """
         DOCSTRING
         """
