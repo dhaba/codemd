@@ -33,7 +33,7 @@ paths = {"scikit-learn": {"include":["sklearn/*"], "exclude":['README', '*.md', 
 # Always exclude these paths
 always_exclude = ["*.md", "*.yml", "MIT-LICENSE", "*.gemspec", "Gemfile", ".bower",
 "*.rdoc", "*.gitkeep", "*.json", "*.gitignore", "*.txt", ".json", ".git", ".png",
-".gif", ".jpg", "README.*", "*.dat", "LICENSE"]
+".gif", ".jpg", "README.*", "*.dat", "LICENSE", "*.log", "*.pdf"]
 
 class RepoAnalyser(object):
     """

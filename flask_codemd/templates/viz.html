@@ -34,10 +34,46 @@
     });
 </script>
 
+
+
 <div class="container-fluid">
 
     <!-- ROW 1 - Commits Timeline -->
-    <div class="row" id="first-row">
+    <!-- <div class="row" id="first-row">
+        <div class="col-md-1">
+            <div class="chart-wrapper">
+                <div class="chart-title">
+                    Left Overview
+                </div>
+                <div class="chart-stage">
+                </div>
+            </div>
+        </div> -->
+    <div class="col-md-10">
+        <div class="chart-wrapper">
+            <div class="chart-title">
+                Commits By Week
+            </div>
+            <div class="chart-stage">
+                <div id="commits-timeline">
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="chart-wrapper">
+            <div class="chart-title">
+                Right Overview
+            </div>
+            <div class="chart-stage">
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ROW 2 - Defects Distribution -->
+<!-- <div class="row" id="second-row">
         <div class="col-md-1">
             <div class="chart-wrapper">
                 <div class="chart-title">
@@ -47,158 +83,126 @@
 
                 </div>
             </div>
+        </div> -->
+<div class="col-md-10">
+    <div class="chart-wrapper">
+        <div class="chart-title">
+            Distribution of Defects
         </div>
-        <div class="col-md-10">
-            <div class="chart-wrapper">
-                <div class="chart-title">
-                    Commits By Week
-                </div>
-                <div class="chart-stage">
-                    <div id="commits-timeline"></div>
-                </div>
-            </div>
+        <div class="chart-stage">
+            <div id="defects-distribution"></div>
         </div>
-        <div class="col-md-1">
-            <div class="chart-wrapper">
-                <div class="chart-title">
-                    Right Overview
-                </div>
-                <div class="chart-stage">
+    </div>
+</div>
+<div class="col-md-2">
+    <div class="chart-wrapper">
+        <div class="chart-title">
+            Right Overview
+        </div>
+        <div class="chart-stage">
 
-                </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- ROW 3 - Churn Metrics and Author Contributions -->
+<div class="row" id="third-row">
+    <div class="col-md-4">
+        <div class="chart-wrapper">
+            <div class="chart-title">
+                Development Velocity
+            </div>
+            <div class="chart-stage">
+                <div id="churn-over-del"></div>
             </div>
         </div>
     </div>
-
-    <!-- ROW 2 - Bugs Distribution -->
-    <div class="row" id="second-row">
-        <div class="col-md-1">
-            <div class="chart-wrapper">
-                <div class="chart-title">
-                    Left Overview
-                </div>
-                <div class="chart-stage">
-
-                </div>
+    <div class="col-md-4">
+        <div class="chart-wrapper">
+            <div class="chart-title">
+                Code Frequency
             </div>
-        </div>
-        <div class="col-md-10">
-            <div class="chart-wrapper">
-                <div class="chart-title">
-                    Distribution of Defects
-                </div>
-                <div class="chart-stage">
-                    <div id="defects-distribution"></div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-1">
-            <div class="chart-wrapper">
-                <div class="chart-title">
-                    Right Overview
-                </div>
-                <div class="chart-stage">
-
-                </div>
+            <div class="chart-stage">
+                <div id="code-frequency"></div>
             </div>
         </div>
     </div>
-
-    <!-- ROW 3 - Churn / Deleted (Velocity of Feature Development) -->
-    <div class="row" id="third-row">
-        <div class="col-md-1">
-            <div class="chart-wrapper">
-                <div class="chart-title">
-                    Left Overview
-                </div>
-                <div class="chart-stage">
-                </div>
+    <div class="col-md-4">
+        <div class="chart-wrapper">
+            <div class="chart-title">
+                Top Contributors
             </div>
-        </div>
-        <div class="col-md-10">
-            <div class="chart-wrapper">
-                <div class="chart-title">
-                </div>
-                <div class="chart-stage">
-                    <div id="churn-over-del"></div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-1">
-            <div class="chart-wrapper">
-                <div class="chart-title">
-                    Right Overview
-                </div>
-                <div class="chart-stage">
-                </div>
+            <div class="chart-stage">
             </div>
         </div>
     </div>
+</div>
 
-    <!-- ROW 4 - Churned / Total (high = likely bugs) -->
-    <div class="row" id="third-row">
-        <div class="col-md-1">
-            <div class="chart-wrapper">
-                <div class="chart-title">
-                    Left Overview
-                </div>
-                <div class="chart-stage">
-                </div>
+<!-- ROW 4 - Churned / Total (high = likely bugs) -->
+<div class="row" id="third-row">
+    <div class="col-md-1">
+        <div class="chart-wrapper">
+            <div class="chart-title">
+                Left Overview
             </div>
-        </div>
-        <div class="col-md-10">
-            <div class="chart-wrapper">
-                <div class="chart-title">
-                </div>
-                <div class="chart-stage">
-                    <div id="churn-over-total"></div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-1">
-            <div class="chart-wrapper">
-                <div class="chart-title">
-                    Right Overview
-                </div>
-                <div class="chart-stage">
-                </div>
+            <div class="chart-stage">
             </div>
         </div>
     </div>
-
-    <!-- Row 4 (TODO put stuff in here) -->
-    <div class="row" id="bottomrow">
-        <div class="col-md-4">
-            <div class="chart-wrapper">
-                <div class="chart-title">
-                    Bug Distribution
-                </div>
-                <div class="chart-stage">
-                    <img data-src="holder.js/100%x180/white/text:#grid-2-1">
-                </div>
+    <div class="col-md-10">
+        <div class="chart-wrapper">
+            <div class="chart-title">
             </div>
-        </div>
-        <div class="col-md-4">
-            <div class="chart-wrapper">
-                <div class="chart-title">
-                    Code Churn
-                </div>
-                <div class="chart-stage">
-                    <div id="code-churn"></div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="chart-wrapper">
-                <div class="chart-title">
-                    Top Contributors
-                </div>
-                <div class="chart-stage">
-                    <img data-src="holder.js/100%x180/white/text:#grid-2-3">
-                </div>
+            <div class="chart-stage">
+                <div id="churn-over-total"></div>
             </div>
         </div>
     </div>
+    <div class="col-md-1">
+        <div class="chart-wrapper">
+            <div class="chart-title">
+                Right Overview
+            </div>
+            <div class="chart-stage">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Row 4 (TODO put stuff in here) -->
+<div class="row" id="bottomrow">
+    <div class="col-md-4">
+        <div class="chart-wrapper">
+            <div class="chart-title">
+                Bug Distribution
+            </div>
+            <div class="chart-stage">
+                <img data-src="holder.js/100%x180/white/text:#grid-2-1">
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="chart-wrapper">
+            <div class="chart-title">
+                Code Churn
+            </div>
+            <div class="chart-stage">
+                <div id="code-churn"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="chart-wrapper">
+            <div class="chart-title">
+                Top Contributors
+            </div>
+            <div class="chart-stage">
+                <img data-src="holder.js/100%x180/white/text:#grid-2-3">
+            </div>
+        </div>
+    </div>
+</div>
 
 </div>
 
@@ -215,4 +219,4 @@
 
 <div id="json-data"></div>
 
-{% endblock %}
+{% endblock %} %}

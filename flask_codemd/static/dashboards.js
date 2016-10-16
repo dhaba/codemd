@@ -45,6 +45,7 @@ function buildDashboards(data) {
     // Groups and Aggregates
     var dateGroup = dateDim.group()
     var totalChurnByDateGroup = dateDim.group();
+    var churnByDateGroup = dateDim.group();
     var bugsByDateGroup = dateDim.group().reduceSum(function(d) {
         return d.bug ? 1 : 0;
     })
@@ -54,15 +55,16 @@ function buildDashboards(data) {
     var startDeletions = 0;
     var needsResetStart = true;
 
-    // Compute local optima for insertions and deletions
-    var reducer = reductio()
-    reducer.value("insertions").max(function(d) {
-        return d.total_insertions;
-    })
-    reducer.value("deletions").max(function(d) {
-        return d.total_deletions;
-    })
-    reducer(totalChurnByDateGroup)
+    // Compute sums and local optima for insertions and deletions
+    var maxReducer = reductio();
+    maxReducer.value("insertions").max(function(d) { return d.total_insertions; })
+    maxReducer.value("deletions").max(function(d) { return d.total_deletions; })
+    maxReducer(totalChurnByDateGroup)
+
+    var aggReducer = reductio();
+    aggReducer.value("insertions").max(function(d) { return d.insertions; })
+    aggReducer.value("deletions").max(function(d) { return d.deletions; })
+    aggReducer(churnByDateGroup);
 
     // Define range values
     var dateRange = {
@@ -75,7 +77,7 @@ function buildDashboards(data) {
     // Commits timeline
     var commitsTimeline = dc.lineChart("#commits-timeline");
     commitsTimeline
-        .width(990)
+        .width(900)
         .height(70)
         .margins({
             top: 10,
@@ -108,7 +110,7 @@ function buildDashboards(data) {
     // Distribution of defects
     var defectsDistribution = dc.barChart("#defects-distribution");
     defectsDistribution
-        .width(990)
+        .width(900)
         .height(60)
         .margins({
             top: 10,
@@ -164,6 +166,9 @@ function buildDashboards(data) {
             console.log("something has gone terribly wrong lol...");
         }
         return val;
+
+        var inserts = p.value.insertions.max;
+        var deletions = p.value.deletions.max;
     }
 
     // M7 - Churned/Deleted (Dev Velocity)
@@ -182,11 +187,15 @@ function buildDashboards(data) {
         .round(d3.time.week.round)
         .dimension(dateDim)
         .group(totalChurnByDateGroup)
-        // .renderArea(true)
+        // .valueAccessor(function(p) {
+        //   inserts = p.value.insertions.max;
+        //   deletions = p.value.deletions.max;
+        //   if (deletions == 0) { deletions += 1; }
+        //   return (inserts + deletions) / deletions
+        // })
         .valueAccessor(adjustValues)
         .rangeChart(commitsTimeline)
         .elasticY(true)
-        // .elasticX(true)
         .renderHorizontalGridLines(true)
         // .yAxisLabel("Churned LOC / Deleted LOC")
         .brushOn(false)
@@ -204,11 +213,11 @@ function buildDashboards(data) {
         // needsResetStart = true;
     });
     churnOverDeletions.on('preRedraw', function(chart) {
-        console.log('preRedraw called');
-       startInsertions = dateDim.bottom(1)[0].total_insertions;
-       startDeletions = dateDim.bottom(1)[0].total_deletions;
-         console.log("(inside adjustVals) min total inserts: " + startInsertions);
-         console.log("(inside adjustVals) min total deletes: " + startDeletions);
+      //   console.log('preRedraw called');
+      //   startInsertions = dateDim.bottom(1)[0].total_insertions;
+      //  startDeletions = dateDim.bottom(1)[0].total_deletions;
+      //    console.log("(inside adjustVals) min total inserts: " + startInsertions);
+      //    console.log("(inside adjustVals) min total deletes: " + startDeletions);
     });
     churnOverDeletions.on('filtered', function(chart, zoom) {
         console.log('(CHURN OVER DEL) filtered called');
