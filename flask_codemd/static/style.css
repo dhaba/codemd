@@ -19,6 +19,10 @@ h1 {
     display: none;
 }
 
+#defects-distribution g.y {
+    display: none;
+}
+
 .dc-chart {
     float: none !important;
     text-align: center;
@@ -29,4 +33,21 @@ h1 {
 
 .chart-title {
     text-align: center;
+}
+
+
+/* bullshit below */
+
+svg {
+    font: 10px sans-serif;
+}
+
+path {
+    fill: steelblue;
+}
+
+.axis path, .axis line {
+    fill: none;
+    stroke: #000;
+    shape-rendering: crispEdges;
 }
