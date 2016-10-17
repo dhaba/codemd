@@ -1,7 +1,106 @@
-{% extends "layout.html" %} {% block body %}
-<form action="{{ url_for('fetchdata') }}" method=post>
+{% extends "layout.html" %}
+{% block body %}
+
+<!-- <form action="{{ url_for('fetchdata') }}" method=post>
     Enter a git repository (.git URL not github URL)<br>
     <input type="text" name="git_url" value="git://github.com/dhaba/git-pandas.git" style="width:700px;">
     <input type="submit" value="Submit form">
-</form>
+</form> -->
+
+<body>
+
+    <!-- Navigation -->
+    <!-- Page Content -->
+    <div class="container">
+
+        <!-- Jumbotron Header -->
+        <header class="jumbotron hero-spacer">
+            <h1>Yo</h1>
+            <p>sup</p>
+            <p><a class="btn btn-primary btn-large">Call to action!</a>
+            </p>
+        </header>
+
+        <hr>
+
+        <!-- Title -->
+        <div class="row">
+            <div class="col-lg-12">
+                <h3>Browse Repositories</h3>
+            </div>
+        </div>
+        <!-- /.row -->
+
+        <!-- Page Features -->
+        <div class="row text-center">
+
+            <div class="col-md-3 col-sm-3 hero-feature">
+                <div class="thumbnail">
+                    <div class="caption">
+                        <h5>Ruby on Rails</h5>
+                        <p>Explore tends in blahblahblah...</p>
+                        <p>
+                            <a href="#" class="btn btn-success">Explore</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3 col-sm-6 hero-feature">
+                <div class="thumbnail">
+                    <div class="caption">
+                        <h3>Feature Label</h3>
+                        <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit.</p>
+                        <p>
+                            <a href="#" class="btn btn-primary">Buy Now!</a> <a href="#" class="btn btn-default">More Info</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3 col-sm-6 hero-feature">
+                <div class="thumbnail">
+                    <div class="caption">
+                        <h3>Feature Label</h3>
+                        <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit.</p>
+                        <p>
+                            <a href="#" class="btn btn-primary">Buy Now!</a> <a href="#" class="btn btn-default">More Info</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3 col-sm-6 hero-feature">
+                <div class="thumbnail">
+                    <div class="caption">
+                      Link 1
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        <!-- /.row -->
+
+        <hr>
+
+        <!-- Footer -->
+        <footer>
+            <div class="row">
+                <div class="col-lg-12">
+                    <p>Code, MD was made by Davis Haba as a 2 week capstone project for Galvanize Data Science Immersive</p>
+                </div>
+            </div>
+        </footer>
+
+    </div>
+    <!-- /.container -->
+
+    <!-- jQuery -->
+    <script src="js/jquery.js"></script>
+
+    <!-- Bootstrap Core JavaScript -->
+    <script src="js/bootstrap.min.js"></script>
+
+</body>
+
 {% endblock %}

@@ -1,19 +1,23 @@
-h1 {
-    text-align: center;
-    position: relative;
+.chart-wrapper {
+    background: #303030;
+    border: 1px solid #464545;
 }
 
+.chart-title {
+    color: #0ce3ac;
+}
 
-/*html, body, .container-fluid {
-    height: 100%;
+.dc-chart path.line {
+  stroke-width: 0px;
 }
-.container-fluid {
-    height: 100%;
-    -moz-box-sizing: border-box;
-    -webkit-box-sizing: border-box;
-    box-sizing: border-box;
+
+.offset-left {
+  text-align: center;
 }
-*/
+
+.body {
+  margin-top: 30px;
+}
 
 #commits-timeline g.y {
     display: none;
@@ -24,13 +28,13 @@ h1 {
 }
 
 .dc-chart {
-    float: none !important;
-    text-align: center;
+    /*float: none !important;*/
+    /*text-align: center;*/
     /*display: inline-block;*/
     /*height: 151px;
     margin-bottom: 20px;*/
 }
 
 .chart-title {
-    text-align: center;
+    /*text-align: center;*/
 }

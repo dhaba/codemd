@@ -102,10 +102,10 @@ function buildDashboards(data) {
     // Commits timeline
     var commitsTimeline = dc.lineChart("#commits-timeline");
     commitsTimeline
-        .width(900)
+        .width(860)
         .height(70)
         .margins({
-            top: 10,
+            top: 25,
             right: 10,
             bottom: 20,
             left: 10
@@ -147,7 +147,7 @@ function buildDashboards(data) {
     // Distribution of defects
     var defectsDistribution = dc.barChart("#defects-distribution");
     defectsDistribution
-        .width(900)
+        .width(860)
         .height(60)
         .margins({
             top: 10,
@@ -234,7 +234,10 @@ function buildDashboards(data) {
         .group(insertionsByDateGroup)
         .colors(['#2ca02c'])
         .renderArea(true)
-        // .rangeChart(commitsTimeline)
+        .on('renderlet', function(chart){
+          //chart.svg().select('g.chart-body').selectAll('path.line').style('stroke-width', '0px')
+          chart.select('g.chart-body').selectAll('path.line').style('stroke-width', '0px');
+        });
 
     deletionsFreq
         .group(deletionsByDateGroup)
@@ -245,13 +248,13 @@ function buildDashboards(data) {
         })
 
     codeFreq
-        .width(600)
-        .height(150)
+        .width(860)
+        .height(400)
         .margins({
             top: 10,
             right: 20,
             bottom: 16,
-            left: 20
+            left: 50
         })
         .x(d3.time.scale().domain([dateRange.minDate, dateRange.maxDate]))
         .xUnits(d3.time.weeks)
@@ -290,28 +293,6 @@ function buildDashboards(data) {
         return this;
     };
 
-
-    churnOverDeletions.on('preRedraw', function(chart) {
-        console.log('preRedraw called');
-        // startInsertions = dateDim.bottom(1)[0].total_insertions;
-        // startDeletions = dateDim.bottom(1)[0].total_deletions;
-         console.log("(inside adjustVals) min total inserts: " + startInsertions);
-         console.log("(inside adjustVals) min total deletes: " + startDeletions);
-    });
-
-    churnOverDeletions.on('preRender', function(chart) {
-        console.log('preRender called');
-    });
-    churnOverDeletions.on('renderlet', function(chart) {
-        console.log('renderlet called');
-    });
-    churnOverDeletions.on('postRedraw', function(chart) {
-        console.log('postRedraw called');
-    });
-    churnOverDeletions.on('filtered', function(chart, zoom) {
-        console.log('(CHURN OVER DEL) filtered called');
-    });
-
     var topAuthors = dc.rowChart('#top-authors');
     topAuthors
       .height(400)
@@ -325,7 +306,7 @@ function buildDashboards(data) {
       .renderlet(function(chart) {
         chart.svg().selectAll('g.row text').style('fill', 'black');
       })
-      .xAxis().ticks(5)
+      .xAxis().ticks(4)
 
     commitsTimeline.focusCharts([codeFreq, churnOverDeletions]);
     dc.renderAll();

@@ -7,224 +7,235 @@
 <script src="{{ url_for('static', filename='./bower_components/crossfilter/crossfilter.js') }}"></script>
 <script src="{{ url_for('static', filename='./bower_components/d3/d3.js') }}"></script>
 <script src="{{ url_for('static', filename='./bower_components/dcjs/dc.js') }}"></script>
-<script src="{{ url_for('static', filename='./bower_components/jquery/dist/jquery.min.js') }}"></script>
 <script src="{{ url_for('static', filename='./bower_components/reductio/reductio.js') }}"></script>
 <script src="{{ url_for('static', filename='./bower_components/colorbrewer/colorbrewer.js') }}"></script>
 <script src="{{ url_for('static', filename='./holderjs/holder.js') }}"></script>
 <script src="{{ url_for('static', filename='./dashboards.js') }}"></script>
 
+<style>
+/* Center the loader */
+#loader {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 1;
+  width: 150px;
+  height: 150px;
+  margin: -75px 0 0 -75px;
+  border: 16px solid #f3f3f3;
+  border-radius: 50%;
+  border-top: 16px solid #3498db;
+  width: 120px;
+  height: 120px;
+  -webkit-animation: spin 2s linear infinite;
+  animation: spin 2s linear infinite;
+}
 
+.body {
+  margin-top: 50;
+}
+
+.top-row {
+  margin-top:40px;
+}
+
+@-webkit-keyframes spin {
+  0% { -webkit-transform: rotate(0deg); }
+  100% { -webkit-transform: rotate(360deg); }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Add animation to "page content" */
+.animate-bottom {
+  position: relative;
+  -webkit-animation-name: animatebottom;
+  -webkit-animation-duration: 1s;
+  animation-name: animatebottom;
+  animation-duration: 1s
+}
+
+@-webkit-keyframes animatebottom {
+  from { bottom:-100px; opacity:0 }
+  to { bottom:0px; opacity:1 }
+}
+
+@keyframes animatebottom {
+  from{ bottom:-100px; opacity:0 }
+  to{ bottom:0; opacity:1 }
+}
+
+#myDiv {
+  display: none;
+  text-align: center;
+}
+
+.dc-chart path.line {
+  stroke-width: 0px;
+}
+
+.dc-chart path.area {
+  fill-opacity: 0.60;
+}
+
+</style>
 
 <script>
-    $(function() {
-        console.log("document is ready is ready");
+  $(function() {
+              console.log("document is ready is ready");
 
-        // TODO -- remove this debug line
-        Holder.add_theme("white", {
-            background: "#fff",
-            foreground: "#a7a7a7",
-            size: 10
-        });
-        var projectName = '{{ project_name }}';
-        if (projectName === null) {
-            projectName = this.pathname.split('/').pop();
-            alert("project name was null. Setting it to " + projectName); // TODO -- remove this debug line
-        }
-        var requestUrl = "/api/commits?project_name=" + projectName;
+              // TODO -- remove this debug line
+              // Holder.add_theme("white", {
+              //     background: "#fff",
+              //     foreground: "#a7a7a7",
+              //     size: 10
+              // });
+              var projectName = '{{ project_name }}';
+              if (projectName === null) {
+                  projectName = this.pathname.split('/').pop();
+                  alert("project name was null. Setting it to " + projectName); // TODO -- remove this debug line
+              }
 
-        $.getJSON(requestUrl, function(data) {
-            // alert("Got data back from JSON query: " + data)
-            // TODO -- add loading spinner or something
-            buildDashboards(data);
-        });
-    });
+              var requestUrl = "/api/commits?project_name=" + projectName;
+
+              $.getJSON(requestUrl, function(data) {
+                  // alert("Got data back from JSON query: " + data)
+                  // TODO -- add loading spinner or something
+                  $("body").fadeIn(2000)
+                  buildDashboards(data);
+              });
+            });
+      //       $.ajax({
+      //         xhr: function()
+      //         {
+      //           var xhr = new window.XMLHttpRequest();
+      //           //Upload progress
+      //           xhr.upload.addEventListener("progress", function(evt){
+      //             if (evt.lengthComputable) {
+      //               var percentComplete = evt.loaded / evt.total;
+      //               //Do something with upload progress
+      //               console.log(percentComplete);
+      //             }
+      //           }, false);
+      //           //Download progress
+      //           xhr.addEventListener("progress", function(evt){
+      //             if (evt.lengthComputable) {
+      //               var percentComplete = evt.loaded / evt.total;
+      //               //Do something with download progress
+      //               console.log(percentComplete);
+      //             }
+      //           }, false);
+      //           return xhr;
+      //         },
+      //         type: 'GET',
+      //         url: requestUrl,
+      //         data: {},
+      //         success: function(data){
+      //           //Do something success-ish
+      //         }
+      //       });
+      //
+      // });
+
 </script>
 
 
-
-<div class="container-fluid">
-
-    <!-- ROW 1 - Commits Timeline -->
-    <div class="row" id="first-row">
-        <!-- <div class="col-md-1">
-            <div class="chart-wrapper">
-                <div class="chart-title">
-                    Left Overview
-                </div>
-                <div class="chart-stage">
-                </div>
-            </div>
-        </div> -->
-        <div class="col-md-10">
-            <div class="chart-wrapper">
-                <div class="chart-title">
-                    Commits By Week
-                </div>
-                <div class="chart-stage">
-                    <div id="commits-timeline">
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-2">
-            <div class="chart-wrapper">
-                <div class="chart-title">
-                    Right Overview
-                </div>
-                <div class="chart-stage">
-
-                </div>
-            </div>
-        </div>
+<!-- <div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+    <div class="container-fluid">
+      <div class="navbar-header">
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../">
+          <span class="glyphicon glyphicon-chevron-left"></span>
+        </a>
+        <a class="navbar-brand" href="./">Layouts &raquo; Hero Sidebar</a>
+      </div>
+      <div class="navbar-collapse collapse">
+        <ul class="nav navbar-nav navbar-left">
+          <li><a href="https://keen.io">Home</a></li>
+          <li><a href="https://keen.io/team">Team</a></li>
+          <li><a href="https://github.com/keenlabs/dashboards/tree/gh-pages/layouts/hero-sidebar">Source</a></li>
+          <li><a href="https://groups.google.com/forum/#!forum/keen-io-devs">Community</a></li><li><a href="http://stackoverflow.com/questions/tagged/keen-io?sort=newest&pageSize=15">Technical Support</a></li>
+        </ul>
+      </div>
     </div>
+  </div> -->
 
-    <!-- ROW 2 - Defects Distribution -->
-    <div class="row" id="second-row">
-        <!-- <div class="col-md-1">
-          <div class="chart-wrapper">
-                <div class="chart-title">
-                    Left Overview
-                </div>
-                <div class="chart-stage">
+  <div class="container-fluid top-row">
 
-                </div>
-            </div>
-        </div>  -->
-        <div class="col-md-10">
-            <div class="chart-wrapper">
-                <div class="chart-title">
-                    Distribution of Defects
-                </div>
-                <div class="chart-stage">
-                    <div id="defects-distribution"></div>
-                </div>
-            </div>
+    <div class="row">
+      <div class="col-sm-3">
+        <div class="chart-wrapper">
+          <div class="chart-title">
+            Top Contributors
+          </div>
+          <div class="chart-stage">
+              <div id="top-authors"></div>
+          </div>
         </div>
-        <div class="col-md-2">
-            <div class="chart-wrapper">
-                <div class="chart-title">
-                    Right Overview
-                </div>
-                <div class="chart-stage">
+      </div>
+      <div class="col-sm-9">
 
-                </div>
+
+        <div class="row">
+          <div class="col-sm-12">
+            <div class="chart-wrapper">
+              <div class="chart-title">
+                Commit History
+              </div>
+              <div class="chart-stage">
+                <div id="commits-timeline"></div>
+              </div>
             </div>
+          </div>
         </div>
+        <div class="row">
+          <div class="col-sm-12">
+            <div class="chart-wrapper">
+              <!-- <div class="chart-title">
+                Cell Title
+              </div> -->
+              <div class="chart-stage">
+                <div id="defects-distribution"></div>
+              </div>
+              <div class="chart-notes">
+                Distribution of Defects
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-sm-12">
+            <div class="chart-wrapper">
+              <div class="chart-title">
+                Code Frequency
+              </div>
+              <div class="chart-stage">
+                <div id="code-frequency"></div>
+              </div>
+              <div class="chart-notes">
+                Notes about this chart
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
-    <!-- ROW 3 - Churn Metrics and Author Contributions -->
-    <div class="row" id="third-row">
-        <div class="col-md-4">
-            <div class="chart-wrapper">
-                <div class="chart-title">
-                    Development Velocity
-                </div>
-                <div class="chart-stage">
-                    <div id="churn-over-del"></div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-8">
-            <div class="chart-wrapper">
-                <div class="chart-title">
-                    Code Frequency
-                </div>
-                <div class="chart-stage">
-                    <div id="code-frequency"></div>
-                </div>
-            </div>
-        </div>
-        <!-- <div class="col-md-4">
-          <div class="chart-wrapper">
-              <div class="chart-title">
-                  Top Contributors
-              </div>
-              <div class="chart-stage">
-              </div>
-          </div>
-      </div> -->
-    </div>
 
-    <!-- ROW 4 - Churned / Total (high = likely bugs) -->
-    <div class="row" id="third-row">
-        <div class="col-md-1">
-            <div class="chart-wrapper">
-                <div class="chart-title">
-                    Left Overview
-                </div>
-                <div class="chart-stage">
-                </div>
-            </div>
-        </div>
-        <div class="col-md-10">
-            <div class="chart-wrapper">
-                <div class="chart-title">
-                </div>
-                <div class="chart-stage">
-                    <div id="top-authors"></div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-1">
-            <div class="chart-wrapper">
-                <div class="chart-title">
-                    Right Overview
-                </div>
-                <div class="chart-stage">
-                </div>
-            </div>
-        </div>
-    </div>
+    <hr>
 
-    <!-- Row 4 (TODO put stuff in here) -->
-    <div class="row" id="bottomrow">
-        <div class="col-md-4">
-            <div class="chart-wrapper">
-                <div class="chart-title">
-                    Bug Distribution
-                </div>
-                <div class="chart-stage">
-                    <img data-src="holder.js/100%x180/white/text:#grid-2-1">
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="chart-wrapper">
-                <div class="chart-title">
-                    Code Churn
-                </div>
-                <div class="chart-stage">
-                    <div id="code-churn"></div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="chart-wrapper">
-                <div class="chart-title">
-                    Top Contributors
-                </div>
-                <div class="chart-stage">
-                    <img data-src="holder.js/100%x180/white/text:#grid-2-3">
-                </div>
-            </div>
-        </div>
-    </div>
+    <p class="small text-muted offset-left">Built by Davis Haba, as a part of the capstone project for the Galvanize Data Science immersive program.</a></p>
 
-</div>
+  </div>
 
-<!-- <table class='table table-hover' id='data-table'>
-    <thead>
-        <tr class='header'>
-            <th>insertions</th>
-            <th>deletions</th>
-            <th>author</th>
-            <th>date</th>
-        </tr>
-    </thead>
-</table> -->
-
-
-<div id="json-data"></div>
 
 {% endblock %}
