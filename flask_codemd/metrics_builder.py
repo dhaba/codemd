@@ -13,7 +13,8 @@ import repo_analyser
 # ::::  HEURISTICS ::::
 # Hard coded rules for inclusion/exclusion of files when calculated various metrics
 # Ideally these would be exposed to the user for custom tinkering
-LOC_THRESHOLD = 30 # min number of lines to be considered in bug score
+
+LOC_THRESHOLD = 30 # min number of lines to be considered in circle packing
 
 
 class MetricsBuilder(object):
@@ -73,88 +74,27 @@ class MetricsBuilder(object):
         knowledge map, and code age. I should break this up but I'm way too tired
         lol.
 
-        Acceptable invocations: Specify all parameters or specify none
+        Acceptable invocations: t.b.d.
 
-        All dates are assumed to be in "javascript" format.
+        All dates are assumed to be in unix epoch format (parse them in the
+                                                           view controllers)
 
         TODO -- params, docstring, refactor, ect
         """
 
-        # Convert times into unix epoch
-        unix_epoch = datetime.datetime(1970,1,1)).total_seconds()
-        if (interval1_start) {
-
-        }
-
         self.log.debug("Building hotspots information...")
 
-        if interval1_end == None:
+        if interval1_start is None:
+            interval1_start = 0
+            self.log.debug("Interval1_start was None. Defaulted to 0")
+
+        if interval1_end is None:
             last_entry = list(self.collection.find(
                         {'revision_id': {'$exists': True}}).sort('date', -1))[0]
-            end_date = last_entry['date']
-
-        # Iterate over each modified file and build a dict of dicts, with a key
-        # for each filename, and a value containing file info. Structure:
-        # {'file_1': {'creation_date': xx, 'last_modified': xx, 'loc': 50,
-        #              'bug_dates': [ first_bug_date, ... , last_bug_date ]}}
-        files = {}
-        max_score = 0
-        for mod_file in self.file_history(start_date=None, end_date=end_date):
-            if mod_file['filename'] not in files.keys():
-                files[mod_file['filename']] = {'creation_date': mod_file['date'],
-                                                    'bug_dates': [], 'bug_messages': [],
-                                                    'loc': 0, 'score': 0}
-            f = files[mod_file['filename']]
-            f['loc'] += mod_file['insertions'] - mod_file['deletions']
-            f['last_modified'] = mod_file['date']
-
-            if f['loc'] <= 0:
-                #self.log.error("!!! PROBLEM: negative loc for file: %s", mod_file['filename'])
-                files.pop(mod_file['filename'], None)
-                continue
-
-            # Check commit message for bug fixes
-            if self.is_bug(mod_file['message']):
-                # just for debugging really
-                f['bug_dates'].append(mod_file['date'])
-                f['bug_messages'].append(mod_file['message'])
-
-                # Add score to each file. Scoring function based on research from Chris
-                # Lewis and Rong Ou
-                fix_date = mod_file['date']
-                time_delta = end_date - f['creation_date']
-                if time_delta <= 0:
-                    norm_time = 1.0
-                else:
-                    norm_time = 1 - (float(end_date - fix_date) / (time_delta))
-                f['score'] += 1 / (1 + math.exp(-12 * norm_time + 12))
-
-                if f['score'] > max_score:
-                    max_score = f['score']
-
-        self.log.info("Highest score: %s", max_score)
+            interval1_end = last_entry['date']
+            self.log.debug("Interval_end1 was none. Defaulted to last entry: %s", interval1_end)
 
 
-        files_to_filter = [] # Files that are too short
-
-        # Normalize scores
-        if max_score > 0:
-            for f_name, f_info in files.iteritems():
-                # DEBUG TODO -- remove
-                if math.isnan(f_info['score']) or math.isnan(f_info['loc']):
-                    self.log.error(
-                        "Got nan score/loc for file %s, with info: %s", f_name, f_info)
-                if f_info['score'] == max_score:
-                    self.log.info("Highest score was %s for file %s with info:\n%s",
-                                                        max_score, f_name, f_info)
-                if f_info['loc'] < LOC_THRESHOLD:
-                    files_to_filter.append(f_name)
-
-                f_info['score'] /= max_score
-
-        for f in files_to_filter:
-            # self.log.debug("Removing file %s because it only had %s lines", f, files[f]['loc'])
-            files.pop(f, None)
 
         return {"name": "root", "children": self.__build_filetree(files, attributes=['score', 'loc'])}
 
@@ -197,6 +137,7 @@ class MetricsBuilder(object):
         TODO -- Add docstring params and returns
         """
 
+        self.log.debug("Building object tree...")
         tree = []
         for filename, file_info in files.iteritems():
             components = filename.split(component_delim)
@@ -221,7 +162,7 @@ class MetricsBuilder(object):
                     else:
                         current_node.append(new_node)
                         current_node = new_node['children']
-
+        self.log.debug("Finished building object tree.")
         return tree
 
 
@@ -271,76 +212,148 @@ class HotspotsUtil(object):
 
     :param intervals: An array of tuples, identifying the (start_time, end_time) for
     each interval. For only one interval, pass an array with one element.
+    NOTE : Assumes times are in epoch unix! Blame github lol.
     """
-
 
     def __init__(self, intervals):
         self.log = logging.getLogger('codemd.MetricsBuilder.HotspotsUtil')
         self.regex = re.compile(r'\b(fix(es|ed)?|close(s|d)?)\b')
+
+        self.log.info("HotspotsUtil created with interval: %s", intervals)
 
         # Local Variables to track metrics
         self.intervals = intervals
         self.working_data = {} # high level file info
 
         # For temporal coupling analysis
-        self.working_couples = {}
-        self.working_rev_counts = {}
+        self.working_couples = defaultdict(int)
+        self.working_rev_counts = defaultdict(int)
 
         # working data will be appended after an interval is popped
         self.completedData = []
 
         # convenience
         self.max_bug_score = 0
+        self.commits_buffer = {'commits': [], 'date':None}
 
 
-    def feed_file(self, f):
+    def feed_file(self, current_file):
         """
         Accepts a file from MetricsBuilder and extracts it into various metrics
         as needed
         """
 
+        # TODO -- parralelize processing... add input queue to this feed_file
+        # this could all be made a lot quicker
+
         # Sanity check
         if len(self.intervals) == 0:
             self.log.error("Error -- passed file_info even though object has \
-                            no more intervals left to parse! File info: %s", file_info)
+                            no more intervals left to parse! File info: %s", current_file)
             return
 
         files = self.workingData
-        start_scope, end_scope = self.intervals[0], self.intervals[1]
-        # Check if file info passed is out of range
-        if (f['date'] <= start_scope or f['date'] >= end_scope)
-            self.log.info("Interval out of range for file %s\n\nCopying data and \
-                           starting next interval (if any).", f)
+        start_scope, end_scope = self.intervals[0][0], self.intervals[0][1]
+        current_scope = current_file['date']
+
+        # TODO -- current logic just keeps going in between intervals
+        # (so the case where start1 != end2 will fail miserably)
+        # relying on input checking before it propagates to this point ATM
+
+        # Check if file passed out of range
+        if (current_file['date'] > end_scope)
+            self.log.info("Interval %s out of range for file date %s\n\nCopying data and \
+                           starting next interval (if any).", self.intervals[0], current_file)
             self.__post_process_data()
 
-        # Now actually deal with parsing the required metrics
+        # Now actually deal with parsing these metrics...
         self.__process_general_info(f)
         self.__process_bug_info(f)
         self.__process_temporal_info(f)
 
 
-    def __process_general_info(self, f):
+    def __process_general_info(self, current_file):
         """
-        Extract high level information like file size, name, ect.
+        Extract high level information like lines of code, name, ect.
         """
-        pass
+        # self.log.debug("Extracting general information from file: %s", current_file['filename'])
+
+        if current_file['filename'] not in self.working_data.keys():
+            self.working_data[current_file['filename']] = {'creation_date': current_file['date'],
+                                                'bug_dates': [], 'bug_messages': [],
+                                                'loc': 0, 'bug_score': 0}
+
+        f = self.working_data[current_file['filename']]
+        f['loc'] += current_file['insertions'] - current_file['deletions']
+        f['last_modified'] = current_file['date']
+
+        # Remove file if it was deleted (0 lines of code)
+        if f['loc'] <= 0:
+            #self.log.debug("0 loc for file: %s", mod_file['filename'])
+            self.working_data.pop(current_file['filename'], None)
 
 
-    def __process_bug_info(self, f):
+    def __process_bug_info(self, current_file):
         """
         Responsible for parsing bug score related information out of the file
         """
-        pass
+
+        if self.__is_bug(current_file['message']):
+            f = self.working_data[current_file['filename']]
+
+            # just for debugging really
+            # f['bug_messages'].append(mod_file['message'])
+            # f['bug_dates'].append(mod_file['date'])
+
+            # Sanity check
+            if (self.intervals[0][1] < current_file['date']):
+                self.log.error("Current file date is passed our end interval! \
+                                Something has gone terribly wrong! \
+                                Current interval: %s\nCurrent date: %s",
+                                self.intervals[0], current_file['date'])
+
+            # Add score to each file. Scoring function based on research from Chris
+            # Lewis and Rong Ou
+            end_date = self.intervals[0][1]
+            fix_date = current_file['date']
+            time_delta = end_date - f['creation_date']
+            if time_delta <= 0:
+                norm_time = 1.0
+            else:
+                norm_time = 1 - (float(end_date - fix_date) / (time_delta))
+            f['bug_score'] += 1 / (1 + math.exp(-12 * norm_time + 12))
+
+            if f['bug_score'] > self.max_bug_score:
+                self.max_bug_score = f['bug_score']
 
 
-    def __process_temporal_info(self, f):
+    def __process_temporal_info(self, current_file):
         """
         Responsible for handling temporal coupling metrics
         """
-        pass
+
+        # Increment revision count for file
+        self.working_rev_counts[current_file['filename']] += 1
+
+        # Dirty hack to regroup the original files from a commit since
+        # I unwound them in the original db query like a bad
+        if ((self.commits_buffer['date'] is not None) and
+            (self.commits_buffer['date'] != self.current_file['date'])):
+            # Process the buffer into temporal frequency counts
+            commits = self.commits_buffer['commits']
+
+            for pair in combinations(commits, 2):
+                ordered_pair = sorted(pair)
+                self.working_couples[(ordered_pair[0], ordered_pair[1])] += 1
+
+            self.commits_buffer = {'commits': [], 'date':None}
+
+        # Even if we have a full batch, still need to add a new one
+        self.commits_buffer['date'] = self.current_file['date']
+        self.commits_buffer.append(current_file.filename)
 
 
-    def __process_contribution_info(self, f):
+    def __process_contribution_info(self, current_file):
         """
         Responsible for extracting information pertaining to developer contributions
         and knowledge map
@@ -360,24 +373,56 @@ class HotspotsUtil(object):
         Invoked when we finish up an interval
         """
         # Create a new COPY of the data for next interval.
-        self.log.debug("Beging postprocess. Copying data...")
-        new_data = self.working_data.copy()
-        self.__reset_working_data()
+        self.log.debug("Starting postprocessing. Copying data...")
+        cached_data = self.working_data.copy()
 
         # Normalize bug scores
+        if cached_data.max_bug_score != 0:
+            for f, f_info in cached_data.iteritems():
+                f_info['score'] /= cached_data.max_bug_score
 
-        # Algorithm for temporal frequency
+        # Algorithm for scoring temporal frequency
+        for pair, count in cached_data.iteritems():
+            cached_data.working_couples[pair] /= \
+                ((cached_data.working_rev_counts[pair[0]] + \
+                cached_data.working_rev_counts[pair[1]]) / 2.0)
+
+        sorted_result = sorted(cached_data.working_couples.items(), \
+                               key = lambda x: x[1], reverse=True)
+
+        # TODO --- figure out how to normalize these temp. frequencies for viz
+        # DEBUG
+        self.log.info("\n\nTop 10 temporal frequencies: %s\n\n", sorted_result[:10])
 
         # Add data to self.completedData, pop an interval off
+        self.log.debug("Popping off interval: %s. Adding dataset to completed data.",
+                                                                self.intervals[0])
 
-        self.working_data = new_data
+        self.log.debug("Removing files smaller than threshhold...")
+        files_to_filter = 0
+        for f_name, f_info in cached_data.iteritems():
+            if f_info['loc'] < LOC_THRESHOLD:
+                files_to_filter.append(f_name)
+        self.log.debug("Removing %s files", len(files_to_filter))
+        for f in files_to_filter:
+            # self.log.debug("Removing file %s because it only had %s lines", f, files[f]['loc'])
+            cached_data.pop(f, None)
+
+        self.completedData.append(cached_data)
+        self.intervals.pop(0)
+
+        # Reset relative values on working data
+        self.__reset_working_data()
 
 
     def __reset_working_data(self):
         # Reset appropriate params on self.working_data
         # Be mindful to keep bug information, but reset temporal coupling
-        # TODO -- implement
         self.log.debug("Reseting working data...")
+
+        self.working_couples = defaultdict(int)
+        self.working_rev_counts = defaultdict(int)
+        self.commits_buffer = {'commits': [], 'date':None}
 
 
     def __is_bug(self, message):
