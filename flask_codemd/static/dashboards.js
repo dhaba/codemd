@@ -48,7 +48,12 @@ function buildDashboards(data) {
     var churnByDateGroup = dateDim.group();
     var bugsByDateGroup = dateDim.group().reduceSum(function(d) {
         return d.bug ? 1 : 0;
-    })
+    });
+    // Plot bugs by day regardless of size, as its static
+    bugsDayDim = commits.dimension(function(d) { return d3.time.day(d.date); })
+    var bugsByDayGroup = bugsDayDim.group().reduceSum(function(d) {
+        return d.bug ? 1 : 0;
+    });
 
     var insertionsByDateGroup = dateDim.group().reduceSum(function(d) {
         return d.insertions;
@@ -64,9 +69,9 @@ function buildDashboards(data) {
     })
 
     // Globals
-    var startInsertions = 30840;
+    var startInsertions = 0;
     var startDeletions = 0;
-    var needsResetStart = true;
+
     // Dates
     var dateRange = {
         minDate: dateDim.bottom(1)[0].date,
@@ -102,11 +107,11 @@ function buildDashboards(data) {
     // Commits timeline
     var commitsTimeline = dc.lineChart("#commits-timeline");
     commitsTimeline
-        .width(860)
+        .width(650)
         .height(70)
         .margins({
-            top: 25,
-            right: 10,
+            top: 5,
+            right: 2,
             bottom: 20,
             left: 10
         })
@@ -147,11 +152,11 @@ function buildDashboards(data) {
     // Distribution of defects
     var defectsDistribution = dc.barChart("#defects-distribution");
     defectsDistribution
-        .width(860)
+        .width(650)
         .height(60)
         .margins({
             top: 10,
-            right: 10,
+            right: 2,
             bottom: 16,
             left: 10
         })
@@ -187,14 +192,15 @@ function buildDashboards(data) {
         if (isNaN(val) || val < 0) {
             console.log("something has gone terribly wrong lol...");
         }
+        console.log(val)
         return val;
     }
 
     // M7 - Churned/Deleted (Dev Velocity)
     var churnOverDeletions = dc.lineChart("#churn-over-del");
     churnOverDeletions
-        .width(400)
-        .height(150)
+        .width(250)
+        .height(200)
         .margins({
             top: 10,
             right: 20,
@@ -206,6 +212,8 @@ function buildDashboards(data) {
         .round(rounder)
         .dimension(dateDim)
         .group(totalChurnByDateGroup)
+        // .renderArea(true)
+        // .colors(['#66339'])
         // .group(churnByDateGroup)
         // .valueAccessor(function(p) {
         //   // Change this to get average?
@@ -224,7 +232,7 @@ function buildDashboards(data) {
         .brushOn(false)
         .yAxisPadding(0.1)
         .yAxis().ticks(5)
-    churnOverDeletions.yAxis().ticks(5)
+    churnOverDeletions.xAxis().ticks(4)
 
     var codeFreq = dc.compositeChart("#code-frequency");
     var insertionsFreq = dc.lineChart(codeFreq);
@@ -234,10 +242,10 @@ function buildDashboards(data) {
         .group(insertionsByDateGroup)
         .colors(['#2ca02c'])
         .renderArea(true)
-        .on('renderlet', function(chart){
-          //chart.svg().select('g.chart-body').selectAll('path.line').style('stroke-width', '0px')
-          chart.select('g.chart-body').selectAll('path.line').style('stroke-width', '0px');
-        });
+        // .on('renderlet', function(chart){
+        //   //chart.svg().select('g.chart-body').selectAll('path.line').style('stroke-width', '0px')
+        //   // chart.select('g.chart-body').selectAll('path.line').style('stroke-width', '0px');
+        // });
 
     deletionsFreq
         .group(deletionsByDateGroup)
@@ -248,8 +256,8 @@ function buildDashboards(data) {
         })
 
     codeFreq
-        .width(860)
-        .height(400)
+        .width(600)
+        .height(340)
         .margins({
             top: 10,
             right: 20,
@@ -265,8 +273,11 @@ function buildDashboards(data) {
         .compose([insertionsFreq, deletionsFreq])
         .rangeChart(commitsTimeline)
         .brushOn(false)
+        .mouseZoomable(true)
         .yAxisPadding(0.0)
         .yAxis().ticks(6)
+
+      codeFreq.xAxis().ticks(8)
 
 
 
@@ -295,7 +306,7 @@ function buildDashboards(data) {
 
     var topAuthors = dc.rowChart('#top-authors');
     topAuthors
-      .height(400)
+      .height(350)
       .width(250)
       .dimension(authorsGroup)
       .group(authorCommitsGroup, "commits")
@@ -308,9 +319,23 @@ function buildDashboards(data) {
       })
       .xAxis().ticks(4)
 
-    commitsTimeline.focusCharts([codeFreq, churnOverDeletions]);
+    commitsTimeline.focusCharts([codeFreq, churnOverDeletions, topAuthors]);
     dc.renderAll();
 }
+
+// $('#top-authors').on('click', function(){
+//     // var minDate = tripsByDateDimension.top(5)[4].startDate;
+//     // var maxDate = tripsByDateDimension.top(5)[0].startDate;
+//     // console.log(tripVolume.filters());
+//     //
+//     //
+//     // tripVolume.filter([minDate, maxDate]);
+//     // tripVolume.x(d3.time.scale().domain([minDate,maxDate]));
+//     //
+//     // console.log(tripVolume.filters());
+//
+//     dc.redrawAll()
+// });
 
 
 // To overwrite chart and add multiple filters

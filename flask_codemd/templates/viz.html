@@ -31,12 +31,22 @@
   animation: spin 2s linear infinite;
 }
 
+#system-name {
+  text-align: center;
+}
+
 .body {
-  margin-top: 50;
+  margin-top: 20;
+  margin-left: 10;
+}
+
+
+.dc-chart g.row text {
+  font-family: "Lato","Helvetica Neue",Helvetica,Arial,sans-serif;
 }
 
 .top-row {
-  margin-top:40px;
+  margin-top:10;
 }
 
 @-webkit-keyframes spin {
@@ -73,41 +83,51 @@
   text-align: center;
 }
 
-.dc-chart path.line {
-  stroke-width: 0px;
+div.dc-chart {
+  text-align: center;
+  float: none;
 }
 
+/*.dc-chart path.line {
+  stroke-width: 0px;
+}*/
+
 .dc-chart path.area {
-  fill-opacity: 0.60;
+  fill-opacity: 0.68;
 }
+
+/*.chart-title text {
+    color: #0ce3ac;
+}*/
 
 </style>
 
 <script>
   $(function() {
-              console.log("document is ready is ready");
+      console.log("document is ready is ready");
 
-              // TODO -- remove this debug line
-              // Holder.add_theme("white", {
-              //     background: "#fff",
-              //     foreground: "#a7a7a7",
-              //     size: 10
-              // });
-              var projectName = '{{ project_name }}';
-              if (projectName === null) {
-                  projectName = this.pathname.split('/').pop();
-                  alert("project name was null. Setting it to " + projectName); // TODO -- remove this debug line
-              }
+      // TODO -- remove this debug line
+      // Holder.add_theme("white", {
+      //     background: "#fff",
+      //     foreground: "#a7a7a7",
+      //     size: 10
+      // });
+      var projectName = '{{ project_name }}';
+      if (projectName === null) {
+          projectName = this.pathname.split('/').pop();
+          alert("project name was null. Setting it to " + projectName); // TODO -- remove this debug line
+      }
 
-              var requestUrl = "/api/commits?project_name=" + projectName;
+      var requestUrl = "/api/commits?project_name=" + projectName;
+      $('#system-name').html(projectName)
 
-              $.getJSON(requestUrl, function(data) {
-                  // alert("Got data back from JSON query: " + data)
-                  // TODO -- add loading spinner or something
-                  $("body").fadeIn(2000)
-                  buildDashboards(data);
-              });
-            });
+      $.getJSON(requestUrl, function(data) {
+          // alert("Got data back from JSON query: " + data)
+          // TODO -- add loading spinner or something
+          buildDashboards(data);
+          $("body").fadeIn(2000)
+      });
+    });
       //       $.ajax({
       //         xhr: function()
       //         {
@@ -142,6 +162,8 @@
 
 </script>
 
+<h3 id="system-name"></h3>
+
 
 <!-- <div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
     <div class="container-fluid">
@@ -172,18 +194,31 @@
 
     <div class="row">
       <div class="col-sm-3">
-        <div class="chart-wrapper">
-          <div class="chart-title">
-            Top Contributors
+        <div class="row">
+          <div class="chart-wrapper">
+            <div class="chart-title">
+              Top Contributors
+            </div>
+            <div class="chart-stage">
+                <div id="top-authors"></div>
+            </div>
           </div>
-          <div class="chart-stage">
-              <div id="top-authors"></div>
+        </div>
+          <div class="row">
+          <div class="chart-wrapper">
+            <div class="chart-title">
+              Feature Development
+            </div>
+            <div class="chart-stage">
+                <div id="churn-over-del"></div>
+            </div>
+            <div class="chart-notes">
+              This plots the relative number of churned lines over deleted.
+            </div>
           </div>
         </div>
       </div>
       <div class="col-sm-9">
-
-
         <div class="row">
           <div class="col-sm-12">
             <div class="chart-wrapper">
@@ -199,15 +234,15 @@
         <div class="row">
           <div class="col-sm-12">
             <div class="chart-wrapper">
-              <!-- <div class="chart-title">
-                Cell Title
-              </div> -->
+              <div class="chart-title">
+                Distribution of Defects
+              </div>
               <div class="chart-stage">
                 <div id="defects-distribution"></div>
               </div>
-              <div class="chart-notes">
-                Distribution of Defects
-              </div>
+              <!-- <div class="chart-notes" style="bottom-padding: 18">
+
+              </div> -->
             </div>
           </div>
         </div>
@@ -221,7 +256,7 @@
                 <div id="code-frequency"></div>
               </div>
               <div class="chart-notes">
-                Notes about this chart
+                Code frequency measures the numbers of additions and deletions to a software system. You can use your mouse wheel or trackpad to zoom in.
               </div>
             </div>
           </div>

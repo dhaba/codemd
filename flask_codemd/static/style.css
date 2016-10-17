@@ -1,12 +1,7 @@
-.chart-wrapper {
+/*.chart-wrapper {
     background: #303030;
     border: 1px solid #464545;
-}
-
-.chart-title {
-    color: #0ce3ac;
-}
-
+}*/
 .dc-chart path.line {
   stroke-width: 0px;
 }
