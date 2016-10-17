@@ -9,6 +9,8 @@ import datetime
 
 import repo_analyser
 
+import pdb
+
 
 # ::::  HEURISTICS ::::
 # Hard coded rules for inclusion/exclusion of files when calculated various metrics
@@ -79,10 +81,13 @@ class MetricsBuilder(object):
         All dates are assumed to be in unix epoch format (parse them in the
                                                            view controllers)
 
+        !! Note !! I'm just assuming interval1_end is interval2_start to simply
+        the edge cases for now
+
         TODO -- params, docstring, refactor, ect
         """
 
-        self.log.debug("Building hotspots information...")
+        self.log.debug("Building hotspots information.")
 
         if interval1_start is None:
             interval1_start = 0
@@ -94,10 +99,23 @@ class MetricsBuilder(object):
             interval1_end = last_entry['date']
             self.log.debug("Interval_end1 was none. Defaulted to last entry: %s", interval1_end)
 
+        scan_intervals = [(interval1_start, interval1_end)]
 
+        if interval2_end is not None:
+            scan_intervals.append((interval1_end, interval2_end))
 
-        return {"name": "root", "children": self.__build_filetree(files, attributes=['score', 'loc'])}
+        hotspots_util = HotspotsUtil(scan_intervals)
 
+        self.log.debug("Begin hotspot building process...")
+
+        files_list = hotspots_util.execute_with_gen(self.file_history())
+
+        self.log.debug("Finished hotspot building process...")
+
+        # TODO -- check if this is empty and handle error
+        # files = hotspots_util.completedData[0]
+
+        return {"name": "root", "children": self.__build_filetree(files_list[0], attributes=['bug_score', 'loc'])}
 
 
     def file_history(self, start_date=None, end_date=None):
@@ -165,6 +183,12 @@ class MetricsBuilder(object):
         self.log.debug("Finished building object tree.")
         return tree
 
+
+    def is_bug(self, message):
+        """
+        DOCSTRING
+        """
+        return self.regex.match(message) != None
 
     def fix_fuckups(self, collection_name):
         # Dirty hack to alter previously created documents and filter things I
@@ -237,7 +261,21 @@ class HotspotsUtil(object):
         self.commits_buffer = {'commits': [], 'date':None}
 
 
-    def feed_file(self, current_file):
+    def execute_with_gen(self, gen):
+        """
+        Starts mining the cursor for hotspot metrics. Return a list
+        containing the completed file structures from analysis.
+        """
+
+        for f in gen:
+            self.__feed_file(f)
+
+        if len(self.intervals) > 0:
+            self.__post_process_data()
+
+        return self.completedData
+
+    def __feed_file(self, current_file):
         """
         Accepts a file from MetricsBuilder and extracts it into various metrics
         as needed
@@ -252,7 +290,6 @@ class HotspotsUtil(object):
                             no more intervals left to parse! File info: %s", current_file)
             return
 
-        files = self.workingData
         start_scope, end_scope = self.intervals[0][0], self.intervals[0][1]
         current_scope = current_file['date']
 
@@ -261,15 +298,17 @@ class HotspotsUtil(object):
         # relying on input checking before it propagates to this point ATM
 
         # Check if file passed out of range
-        if (current_file['date'] > end_scope)
+        if current_scope > end_scope:
             self.log.info("Interval %s out of range for file date %s\n\nCopying data and \
                            starting next interval (if any).", self.intervals[0], current_file)
             self.__post_process_data()
+            # Reset relative values on working data
+            self.__reset_working_data()
 
         # Now actually deal with parsing these metrics...
-        self.__process_general_info(f)
-        self.__process_bug_info(f)
-        self.__process_temporal_info(f)
+        self.__process_general_info(current_file)
+        self.__process_bug_info(current_file)
+        self.__process_temporal_info(current_file)
 
 
     def __process_general_info(self, current_file):
@@ -286,11 +325,6 @@ class HotspotsUtil(object):
         f = self.working_data[current_file['filename']]
         f['loc'] += current_file['insertions'] - current_file['deletions']
         f['last_modified'] = current_file['date']
-
-        # Remove file if it was deleted (0 lines of code)
-        if f['loc'] <= 0:
-            #self.log.debug("0 loc for file: %s", mod_file['filename'])
-            self.working_data.pop(current_file['filename'], None)
 
 
     def __process_bug_info(self, current_file):
@@ -338,7 +372,7 @@ class HotspotsUtil(object):
         # Dirty hack to regroup the original files from a commit since
         # I unwound them in the original db query like a bad
         if ((self.commits_buffer['date'] is not None) and
-            (self.commits_buffer['date'] != self.current_file['date'])):
+            (self.commits_buffer['date'] != current_file['date'])):
             # Process the buffer into temporal frequency counts
             commits = self.commits_buffer['commits']
 
@@ -349,8 +383,8 @@ class HotspotsUtil(object):
             self.commits_buffer = {'commits': [], 'date':None}
 
         # Even if we have a full batch, still need to add a new one
-        self.commits_buffer['date'] = self.current_file['date']
-        self.commits_buffer.append(current_file.filename)
+        self.commits_buffer['date'] = current_file['date']
+        self.commits_buffer['commits'].append(current_file['filename'])
 
 
     def __process_contribution_info(self, current_file):
@@ -377,29 +411,42 @@ class HotspotsUtil(object):
         cached_data = self.working_data.copy()
 
         # Normalize bug scores
-        if cached_data.max_bug_score != 0:
-            for f, f_info in cached_data.iteritems():
-                f_info['score'] /= cached_data.max_bug_score
+        if self.max_bug_score != 0:
+            for f in cached_data:
+                cached_data[f]['bug_score'] /= self.max_bug_score
+
+        debug_copy = self.working_couples.copy()
 
         # Algorithm for scoring temporal frequency
-        for pair, count in cached_data.iteritems():
-            cached_data.working_couples[pair] /= \
-                ((cached_data.working_rev_counts[pair[0]] + \
-                cached_data.working_rev_counts[pair[1]]) / 2.0)
+        for pair, count in self.working_couples.iteritems():
+            avg_of_pair = ((self.working_rev_counts[pair[0]] + self.working_rev_counts[pair[1]]) / 2.0)
+            self.working_couples[pair] /= avg_of_pair
 
-        sorted_result = sorted(cached_data.working_couples.items(), \
+
+        sorted_result = sorted(self.working_couples.items(), \
                                key = lambda x: x[1], reverse=True)
 
         # TODO --- figure out how to normalize these temp. frequencies for viz
         # DEBUG
-        self.log.info("\n\nTop 10 temporal frequencies: %s\n\n", sorted_result[:10])
+        # self.log.info("\n\nTop 15 temporal frequencies: %s\n\n", sorted_result[:15])
+        for result in sorted_result[0:25]:
+            pairs = result[0]
+            first = pairs[0]
+            second = pairs[1]
+            score = result[1]
+            self.log.debug("------------------------------------------------")
+            self.log.debug("Coupling between file %s and %s :", first, second)
+            self.log.debug("Score: %s", score)
+            self.log.debug("Joint Occurences: %s", debug_copy[pair])
+            self.log.debug("Total count for %s:  %s", first, self.working_rev_counts[first])
+            self.log.debug("Total count for %s:  %s", second, self.working_rev_counts[second])
 
         # Add data to self.completedData, pop an interval off
         self.log.debug("Popping off interval: %s. Adding dataset to completed data.",
                                                                 self.intervals[0])
 
         self.log.debug("Removing files smaller than threshhold...")
-        files_to_filter = 0
+        files_to_filter = []
         for f_name, f_info in cached_data.iteritems():
             if f_info['loc'] < LOC_THRESHOLD:
                 files_to_filter.append(f_name)
@@ -410,9 +457,6 @@ class HotspotsUtil(object):
 
         self.completedData.append(cached_data)
         self.intervals.pop(0)
-
-        # Reset relative values on working data
-        self.__reset_working_data()
 
 
     def __reset_working_data(self):
