@@ -70,6 +70,18 @@ class MetricsBuilder(object):
         return docs
 
 
+    # def defect_rates(self, mongo_collection):
+    #     """
+    #     (For EDA) Returns a list of each module and number of defects, sorted by
+    #     number of defects
+    #     """
+    #
+    #     cursor = self.colltion.aggregate([
+    #         {"$match": {'revision_id': {'$exists': True}}},
+    #         {"$unwind": "$files_modified"},
+    #     ])
+
+
     def hotspots(self, interval1_start=None, interval1_end=None, interval2_start=None, interval2_end=None):
         """
         All-in-one superhero method to calculate temporal frequency, bug score,
@@ -320,7 +332,7 @@ class HotspotsUtil(object):
         if current_file['filename'] not in self.working_data.keys():
             self.working_data[current_file['filename']] = {'creation_date': current_file['date'],
                                                 'bug_dates': [], 'bug_messages': [],
-                                                'loc': 0, 'bug_score': 0}
+                                                'loc': 0, 'bug_score': 0, 'bug_count': 0}
 
         f = self.working_data[current_file['filename']]
         f['loc'] += current_file['insertions'] - current_file['deletions']
@@ -338,6 +350,7 @@ class HotspotsUtil(object):
             # just for debugging really
             # f['bug_messages'].append(mod_file['message'])
             # f['bug_dates'].append(mod_file['date'])
+            f['bug_count'] += 1
 
             # Sanity check
             if (self.intervals[0][1] < current_file['date']):
