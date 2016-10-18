@@ -70,16 +70,47 @@ class MetricsBuilder(object):
         return docs
 
 
-    # def defect_rates(self, mongo_collection):
-    #     """
-    #     (For EDA) Returns a list of each module and number of defects, sorted by
-    #     number of defects
-    #     """
-    #
-    #     cursor = self.colltion.aggregate([
-    #         {"$match": {'revision_id': {'$exists': True}}},
-    #         {"$unwind": "$files_modified"},
-    #     ])
+    def file_complexity_history(filename):
+        file_string = "$" + filename
+        cursor = self.collection.aggregate([ \
+            { "$match" : {'revision_id': { '$exists': True }}},
+            {  "$match" : {'filename' : file_string}},
+            { "$unwind": "$files_modified" },
+            { "$project":{"filename": "$files_modified.filename",
+                          "insertions": "$files_modified.insertions",
+                          "deletions": "$files_modified.deletions",
+                          "message": 1, "author": 1, "date": 1, "_id": 0 }},
+            { "$sort": {"date": 1} } ], allowDiskUse=True)
+
+
+    def defect_rates(self):
+        """
+        (For EDA) Returns a list of each module and number of defects, sorted by
+        number of defects
+        """
+
+        self.log.debug("Building defects information.")
+        interval1_start = 0
+
+        last_entry = list(self.collection.find(
+                    {'revision_id': {'$exists': True}}).sort('date', -1))[0]
+        interval1_end = last_entry['date']
+        scan_intervals = [(interval1_start, interval1_end)]
+        hotspots_util = HotspotsUtil(scan_intervals)
+
+        files_list = hotspots_util.execute_with_gen(self.file_history())
+
+        self.log.debug("Finished defects building process")
+
+        flat_data = []
+        for fname, info in files_list[0].iteritems():
+            info['filename'] = fname
+            flat_data.append(info)
+
+        # TODO -- check if this is empty and handle error
+        # files = hotspots_util.completedData[0]
+
+        return flat_data
 
 
     def hotspots(self, interval1_start=None, interval1_end=None, interval2_start=None, interval2_end=None):

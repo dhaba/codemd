@@ -38,11 +38,13 @@
 .body {
   margin-top: 20;
   margin-left: 10;
+  padding-left:10;
 }
 
 
 .dc-chart g.row text {
   font-family: "Lato","Helvetica Neue",Helvetica,Arial,sans-serif;
+  font-size 24;
 }
 
 .top-row {
@@ -247,7 +249,7 @@ div.dc-chart {
           </div>
         </div>
         <div class="row">
-          <div class="col-sm-12">
+          <div class="col-md-6">
             <div class="chart-wrapper">
               <div class="chart-title">
                 Code Frequency
@@ -257,6 +259,19 @@ div.dc-chart {
               </div>
               <div class="chart-notes">
                 Code frequency measures the numbers of additions and deletions to a software system. You can use your mouse wheel or trackpad to zoom in.
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="chart-wrapper">
+              <div class="chart-title">
+                Total Lines of Code
+              </div>
+              <div class="chart-stage">
+                <div id="total-loc"></div>
+              </div>
+              <div class="chart-notes">
+                   
               </div>
             </div>
           </div>

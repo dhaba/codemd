@@ -4,6 +4,9 @@
 
 var ROW_LIM = 7000 // any more than this and we will have to bin by weeks
 
+//var ROW_LIM = 40231; // so rails will run
+
+
 function buildDashboards(data) {
     console.log('Building dashboards...');
     var commits_json = JSON.parse(data);
@@ -39,12 +42,14 @@ function buildDashboards(data) {
     // var deletionsDim = commits.dimension(function(d) { return d.deletions; });
     var totalDeletionsDim = commits.dimension(function(d) { return d.total_deletions; });
     var totalInsertionsDim = commits.dimension(function(d) { return d.total_insertions; });
+    // var totalLocDim = commits.dimension(function(d) { return d.total_insertions - d.total_deletions});
 
-    var authorsDim = commits.dimension(function(d) { return d.author;})
+    var authorsDim = commits.dimension(function(d) { return d.author;});
 
     // Groups and Aggregates
     var dateGroup = dateDim.group()
     var totalChurnByDateGroup = dateDim.group()
+    var totalLocByDateGroup = dateDim.group();
     var churnByDateGroup = dateDim.group();
     var bugsByDateGroup = dateDim.group().reduceSum(function(d) {
         return d.bug ? 1 : 0;
@@ -107,7 +112,7 @@ function buildDashboards(data) {
     // Commits timeline
     var commitsTimeline = dc.lineChart("#commits-timeline");
     commitsTimeline
-        .width(650)
+        .width(800)
         .height(70)
         .margins({
             top: 5,
@@ -152,7 +157,7 @@ function buildDashboards(data) {
     // Distribution of defects
     var defectsDistribution = dc.barChart("#defects-distribution");
     defectsDistribution
-        .width(650)
+        .width(800)
         .height(60)
         .margins({
             top: 10,
@@ -192,14 +197,14 @@ function buildDashboards(data) {
         if (isNaN(val) || val < 0) {
             console.log("something has gone terribly wrong lol...");
         }
-        console.log(val)
+        // console.log(val)
         return val;
     }
 
     // M7 - Churned/Deleted (Dev Velocity)
     var churnOverDeletions = dc.lineChart("#churn-over-del");
     churnOverDeletions
-        .width(250)
+        .width(300)
         .height(200)
         .margins({
             top: 10,
@@ -234,6 +239,36 @@ function buildDashboards(data) {
         .yAxis().ticks(5)
     churnOverDeletions.xAxis().ticks(4)
 
+
+    var totalLoc = dc.lineChart("#total-loc");
+    totalLoc
+      .width(800)
+      .height(350)
+      .margins({
+          top: 10,
+          right: 20,
+          bottom: 16,
+          left: 50
+      })
+        .x(d3.time.scale().domain([dateRange.minDate, dateRange.maxDate]))
+        .xUnits(units)
+        .round(rounder)
+        .dimension(dateDim)
+        .group(totalChurnByDateGroup)
+        .valueAccessor(function(p) {
+          return p.value.insertions.max - p.value.deletions.max;
+        })
+        .rangeChart(commitsTimeline)
+        .elasticY(true)
+        .renderHorizontalGridLines(true)
+        // .yAxisLabel("Churned LOC / Deleted LOC")
+        .brushOn(false)
+        .interpolate("basis")
+        .renderArea(true)
+        .colors(['#900C3F'])
+        .yAxis().ticks(5)
+    totalLoc.xAxis().ticks(4)
+
     var codeFreq = dc.compositeChart("#code-frequency");
     var insertionsFreq = dc.lineChart(codeFreq);
     var deletionsFreq = dc.lineChart(codeFreq);
@@ -242,6 +277,7 @@ function buildDashboards(data) {
         .group(insertionsByDateGroup)
         .colors(['#2ca02c'])
         .renderArea(true)
+        .interpolate("basis")
         // .on('renderlet', function(chart){
         //   //chart.svg().select('g.chart-body').selectAll('path.line').style('stroke-width', '0px')
         //   // chart.select('g.chart-body').selectAll('path.line').style('stroke-width', '0px');
@@ -251,13 +287,14 @@ function buildDashboards(data) {
         .group(deletionsByDateGroup)
         .colors(["#ef3b2c"])
         .renderArea(true)
+        .interpolate("basis")
         .valueAccessor(function(d) {
             return -1 * d.value;
         })
 
     codeFreq
-        .width(600)
-        .height(340)
+        .width(800)
+        .height(350)
         .margins({
             top: 10,
             right: 20,
@@ -319,7 +356,7 @@ function buildDashboards(data) {
       })
       .xAxis().ticks(4)
 
-    commitsTimeline.focusCharts([codeFreq, churnOverDeletions, topAuthors]);
+    commitsTimeline.focusCharts([codeFreq, totalLoc, churnOverDeletions, topAuthors]);
     dc.renderAll();
 }
 
