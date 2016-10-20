@@ -48,6 +48,7 @@ function buildDashboards(data) {
 
     // Groups and Aggregates
     var dateGroup = dateDim.group()
+    var authorDateGroup = dateDim.group()
     var totalChurnByDateGroup = dateDim.group()
     var totalLocByDateGroup = dateDim.group();
     var churnByDateGroup = dateDim.group();
@@ -72,6 +73,8 @@ function buildDashboards(data) {
     var authorLinesGroup = authorsGroup.reduceSum(function(d) {
       return d.insertions + d.deletions;
     })
+
+    var commitsSelected = commits.groupAll().reduceSum()
 
     // Globals
     var startInsertions = 0;
@@ -108,11 +111,11 @@ function buildDashboards(data) {
 
     // console.log('min date: ' + dateRange.minDate);
     // console.log('max date ' + dateRange.maxDate);
-
+    commitsFocusScale = d3.time.scale().domain([dateRange.minDate, dateRange.maxDate]);
     // Commits timeline
     var commitsTimeline = dc.lineChart("#commits-timeline");
     commitsTimeline
-        .width(800)
+        .width(850)
         .height(70)
         .margins({
             top: 5,
@@ -145,19 +148,25 @@ function buildDashboards(data) {
             //  console.log("(inside adjustVals) min total deletes: " + startDeletions);
         });
 
-    commitsTimeline.on('filtered', function(chart) {
-        console.log('commits timeline filtered!!!')
-        // churnOverDeletions.focus(chart.filters())
-            // churnOverDeletions.redraw()
-            // startInsertions = dateDim.bottom(1)[0].total_insertions;
-            // startDeletions = dateDim.bottom(1)[0].total_deletions;
-            // churnOverDeletions.focus(chart.filters());
-    })
+    // var totalCommits = dc.numberDisplay("commits-selected")
+    // totalCommits
+    //   .formatNumber(d3.format("d"))
+    //   .valueAccessor(function(d){return d;})
+    //   .group(totalCommits)
+
+    // commitsTimeline.on('filtered', function(chart) {
+    //     console.log('commits timeline filtered!!!')
+    //     // churnOverDeletions.focus(chart.filters())
+    //         // churnOverDeletions.redraw()
+    //         // startInsertions = dateDim.bottom(1)[0].total_insertions;
+    //         // startDeletions = dateDim.bottom(1)[0].total_deletions;
+    //         // churnOverDeletions.focus(chart.filters());
+    // })
 
     // Distribution of defects
-    var defectsDistribution = dc.barChart("#defects-distribution");
+    var defectsDistribution = dc.lineChart("#defects-distribution");
     defectsDistribution
-        .width(800)
+        .width(850)
         .height(60)
         .margins({
             top: 10,
@@ -169,11 +178,14 @@ function buildDashboards(data) {
             .range(["#fb6a4a", "#ef3b2c", "#cb181d", "#a50f15", "#67000d"]))
         .dimension(dateDim)
         .group(bugsByDateGroup)
-        .x(d3.time.scale().domain([dateRange.minDate, dateRange.maxDate]))
+        .x(commitsFocusScale)
         .xUnits(units)
         .round(rounder)
-        .centerBar(true)
+        .elasticY(true)
+        .renderArea(true)
         .brushOn(false)
+        .interpolate("basis")
+        .rangeChart(commitsTimeline)
         .title(function(d) {
             return "Reported defects: " + d.y;
         })
@@ -230,7 +242,6 @@ function buildDashboards(data) {
         //     return (inserts + deletions) / deletions
         // })
         .valueAccessor(adjustValues)
-        .rangeChart(commitsTimeline)
         .elasticY(true)
         .renderHorizontalGridLines(true)
         // .yAxisLabel("Churned LOC / Deleted LOC")
@@ -238,7 +249,6 @@ function buildDashboards(data) {
         .yAxisPadding(0.1)
         .yAxis().ticks(5)
     churnOverDeletions.xAxis().ticks(4)
-
 
     var totalLoc = dc.lineChart("#total-loc");
     totalLoc
@@ -250,7 +260,7 @@ function buildDashboards(data) {
           bottom: 16,
           left: 50
       })
-        .x(d3.time.scale().domain([dateRange.minDate, dateRange.maxDate]))
+        .x(commitsFocusScale)
         .xUnits(units)
         .round(rounder)
         .dimension(dateDim)
@@ -258,7 +268,6 @@ function buildDashboards(data) {
         .valueAccessor(function(p) {
           return p.value.insertions.max - p.value.deletions.max;
         })
-        .rangeChart(commitsTimeline)
         .elasticY(true)
         .renderHorizontalGridLines(true)
         // .yAxisLabel("Churned LOC / Deleted LOC")
@@ -344,7 +353,7 @@ function buildDashboards(data) {
     var topAuthors = dc.rowChart('#top-authors');
     topAuthors
       .height(350)
-      .width(250)
+      .width(300)
       .dimension(authorsGroup)
       .group(authorCommitsGroup, "commits")
       .ordering(function(t){return t.commits;})
@@ -356,7 +365,8 @@ function buildDashboards(data) {
       })
       .xAxis().ticks(4)
 
-    commitsTimeline.focusCharts([codeFreq, totalLoc, churnOverDeletions, topAuthors]);
+    commitsTimeline.focusCharts([codeFreq, totalLoc, churnOverDeletions,
+                                topAuthors, defectsDistribution]);
     dc.renderAll();
 }
 
