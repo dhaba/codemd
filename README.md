@@ -2,7 +2,6 @@
 Final Project
 
 ## Code.MD
-##### Davis Haba, 9/28
 
 ### 1. Motivation
 
