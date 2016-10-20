@@ -35,10 +35,22 @@
   text-align: center;
 }
 
+/*.row {
+  display: inline-block
+}*/
+
+.chart-wrapper {
+  display: inline-block
+}
+
 .body {
   margin-top: 20;
   margin-left: 10;
   padding-left:10;
+}
+
+.fuck-bootstrap {
+  width: 100%
 }
 
 
@@ -242,14 +254,11 @@ div.dc-chart {
               <div class="chart-stage">
                 <div id="defects-distribution"></div>
               </div>
-              <!-- <div class="chart-notes" style="bottom-padding: 18">
-
-              </div> -->
             </div>
           </div>
         </div>
         <div class="row">
-          <div class="col-md-6">
+          <div class="col-md-6" style="width: inherit">
             <div class="chart-wrapper">
               <div class="chart-title">
                 Code Frequency
@@ -258,7 +267,7 @@ div.dc-chart {
                 <div id="code-frequency"></div>
               </div>
               <div class="chart-notes">
-                Code frequency measures the numbers of additions and deletions to a software system. You can use your mouse wheel or trackpad to zoom in.
+                Code frequency measures the numbers of additions and deletions to a system
               </div>
             </div>
           </div>
@@ -271,7 +280,7 @@ div.dc-chart {
                 <div id="total-loc"></div>
               </div>
               <div class="chart-notes">
-                   
+
               </div>
             </div>
           </div>

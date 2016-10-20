@@ -242,7 +242,7 @@ function buildDashboards(data) {
 
     var totalLoc = dc.lineChart("#total-loc");
     totalLoc
-      .width(800)
+      .width(400)
       .height(350)
       .margins({
           top: 10,
@@ -293,7 +293,7 @@ function buildDashboards(data) {
         })
 
     codeFreq
-        .width(800)
+        .width(400)
         .height(350)
         .margins({
             top: 10,
