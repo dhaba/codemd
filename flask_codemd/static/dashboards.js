@@ -2,7 +2,7 @@
 // Scripts to build live dashboards on /viz page
 //
 
-var ROW_LIM = 7000 // any more than this and we will have to bin by weeks
+var ROW_LIM = 7000; // any more than this and we will have to bin by weeks
 
 //var ROW_LIM = 40231; // so rails will run
 
@@ -66,6 +66,9 @@ function buildDashboards(data) {
     });
     var deletionsByDateGroup = dateDim.group().reduceSum(function(d) {
         return d.deletions;
+    });
+    var netChangeByDateGroup = dateDim.group().reduceSum(function(d) {
+        return d.insertions - d.deletions;
     });
 
     var authorsGroup = authorsDim.group();
@@ -132,7 +135,6 @@ function buildDashboards(data) {
         .interpolate("basis")
         .renderlet(function(chart) {
             console.log('render let called inside of commitsTimesLine')
-            // chart.svg().selectAll('.chart-body').attr('clip-path', null);
             bottom = dateDim.bottom(1)[0];
             if (typeof bottom !== "undefined") {
               startInsertions = bottom.total_insertions;
@@ -250,6 +252,10 @@ function buildDashboards(data) {
         .yAxis().ticks(5)
     churnOverDeletions.xAxis().ticks(4)
 
+    churnOverDeletions.renderlet(function(chart) {
+      chart.selectAll('.dc-chart path.line').style('stroke-width', '2px')
+    });
+
     var totalLoc = dc.lineChart("#total-loc");
     totalLoc
       .width(400)
@@ -257,7 +263,7 @@ function buildDashboards(data) {
       .margins({
           top: 10,
           right: 20,
-          bottom: 16,
+          bottom: 25,
           left: 50
       })
         .x(commitsFocusScale)
@@ -281,12 +287,21 @@ function buildDashboards(data) {
     var codeFreq = dc.compositeChart("#code-frequency");
     var insertionsFreq = dc.lineChart(codeFreq);
     var deletionsFreq = dc.lineChart(codeFreq);
+    // var netFreq = dc.linechart(codeFreq);
+
+    // netFreq
+    //     .group(netChangeByDateGroup)
+    //     .colors(['#900C3F'])
+    //     .renderArea(true)
+    //     .interpolate("basis")
+    //     .brushOn(false)
 
     insertionsFreq
         .group(insertionsByDateGroup)
         .colors(['#2ca02c'])
         .renderArea(true)
         .interpolate("basis")
+        .brushOn(false)
         // .on('renderlet', function(chart){
         //   //chart.svg().select('g.chart-body').selectAll('path.line').style('stroke-width', '0px')
         //   // chart.select('g.chart-body').selectAll('path.line').style('stroke-width', '0px');
@@ -300,6 +315,7 @@ function buildDashboards(data) {
         .valueAccessor(function(d) {
             return -1 * d.value;
         })
+        .brushOn(false)
 
     codeFreq
         .width(400)
@@ -307,7 +323,7 @@ function buildDashboards(data) {
         .margins({
             top: 10,
             right: 20,
-            bottom: 16,
+            bottom: 25,
             left: 50
         })
         .x(d3.time.scale().domain([dateRange.minDate, dateRange.maxDate]))
@@ -316,14 +332,13 @@ function buildDashboards(data) {
         .dimension(dateDim)
         .renderHorizontalGridLines(true)
         .elasticY(true)
-        .compose([insertionsFreq, deletionsFreq])
-        .rangeChart(commitsTimeline)
+        .compose([insertionsFreq, deletionsFreq])//.compose([insertionsFreq, deletionsFreq, netFreq])
         .brushOn(false)
         .mouseZoomable(true)
         .yAxisPadding(0.0)
         .yAxis().ticks(6)
 
-      codeFreq.xAxis().ticks(8)
+      codeFreq.xAxis().ticks(5)
 
 
 

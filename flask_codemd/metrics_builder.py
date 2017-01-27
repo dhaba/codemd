@@ -15,7 +15,6 @@ import pdb
 # ::::  HEURISTICS ::::
 # Hard coded rules for inclusion/exclusion of files when calculated various metrics
 # Ideally these would be exposed to the user for custom tinkering
-
 LOC_THRESHOLD = 30 # min number of lines to be considered in circle packing
 
 

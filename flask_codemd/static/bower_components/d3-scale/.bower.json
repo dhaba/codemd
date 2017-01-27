@@ -10,6 +10,5 @@
   },
   "_source": "https://github.com/d3/d3-scale.git",
   "_target": "^1.0.3",
-  "_originalSource": "d3-scale",
-  "_direct": true
+  "_originalSource": "d3-scale"
 }
