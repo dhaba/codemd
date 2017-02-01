@@ -27,15 +27,15 @@
       console.log("starting json request....");
       $.getJSON(requestUrl, function(data) {
           console.log("finished json request....");
-          // $(".loader").hide();
+
           $(".loader-mask").fadeOut(500);
-          $(".loader-mask").fadeOut(1000);
+          $(".loader").fadeOut(1000);
       });
     });
 
 </script>
 
-<body>
+
 
   <div class="loader-mask">HELLO THIS IS THE LOADING TEXT!!!!
     <div class="loader"></div>
@@ -91,7 +91,7 @@
 
   </div>
 
-</body>
+
 
 {% endblock %}
 

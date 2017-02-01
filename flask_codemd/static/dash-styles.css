@@ -1,0 +1,72 @@
+.dash-holder {
+    min-width: 1366px;
+    min-height: 768px;
+}
+
+body {
+    padding: 100px 0 0;
+}
+
+.loader-mask {
+    position: fixed;
+    height: 100%;
+    width: 100%;
+    top: 0;
+    left: 0;
+    background: #222222;
+    z-index: 9000;
+}
+
+.loader {
+    border: 16px solid #f3f3f3;
+    border-radius: 50%;
+    border-top: 16px solid #00bc8c;
+    width: 120px;
+    height: 120px;
+    -webkit-animation: spin 2s linear infinite;
+    animation: spin 2s linear infinite;
+    z-index: 9999;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 200px;
+}
+
+@-webkit-keyframes spin {
+    0% {
+        -webkit-transform: rotate(0deg);
+    }
+    100% {
+        -webkit-transform: rotate(360deg);
+    }
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.chart-wrapper {
+    display: inline-block
+}
+
+.dc-chart g.row text {
+    font-family: "Lato", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size 24;
+}
+
+div.dc-chart {
+    text-align: center;
+    float: none;
+}
+
+.dc-chart path.line {
+    stroke-width: 0.45px;
+}
+
+.dc-chart path.area {
+    fill-opacity: 0.68;
+}
