@@ -71,102 +71,101 @@
   <div class="loader"></div>
 </div>
 
-<div class="container dash-holder">
 
-    <div class="row">
-        <div class="col-sm-3">
-            <div class="chart-wrapper hug-right">
-                <div class="chart-title">
-                    Top Contributors
-                </div>
-                <div class="chart-stage">
-                    <div id="top-authors"></div>
-                </div>
-            </div>
-            <div class="chart-wrapper hug-right">
-                <div class="chart-title">
-                    Feature Development Velocity
-                </div>
-                <div class="chart-stage">
-                    <div id="churn-over-del"></div>
-                </div>
-                <div class="chart-notes">
-                    This plots the relative number of churned lines over deleted.
-                </div>
-            </div>
-        </div>
-        <div class="col-sm-9">
-            <div class="row">
-                <div class="col-sm-12">
-                    <div class="chart-wrapper">
-                        <div class="chart-title">
-                            Commit History
-                        </div>
-                        <div class="chart-stage">
-                            <div id="commits-timeline"></div>
-                        </div>
-                    </div>
-                </div>
-                <!-- <div class="col-sm-3">
-            <div class="chart-wrapper">
+
+<div class="container dash-holder">
+  <div class="row">
+    <!-- Author Contributions -->
+    <div class="col-md-3">
+      <div class="chart-wrapper">
+          <div class="chart-title">
+              Top Contributors
+          </div>
+          <div class="chart-stage">
+              <div id="top-authors"></div>
+          </div>
+      </div>
+    </div>
+    <div class="col-md-9">
+      <div class="row">
+        <!-- Commits -->
+        <div class="col-md-8">
+          <div class="chart-wrapper">
               <div class="chart-title">
-                Commits Selected
+                  Commit History
               </div>
               <div class="chart-stage">
-                <div id="commits-selected"></div>
+                  <div id="commits-timeline"></div>
               </div>
-            </div>
-          </div> -->
-            </div>
-            <div class="row">
-                <div class="col-sm-12">
-                    <div class="chart-wrapper">
-                        <div class="chart-title">
-                            Distribution of Defects
-                        </div>
-                        <div class="chart-stage">
-                            <div id="defects-distribution"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-6" style="width: inherit">
-                    <div class="chart-wrapper">
-                        <div class="chart-title">
-                            Code Frequency
-                        </div>
-                        <div class="chart-stage">
-                            <div id="code-frequency"></div>
-                        </div>
-                        <div class="chart-notes">
-                            Code frequency measures the numbers of additions and deletions to a system
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="chart-wrapper">
-                        <div class="chart-title">
-                            Total Lines of Code
-                        </div>
-                        <div class="chart-stage">
-                            <div id="total-loc"></div>
-                        </div>
-                        <div class="chart-notes">
-                            This can be a rough measure of overall complexity in the system.
-                        </div>
-                    </div>
-                </div>
-            </div>
+          </div>
         </div>
+        <!-- UI Buttons -->
+        <div class="col-md-4"> buttons </div>
+      </div>
+      <div class="row">
+        <!-- Bugs -->
+        <div class="col-md-9">
+          <div class="chart-wrapper">
+              <div class="chart-title">
+                  Distribution of Defects
+              </div>
+              <div class="chart-stage">
+                  <div id="defects-distribution"></div>
+              </div>
+          </div>
+        </div>
+        <!-- Focus Info -->
+        <div class="col-md-3"> focus info </div>
+      </div>
     </div>
-</div>
+  </div>
 
+  <div class="row">
+    <!-- Dev Velocity -->
+    <div class="col-md-3">
+      <div class="chart-wrapper">
+          <div class="chart-title">
+              Feature Development Velocity
+          </div>
+          <div class="chart-stage">
+              <div id="churn-over-del"></div>
+          </div>
+          <div class="chart-notes">
+              This plots the relative number of churned lines over deleted.
+          </div>
+      </div>
+    </div>
+    <!-- Code Freq -->
+    <div class="col-md-5">
+      <div class="chart-wrapper">
+          <div class="chart-title">
+              Code Frequency
+          </div>
+          <div class="chart-stage">
+              <div id="code-frequency"></div>
+          </div>
+          <div class="chart-notes">
+              Code frequency measures the numbers of additions and deletions to a system
+          </div>
+      </div>
+    </div>
+    <!-- Total LOC -->
+    <div class="col-md-4">
+      <div class="chart-wrapper">
+          <div class="chart-title">
+              Total Lines of Code
+          </div>
+          <div class="chart-stage">
+              <div id="total-loc"></div>
+          </div>
+          <div class="chart-notes">
+              This can be a rough measure of overall complexity in the system.
+          </div>
+      </div>
+    </div>
+  </div>
 
-<hr>
-
-<p class="small text-muted offset-left">Built by Davis Haba, as a part of a 2 week capstone project for the Galvanize Data Science Immersive program.</a>
-</p>
+  <p class="small text-muted offset-left">Built by Davis Haba, as a part of a 2 week capstone project for the Galvanize Data Science Immersive program.</p>
 
 </div>
 
