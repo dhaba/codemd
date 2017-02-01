@@ -413,7 +413,7 @@ class HotspotsUtil(object):
         self.working_rev_counts[current_file['filename']] += 1
 
         # Dirty hack to regroup the original files from a commit since
-        # I unwound them in the original db query like a bad
+        # I unwound them in the original db query like an idiot
         if ((self.commits_buffer['date'] is not None) and
             (self.commits_buffer['date'] != current_file['date'])):
             # Process the buffer into temporal frequency counts

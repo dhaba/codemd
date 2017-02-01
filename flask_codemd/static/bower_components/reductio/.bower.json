@@ -27,6 +27,6 @@
     "commit": "5079f2cdbcd198dead2efc70fd8c0ddb4a1c89f3"
   },
   "_source": "https://github.com/esjewett/reductio.git",
-  "_target": "^0.6.3",
+  "_target": "0.6.3",
   "_originalSource": "reductio"
 }

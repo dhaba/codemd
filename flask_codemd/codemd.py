@@ -38,6 +38,11 @@ stream_handler.setFormatter(formatter)
 log.addHandler(file_handler)
 log.addHandler(stream_handler)
 
+# Debug
+@app.route("/test")
+def show_test():
+    return render_template('test_dash.html')
+
 # Home page
 @app.route("/")
 def show_home():

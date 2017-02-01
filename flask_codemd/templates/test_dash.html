@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dashboard Starter UI, by Keen IO</title>
+  <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no' />
+
+  <link href="{{ url_for('static', filename='./bower_components/keen-dashboards/dist/keen-dashboards.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='./bower_components/colorbrewer/colorbrewer.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='./bower_components/dcjs/dc.css') }}" rel="stylesheet">
+
+  <script src="{{ url_for('static', filename='./bower_components/crossfilter/crossfilter.js') }}"></script>
+  <script src="{{ url_for('static', filename='./bower_components/d3/d3.js') }}"></script>
+  <script src="{{ url_for('static', filename='./bower_components/dcjs/dc.js') }}"></script>
+  <script src="{{ url_for('static', filename='./bower_components/reductio/reductio.js') }}"></script>
+  <script src="{{ url_for('static', filename='./bower_components/colorbrewer/colorbrewer.js') }}"></script>
+
+  <link href="{{ url_for('static', filename='./test_styles.css') }}" rel="stylesheet">
+</head>
+
+{% extends "layout.html" %} {% block body %}
+
+<script>
+  $(function() {
+      console.log("document is ready is ready");
+      var requestUrl = "/api/commits?project_name=rails";
+
+      console.log("starting json request....");
+      $.getJSON(requestUrl, function(data) {
+          console.log("finished json request....");
+          // $(".loader").hide();
+          $(".loader").fadeOut(1000);
+      });
+    });
+
+</script>
+
+<body class="application">
+
+  <div class="loader">HELLO THIS IS THE LOADING TEXT!!!!</div>
+
+  <div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+    <div class="container-fluid">
+      <div class="navbar-header">
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../">
+          <span class="glyphicon glyphicon-chevron-left"></span>
+        </a>
+        <a class="navbar-brand" href="./">Service Monitoring UI</a>
+      </div>
+      <div class="navbar-collapse collapse">
+        <ul class="nav navbar-nav navbar-left">
+          <li><a href="https://keen.io">Home</a></li>
+          <li><a href="https://keen.io/team">Team</a></li>
+          <li><a href="https://github.com/keenlabs/dashboard">Github</a></li>
+          <li><a href="https://groups.google.com/forum/#!forum/keen-io-devs">Community</a></li><li><a href="http://stackoverflow.com/questions/tagged/keen-io?sort=newest&pageSize=15">Technical Support</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="container green-border dash-holder">
+    <div class="row">
+      <div class="col-md-3 red-border"> author contributions</div>
+      <div class="col-md-9 red-border">
+        <div class="row">
+          <div class="col-md-9 blue-border"> commits </div>
+          <div class="col-md-3 blue-border"> buttons </div>
+        </div>
+        <div class="row">
+          <div class="col-md-9 blue-border"> bugs </div>
+          <div class="col-md-3 blue-border"> focus info </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-3 red-border"> dev velocity </div>
+      <div class="col-md-5 red-border"> code freq </div>
+      <div class="col-md-4 red-border"> total loc</div>
+    </div>
+
+    <p class="small text-muted">Built with &#9829; by <a href="https://keen.io">Keen IO</a></p>
+
+  </div>
+
+</body>
+
+{% endblock %}
+
+</html>

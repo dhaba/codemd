@@ -1,0 +1,57 @@
+.dash-holder {
+    min-width: 1366px;
+    min-height: 768px;
+}
+
+.green-border {
+    border-color: green;
+    border-width: 1px;
+    border-style: solid;
+    /*border-radius: 50%;*/
+}
+
+.red-border {
+    border-color: red;
+    border-width: 1px;
+    border-style: solid;
+    /*border-radius: 50%;*/
+}
+
+.blue-border {
+    border-color: blue;
+    border-width: 1px;
+    border-style: solid;
+    /*border-radius: 50%;*/
+}
+
+.yellow-border {
+    border-color: yellow;
+    border-width: 1px;
+    border-style: solid;
+    /*border-radius: 50%;*/
+}
+
+
+/*.loader {
+    display: none;
+    width: 200px;
+    height: 200px;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    text-align: center;
+    margin-left: -50px;
+    margin-top: -100px;
+    z-index: 2;
+    overflow: auto;
+}*/
+
+.loader {
+    position: fixed;
+    height: 100%;
+    width: 100%;
+    top: 0;
+    left: 0;
+    background: #000;
+    z-index: 9999;
+}
