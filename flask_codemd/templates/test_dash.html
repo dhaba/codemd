@@ -22,23 +22,26 @@
 <script>
   $(function() {
       console.log("document is ready is ready");
-      var requestUrl = "/api/commits?project_name=rails";
+      var requestUrl = "/api/commits?project_name=pandas";
 
       console.log("starting json request....");
       $.getJSON(requestUrl, function(data) {
           console.log("finished json request....");
           // $(".loader").hide();
-          $(".loader").fadeOut(1000);
+          $(".loader-mask").fadeOut(500);
+          $(".loader-mask").fadeOut(1000);
       });
     });
 
 </script>
 
-<body class="application">
+<body>
 
-  <div class="loader">HELLO THIS IS THE LOADING TEXT!!!!</div>
+  <div class="loader-mask">HELLO THIS IS THE LOADING TEXT!!!!
+    <div class="loader"></div>
+  </div>
 
-  <div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+  <div class="navbar navbar-inverse navbar-fixed-top" role="navigation" style="z-index:9999;">
     <div class="container-fluid">
       <div class="navbar-header">
         <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
