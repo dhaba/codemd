@@ -118,13 +118,13 @@ function buildDashboards(data) {
     // Commits timeline
     var commitsTimeline = dc.lineChart("#commits-timeline");
     commitsTimeline
-        .width(850)
+        .width(768)
         .height(70)
         .margins({
-            top: 5,
-            right: 2,
-            bottom: 20,
-            left: 10
+            top: 0,
+            right: 0,
+            bottom: 0,
+            left: 0
         })
         .dimension(dateDim)
         .group(dateGroup)
@@ -168,13 +168,13 @@ function buildDashboards(data) {
     // Distribution of defects
     var defectsDistribution = dc.lineChart("#defects-distribution");
     defectsDistribution
-        .width(850)
-        .height(60)
+        .width(768)
+        .height(70)
         .margins({
-            top: 10,
-            right: 2,
-            bottom: 16,
-            left: 10
+            top: 0,
+            right: 0,
+            bottom: 0,
+            left: 0
         })
         .colors(d3.scale.quantile().domain([bugsDomain.min, bugsDomain.max])
             .range(["#fb6a4a", "#ef3b2c", "#cb181d", "#a50f15", "#67000d"]))
@@ -218,7 +218,7 @@ function buildDashboards(data) {
     // M7 - Churned/Deleted (Dev Velocity)
     var churnOverDeletions = dc.lineChart("#churn-over-del");
     churnOverDeletions
-        .width(300)
+        .width(341)
         .height(200)
         .margins({
             top: 10,
@@ -258,7 +258,7 @@ function buildDashboards(data) {
 
     var totalLoc = dc.lineChart("#total-loc");
     totalLoc
-      .width(400)
+      .width(500)
       .height(350)
       .margins({
           top: 10,
@@ -318,7 +318,7 @@ function buildDashboards(data) {
         .brushOn(false)
 
     codeFreq
-        .width(400)
+        .width(500)
         .height(350)
         .margins({
             top: 10,
@@ -367,8 +367,8 @@ function buildDashboards(data) {
 
     var topAuthors = dc.rowChart('#top-authors');
     topAuthors
-      .height(350)
-      .width(300)
+      .width(320)
+      .height(409)
       .dimension(authorsGroup)
       .group(authorCommitsGroup, "commits")
       .ordering(function(t){return t.commits;})
