@@ -259,7 +259,7 @@ function buildDashboards(data) {
     var totalLoc = dc.lineChart("#total-loc");
     totalLoc
       .width(500)
-      .height(350)
+      .height(394)
       .margins({
           top: 10,
           right: 20,
@@ -319,7 +319,7 @@ function buildDashboards(data) {
 
     codeFreq
         .width(500)
-        .height(350)
+        .height(394)
         .margins({
             top: 10,
             right: 20,
@@ -368,7 +368,7 @@ function buildDashboards(data) {
     var topAuthors = dc.rowChart('#top-authors');
     topAuthors
       .width(320)
-      .height(409)
+      .height(380)
       .dimension(authorsGroup)
       .group(authorCommitsGroup, "commits")
       .ordering(function(t){return t.commits;})

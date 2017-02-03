@@ -71,12 +71,11 @@
   <div class="loader"></div>
 </div>
 
-
-
 <div class="container dash-holder">
   <div class="row">
-    <!-- Author Contributions -->
+    <!-- Left col (authors, dev velocity) -->
     <div class="col-md-3">
+      <!-- Author Contributions -->
       <div class="chart-wrapper">
           <div class="chart-title">
               Top Contributors
@@ -85,8 +84,23 @@
               <div id="top-authors"></div>
           </div>
       </div>
+      <!-- Dev Velocity -->
+      <div class="chart-wrapper">
+          <div class="chart-title">
+              Feature Development Velocity
+          </div>
+          <div class="chart-stage">
+              <div id="churn-over-del"></div>
+          </div>
+          <div class="chart-notes">
+              This plots the relative number of churned lines over deleted.
+          </div>
+      </div>
     </div>
+
+    <!-- Right col (everything else) -->
     <div class="col-md-9">
+      <!-- ROW 1 (commits, buttons) -->
       <div class="row">
         <!-- Commits -->
         <div class="col-md-9">
@@ -100,8 +114,11 @@
           </div>
         </div>
         <!-- UI Buttons -->
-        <div class="col-md-3 red-border"> buttons </div>
+        <div class="col-md-3">
+          <div class="red-border"> buttons </div>
+        </div>
       </div>
+      <!-- ROW 2 (bugs, focus details) -->
       <div class="row">
         <!-- Bugs -->
         <div class="col-md-9">
@@ -115,59 +132,47 @@
           </div>
         </div>
         <!-- Focus Info -->
-        <div class="col-md-3 green-border"> focus info </div>
+        <div class="col-md-3">
+          <div class="green-border"> focus info </div>
+        </div>
+      </div>
+      <!-- ROW 3 (code freq, total loc) -->
+      <div class="row">
+        <!-- Code Freq -->
+        <div class="col-md-6">
+          <div class="chart-wrapper">
+              <div class="chart-title">
+                  Code Frequency
+              </div>
+              <div class="chart-stage">
+                  <div id="code-frequency"></div>
+              </div>
+              <div class="chart-notes">
+                  Code frequency measures the numbers of additions and deletions to a system
+              </div>
+          </div>
+        </div>
+        <!-- Total LOC -->
+        <div class="col-md-6">
+          <div class="chart-wrapper">
+              <div class="chart-title">
+                  Total Lines of Code
+              </div>
+              <div class="chart-stage">
+                  <div id="total-loc"></div>
+              </div>
+              <div class="chart-notes">
+                  This can be a rough measure of overall complexity in the system.
+              </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
-
-  <div class="row">
-    <!-- Dev Velocity -->
-    <div class="col-md-3">
-      <div class="chart-wrapper">
-          <div class="chart-title">
-              Feature Development Velocity
-          </div>
-          <div class="chart-stage">
-              <div id="churn-over-del"></div>
-          </div>
-          <div class="chart-notes">
-              This plots the relative number of churned lines over deleted.
-          </div>
-      </div>
-    </div>
-    <!-- Code Freq -->
-    <div class="col-md-5">
-      <div class="chart-wrapper">
-          <div class="chart-title">
-              Code Frequency
-          </div>
-          <div class="chart-stage">
-              <div id="code-frequency"></div>
-          </div>
-          <div class="chart-notes">
-              Code frequency measures the numbers of additions and deletions to a system
-          </div>
-      </div>
-    </div>
-    <!-- Total LOC -->
-    <div class="col-md-4">
-      <div class="chart-wrapper">
-          <div class="chart-title">
-              Total Lines of Code
-          </div>
-          <div class="chart-stage">
-              <div id="total-loc"></div>
-          </div>
-          <div class="chart-notes">
-              This can be a rough measure of overall complexity in the system.
-          </div>
-      </div>
-    </div>
-  </div>
-
-  <p class="small text-muted offset-left">Built by Davis Haba, as a part of a 2 week capstone project for the Galvanize Data Science Immersive program.</p>
-
+  <p class="small text-muted offset-left" style="text-align:center">Built by Davis Haba, as a part of a 2 week capstone project for the Galvanize Data Science Immersive program.</p>
 </div>
+
+
 
 
 {% endblock %}
