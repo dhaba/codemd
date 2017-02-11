@@ -3,6 +3,11 @@
     min-height: 768px;
 }
 
+.metric {
+  color: black;
+  min-height: 31px;
+}
+
 .row>div {
     border-color: blue;
     border-width: 1px;

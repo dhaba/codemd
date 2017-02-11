@@ -3,8 +3,13 @@
 //
 
 var ROW_LIM = 7000; // any more than this and we will have to bin by weeks
+//var ROW_LIM = 40231; // rails will run in full glory (but lags on shitty computers)
 
-//var ROW_LIM = 40231; // so rails will run
+
+var LEFT_COL_WIDTH = 290;
+
+
+
 
 
 function buildDashboards(data) {
@@ -118,13 +123,13 @@ function buildDashboards(data) {
     // Commits timeline
     var commitsTimeline = dc.lineChart("#commits-timeline");
     commitsTimeline
-        .width(768)
+        .width(700)
         .height(70)
         .margins({
-            top: 0,
+            top: 10,
             right: 0,
-            bottom: 0,
-            left: 0
+            bottom: 20,
+            left: 25
         })
         .dimension(dateDim)
         .group(dateGroup)
@@ -150,6 +155,27 @@ function buildDashboards(data) {
             //  console.log("(inside adjustVals) min total deletes: " + startDeletions);
         });
 
+      commitsTimeline.yAxis().ticks(4);
+
+    var all = commits.groupAll();
+    var allBugs = commits.groupAll().reduceSum(function(d) {
+      return d.bug ? 1 : 0;
+    });
+
+    var totalCommits = dc.numberDisplay("#total-commits")
+    .formatNumber(d3.format("d"))
+    .valueAccessor(function(d){
+      return d;
+    })
+    .group(all);
+
+    var totalBugs = dc.numberDisplay("#total-bugs")
+    .formatNumber(d3.format("d"))
+    .valueAccessor(function(d){
+      return d;
+    })
+    .group(allBugs);
+
     // var totalCommits = dc.numberDisplay("commits-selected")
     // totalCommits
     //   .formatNumber(d3.format("d"))
@@ -168,13 +194,13 @@ function buildDashboards(data) {
     // Distribution of defects
     var defectsDistribution = dc.lineChart("#defects-distribution");
     defectsDistribution
-        .width(768)
+        .width(700)
         .height(70)
         .margins({
-            top: 0,
+            top: 10,
             right: 0,
-            bottom: 0,
-            left: 0
+            bottom: 20,
+            left: 25
         })
         .colors(d3.scale.quantile().domain([bugsDomain.min, bugsDomain.max])
             .range(["#fb6a4a", "#ef3b2c", "#cb181d", "#a50f15", "#67000d"]))
@@ -187,11 +213,10 @@ function buildDashboards(data) {
         .renderArea(true)
         .brushOn(false)
         .interpolate("basis")
-        .rangeChart(commitsTimeline)
-        .title(function(d) {
-            return "Reported defects: " + d.y;
-        })
+        .rangeChart(commitsTimeline);
         // TODO -- add date string to the title above
+
+    defectsDistribution.yAxis().ticks(3);
 
     // Calculate churn metrics as a function of time interval
     // Churned LOC / Deleted LOC
@@ -334,7 +359,7 @@ function buildDashboards(data) {
         .elasticY(true)
         .compose([insertionsFreq, deletionsFreq])//.compose([insertionsFreq, deletionsFreq, netFreq])
         .brushOn(false)
-        .mouseZoomable(true)
+        .mouseZoomable(false)
         .yAxisPadding(0.0)
         .yAxis().ticks(6)
 
