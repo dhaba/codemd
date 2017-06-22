@@ -1,19 +1,16 @@
-<!doctype html>
-<!-- {% extends "layout.html" %} -->
+
+{% extends "layout.html" %}
 {% block body %}
 
 <link href="{{ url_for('static', filename='./bower_components/keen-dashboards/dist/keen-dashboards.css') }}" rel="stylesheet">
 <link href="{{ url_for('static', filename='./bower_components/dcjs/dc.css') }}" rel="stylesheet">
 <script src="{{ url_for('static', filename='./bower_components/jquery/dist/jquery.min.js') }}"></script>
-<script src="{{ url_for('static', filename='./d3.js') }}"></script>
+<script src="{{ url_for('static', filename='./bower_components/d3/d3.js') }}"></script>
 <script src="{{ url_for('static', filename='./bower_components/crossfilter/crossfilter.js') }}"></script>
 <script src="{{ url_for('static', filename='./bower_components/reductio/reductio.js') }}"></script>
 <script src="{{ url_for('static', filename='./bower_components/dcjs/dc.js') }}"></script>
-<script src="{{ url_for('static', filename='./holderjs/holder.js') }}"></script>
 
 <script src="{{ url_for('static', filename='./dashboards.js') }}"></script>
-
-<!-- <script src="https://d3js.org/d3.v4.js"></script> -->
 
 <meta charset="utf-8">
 <style>
@@ -86,7 +83,7 @@
 
     d3.json(requestUrl, function(error, root) {
         root = JSON.parse(root);
-        // console.log(root);
+        console.log(root);
         var focus = root,
             nodes = pack.nodes(root);
 

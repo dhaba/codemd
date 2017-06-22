@@ -22,8 +22,6 @@
 
 <script>
     $(function() {
-        console.log("document is ready is ready");
-
         var projectName = '{{ project_name }}';
         if (projectName === null) {
             projectName = this.pathname.split('/').pop();
@@ -58,11 +56,9 @@
         </div>
         <div class="navbar-collapse collapse">
             <ul class="nav navbar-nav navbar-left">
-                <li><a href="https://keen.io">Home</a></li>
-                <li><a href="https://keen.io/team">Team</a></li>
-                <li><a href="https://github.com/keenlabs/dashboard">Github</a></li>
-                <li><a href="https://groups.google.com/forum/#!forum/keen-io-devs">Community</a></li>
-                <li><a href="http://stackoverflow.com/questions/tagged/keen-io?sort=newest&pageSize=15">Technical Support</a></li>
+                <li><a href="https://keen.io">About</a></li>
+                <li><a href="https://keen.io/team">Source</a></li>
+                <li><a href="https://github.com/keenlabs/dashboard">Contact</a></li>
             </ul>
         </div>
     </div>
@@ -116,7 +112,14 @@
                 </div>
                 <!-- UI Buttons -->
                 <div class="col-md-3">
-                    <div class="red-border"> buttons </div>
+                    <div class="chart-wrapper">
+                      <div class="chart-title">
+                          Circle Packing Viz
+                      </div>
+                      <button id="temp-coup-btn" type="button" class="btn btn-primary btn-sm">Temporal Coupling</button>
+                      <button id="code-age-btn" type="button" class="btn btn-primary btn-sm">Code Age</button>
+                      <button id="knowledge-dist-btn" type="button" class="btn btn-primary btn-sm">Knowledge Distribution</button>
+                    </div>
                 </div>
             </div>
             <!-- ROW 2 (bugs, focus details) -->

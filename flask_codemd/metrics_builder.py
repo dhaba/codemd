@@ -69,7 +69,7 @@ class MetricsBuilder(object):
         return docs
 
 
-    def file_complexity_history(filename):
+    def file_complexity_history(self, filename):
         file_string = "$" + filename
         cursor = self.collection.aggregate([ \
             { "$match" : {'revision_id': { '$exists': True }}},
@@ -123,7 +123,7 @@ class MetricsBuilder(object):
         All dates are assumed to be in unix epoch format (parse them in the
                                                            view controllers)
 
-        !! Note !! I'm just assuming interval1_end is interval2_start to simply
+        !! Note !! I'm just assuming interval1_end is interval2_start to simplify
         the edge cases for now
 
         TODO -- params, docstring, refactor, ect
@@ -289,7 +289,7 @@ class HotspotsUtil(object):
 
         # Local Variables to track metrics
         self.intervals = intervals
-        self.working_data = {} # high level file info
+        self.working_data = {} # high level file info, dict of dicts. key is filename
 
         # For temporal coupling analysis
         self.working_couples = defaultdict(int)
@@ -307,6 +307,8 @@ class HotspotsUtil(object):
         """
         Starts mining the cursor for hotspot metrics. Return a list
         containing the completed file structures from analysis.
+
+        Returns a generator for optimal performance
         """
 
         for f in gen:
@@ -351,6 +353,7 @@ class HotspotsUtil(object):
         self.__process_general_info(current_file)
         self.__process_bug_info(current_file)
         self.__process_temporal_info(current_file)
+        self.__process_contribution_info(current_file)
 
 
     def __process_general_info(self, current_file):
@@ -412,7 +415,8 @@ class HotspotsUtil(object):
         # Increment revision count for file
         self.working_rev_counts[current_file['filename']] += 1
 
-        # Dirty hack to regroup the original files from a commit since
+        # TODO FIXME
+        # Hack to regroup the original files from a commit since
         # I unwound them in the original db query like an idiot
         if ((self.commits_buffer['date'] is not None) and
             (self.commits_buffer['date'] != current_file['date'])):
@@ -435,14 +439,29 @@ class HotspotsUtil(object):
         Responsible for extracting information pertaining to developer contributions
         and knowledge map
         """
-        pass
+        print current_file
 
 
     def __process_age_info(self, f):
         """
         Responsible for calculating code age
+
+        Should compute:
+            - date last modified for each file
+            - composite modifications, computed with logistic function to weight
+              recent modifications higher than others
         """
-        pass
+
+        self.log.debug("Processing age info...")
+
+        for commit in self.commits:
+            if commit.age > 10:
+                commit.age += 10
+            else:
+                commit.age -= 1
+
+
+    pass
 
 
     def __post_process_data(self):

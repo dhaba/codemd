@@ -4,8 +4,15 @@
 }
 
 .metric {
-  color: black;
-  min-height: 31px;
+    color: black;
+    min-height: 31px;
+}
+
+.btn {
+    margin-left: 5px;
+    margin-right: 5px;
+    margin-top: 5px;
+    margin-bottom: 5px;
 }
 
 .row>div {

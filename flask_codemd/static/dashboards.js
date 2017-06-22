@@ -8,10 +8,6 @@ var ROW_LIM = 7000; // any more than this and we will have to bin by weeks
 
 var LEFT_COL_WIDTH = 290;
 
-
-
-
-
 function buildDashboards(data) {
     console.log('Building dashboards...');
     var commits_json = JSON.parse(data);
@@ -77,7 +73,7 @@ function buildDashboards(data) {
     });
 
     var authorsGroup = authorsDim.group();
-    var authorCommitsGroup = authorsGroup.reduceSum();
+    var  authorCommitsGroup = authorsGroup.reduceSum();
     var authorLinesGroup = authorsGroup.reduceSum(function(d) {
       return d.insertions + d.deletions;
     })
@@ -155,7 +151,7 @@ function buildDashboards(data) {
             //  console.log("(inside adjustVals) min total deletes: " + startDeletions);
         });
 
-      commitsTimeline.yAxis().ticks(4);
+    commitsTimeline.yAxis().ticks(4);
 
     var all = commits.groupAll();
     var allBugs = commits.groupAll().reduceSum(function(d) {
@@ -234,7 +230,7 @@ function buildDashboards(data) {
         } // to prevent 0 division
         var val = (maxInsertions + maxDeletions) / maxDeletions;
         if (isNaN(val) || val < 0) {
-            console.log("something has gone terribly wrong lol...");
+            // console.log("something has gone terribly wrong lol...");
         }
         // console.log(val)
         return val;
@@ -256,22 +252,9 @@ function buildDashboards(data) {
         .round(rounder)
         .dimension(dateDim)
         .group(totalChurnByDateGroup)
-        // .renderArea(true)
-        // .colors(['#66339'])
-        // .group(churnByDateGroup)
-        // .valueAccessor(function(p) {
-        //   // Change this to get average?
-        //     inserts = p.value.insertions.sum;
-        //     deletions = p.value.deletions.sum;
-        //     if (deletions == 0) {
-        //         deletions += 1;
-        //     }
-        //     return (inserts + deletions) / deletions
-        // })
         .valueAccessor(adjustValues)
         .elasticY(true)
         .renderHorizontalGridLines(true)
-        // .yAxisLabel("Churned LOC / Deleted LOC")
         .brushOn(false)
         .yAxisPadding(0.1)
         .yAxis().ticks(5)
@@ -301,36 +284,25 @@ function buildDashboards(data) {
         })
         .elasticY(true)
         .renderHorizontalGridLines(true)
-        // .yAxisLabel("Churned LOC / Deleted LOC")
         .brushOn(false)
         .interpolate("basis")
         .renderArea(true)
         .colors(['#900C3F'])
-        .yAxis().ticks(5)
-    totalLoc.xAxis().ticks(4)
+        .yAxis().ticks(5);
+
+    totalLoc.xAxis().ticks(4);
 
     var codeFreq = dc.compositeChart("#code-frequency");
     var insertionsFreq = dc.lineChart(codeFreq);
     var deletionsFreq = dc.lineChart(codeFreq);
-    // var netFreq = dc.linechart(codeFreq);
 
-    // netFreq
-    //     .group(netChangeByDateGroup)
-    //     .colors(['#900C3F'])
-    //     .renderArea(true)
-    //     .interpolate("basis")
-    //     .brushOn(false)
 
     insertionsFreq
         .group(insertionsByDateGroup)
         .colors(['#2ca02c'])
         .renderArea(true)
         .interpolate("basis")
-        .brushOn(false)
-        // .on('renderlet', function(chart){
-        //   //chart.svg().select('g.chart-body').selectAll('path.line').style('stroke-width', '0px')
-        //   // chart.select('g.chart-body').selectAll('path.line').style('stroke-width', '0px');
-        // });
+        .brushOn(false);
 
     deletionsFreq
         .group(deletionsByDateGroup)
@@ -340,7 +312,7 @@ function buildDashboards(data) {
         .valueAccessor(function(d) {
             return -1 * d.value;
         })
-        .brushOn(false)
+        .brushOn(false);
 
     codeFreq
         .width(500)
@@ -361,9 +333,9 @@ function buildDashboards(data) {
         .brushOn(false)
         .mouseZoomable(false)
         .yAxisPadding(0.0)
-        .yAxis().ticks(6)
+        .yAxis().ticks(6);
 
-      codeFreq.xAxis().ticks(5)
+      codeFreq.xAxis().ticks(5);
 
 
 
@@ -408,22 +380,12 @@ function buildDashboards(data) {
     commitsTimeline.focusCharts([codeFreq, totalLoc, churnOverDeletions,
                                 topAuthors, defectsDistribution]);
     dc.renderAll();
+
+    // BIND BUTTONS
+    $('#temp-coup-btn').on('click', function (e) {
+      alert("temp coup pressed...min date: " + dateDim.bottom(1)[0].date + "max date: " + dateDim.top(1)[0].date);
+   });
 }
-
-// $('#top-authors').on('click', function(){
-//     // var minDate = tripsByDateDimension.top(5)[4].startDate;
-//     // var maxDate = tripsByDateDimension.top(5)[0].startDate;
-//     // console.log(tripVolume.filters());
-//     //
-//     //
-//     // tripVolume.filter([minDate, maxDate]);
-//     // tripVolume.x(d3.time.scale().domain([minDate,maxDate]));
-//     //
-//     // console.log(tripVolume.filters());
-//
-//     dc.redrawAll()
-// });
-
 
 // To overwrite chart and add multiple filters
 function rangesEqual(range1, range2) {
@@ -467,4 +429,18 @@ function rangesEqual(range1, range2) {
   // });
   // churnOverDeletions.on('zoomed', function(chart, filter) {
   //     console.log('zoomed called');
+  // });
+
+  // $('#top-authors').on('click', function(){
+  //     // var minDate = tripsByDateDimension.top(5)[4].startDate;
+  //     // var maxDate = tripsByDateDimension.top(5)[0].startDate;
+  //     // console.log(tripVolume.filters());
+  //     //
+  //     //
+  //     // tripVolume.filter([minDate, maxDate]);
+  //     // tripVolume.x(d3.time.scale().domain([minDate,maxDate]));
+  //     //
+  //     // console.log(tripVolume.filters());
+  //
+  //     dc.redrawAll()
   // });
