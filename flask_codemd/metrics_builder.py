@@ -8,13 +8,6 @@ import datetime
 
 import pdb
 
-
-# ::::  HEURISTICS ::::
-# Hard coded rules for inclusion/exclusion of files when calculated various metrics
-# Ideally these would be exposed to the user for custom tinkering
-LOC_THRESHOLD = 30 # min number of lines to be considered in circle packing
-
-
 class MetricsBuilder(object):
     """
     Docstring
@@ -147,14 +140,14 @@ class MetricsBuilder(object):
 
         self.log.debug("Begin hotspot building process...")
 
-        files_list = hotspots_util.execute_with_gen(self.file_history())
+        file_heirarchy = hotspots_util.execute_with_gen(self.file_history())
 
         self.log.debug("Finished hotspot building process...")
 
         # TODO -- check if this is empty and handle error
         # files = hotspots_util.completedData[0]
 
-        return {"name": "root", "children": self.__build_filetree(files_list[0], attributes=['bug_score', 'loc'])}
+        return {"name": "root", "children": self.__build_filetree(file_heirarchy[0], attributes=['bug_score', 'loc'])}
 
 
     def file_history(self, start_date=None, end_date=None):

@@ -4,7 +4,14 @@ from itertools import combinations
 import logging
 import re
 import datetime
-import metrics_builder
+
+# DEBUG -- remove this!
+import json
+
+# ::::  HEURISTICS ::::
+# Hard coded rules for inclusion/exclusion of files when calculated various metrics
+# Ideally these would be exposed to the user for custom tinkering
+LOC_THRESHOLD = 24 # min number of lines to be considered in circle packing
 
 class HotspotsUtil(object):
     """
@@ -95,13 +102,16 @@ class HotspotsUtil(object):
 
     def __process_general_info(self, current_file):
         """
-        Extract high level information like lines of code, name, ect.
+        Extract high level information including:
+            - lines of code (LOC)
+            - filename
+            - date last modified.
         """
         # self.log.debug("Extracting general information from file: %s", current_file['filename'])
 
         if current_file['filename'] not in self.working_data.keys():
             self.working_data[current_file['filename']] = {'creation_date': current_file['date'],
-                                                'bug_dates': [], 'bug_messages': [],
+                                            #    'bug_dates': [], 'bug_messages': [],
                                                 'loc': 0, 'bug_score': 0, 'bug_count': 0}
 
         f = self.working_data[current_file['filename']]
@@ -130,7 +140,7 @@ class HotspotsUtil(object):
                                 self.intervals[0], current_file['date'])
 
             # Add score to each file. Scoring function based on research from Chris
-            # Lewis and Rong Ou
+            # Lewis and Rong Ou at Google
             end_date = self.intervals[0][1]
             fix_date = current_file['date']
             time_delta = end_date - f['creation_date']
@@ -171,8 +181,8 @@ class HotspotsUtil(object):
         self.commits_buffer['commits'].append(current_file['filename'])
 
         # DEBUG
-        self.log.debug("\n\nCommits buffer: %s", self.commits_buffer)
-        self.log.debug("\nend commits buffer\n")
+        # self.log.debug("\n\nCommits buffer: %s", self.commits_buffer)
+        # self.log.debug("\nend commits buffer\n")
 
 
     def __process_contribution_info(self, current_file):
@@ -212,6 +222,19 @@ class HotspotsUtil(object):
         self.log.debug("Starting postprocessing. Copying data...")
         cached_data = self.working_data.copy()
 
+        self.log.debug("Removing files smaller than threshhold...")
+        files_to_filter = []
+        for f_name, f_info in cached_data.iteritems():
+            if f_info['loc'] < LOC_THRESHOLD:
+                files_to_filter.append(f_name)
+        self.log.debug("Removing %s files", len(files_to_filter))
+        for f in files_to_filter:
+            # self.log.debug("Removing file %s because it only had %s lines", f, files[f]['loc'])
+            cached_data.pop(f, None)
+
+        # DEBUG - print cached_data
+        # print json.dumps(cached_data, indent=1)
+
         # Normalize bug scores
         if self.max_bug_score != 0:
             for f in cached_data:
@@ -225,39 +248,30 @@ class HotspotsUtil(object):
                 (self.working_rev_counts[pair[0]] + self.working_rev_counts[pair[1]]) / 2.0)
             self.working_couples[pair] /= avg_of_pair
 
-        sorted_result = sorted(self.working_couples.items(),
-                               key=lambda x: x[1], reverse=True)
-
         # TODO --- figure out how to normalize these temp. frequencies for viz
         # DEBUG
+        # sorted_result = sorted(self.working_couples.items(),
+        #                        key=lambda x: x[1], reverse=True)
         # self.log.info("\n\nTop 15 temporal frequencies: %s\n\n", sorted_result[:15])
-        for result in sorted_result[0:25]:
-            pairs = result[0]
-            first = pairs[0]
-            second = pairs[1]
-            score = result[1]
-            self.log.debug("------------------------------------------------")
-            self.log.debug("Coupling between file %s and %s :", first, second)
-            self.log.debug("Score: %s", score)
-            self.log.debug("Joint Occurences: %s", debug_copy[pair])
-            self.log.debug("Total count for %s:  %s", first,
-                           self.working_rev_counts[first])
-            self.log.debug("Total count for %s:  %s", second,
-                           self.working_rev_counts[second])
+        # for result in sorted_result[0:25]:
+        #     pairs = result[0]
+        #     first = pairs[0]
+        #     second = pairs[1]
+        #     score = result[1]
+        #     self.log.debug("------------------------------------------------")
+        #     self.log.debug("Coupling between file %s and %s :", first, second)
+        #     self.log.debug("Score: %s", score)
+        #     self.log.debug("Joint Occurences: %s", debug_copy[pair])
+        #     self.log.debug("Total count for %s:  %s", first,
+        #                    self.working_rev_counts[first])
+        #     self.log.debug("Total count for %s:  %s", second,
+        #                    self.working_rev_counts[second])
 
         # Add data to self.completedData, pop an interval off
         self.log.debug("Popping off interval: %s. Adding dataset to completed data.",
                        self.intervals[0])
 
-        self.log.debug("Removing files smaller than threshhold...")
-        files_to_filter = []
-        for f_name, f_info in cached_data.iteritems():
-            if f_info['loc'] < metrics_builder.LOC_THRESHOLD:
-                files_to_filter.append(f_name)
-        self.log.debug("Removing %s files", len(files_to_filter))
-        for f in files_to_filter:
-            # self.log.debug("Removing file %s because it only had %s lines", f, files[f]['loc'])
-            cached_data.pop(f, None)
+
 
         self.completedData.append(cached_data)
         self.intervals.pop(0)
