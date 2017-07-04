@@ -433,13 +433,18 @@ class HotspotsUtil(object):
         self.commits_buffer['date'] = current_file['date']
         self.commits_buffer['commits'].append(current_file['filename'])
 
+        # DEBUG
+        self.log.debug("\n\nCommits buffer: %s", self.commits_buffer)
+        self.log.debug("\nend commits buffer\n")
+
 
     def __process_contribution_info(self, current_file):
         """
         Responsible for extracting information pertaining to developer contributions
         and knowledge map
         """
-        print current_file
+        #print current_file
+        pass
 
 
     def __process_age_info(self, f):
@@ -451,17 +456,15 @@ class HotspotsUtil(object):
             - composite modifications, computed with logistic function to weight
               recent modifications higher than others
         """
+        pass
+        # self.log.debug("Processing age info...")
+        #
+        # for commit in self.commits:
+        #     if commit.age > 10:
+        #         commit.age += 10
+        #     else:
+        #         commit.age -= 1
 
-        self.log.debug("Processing age info...")
-
-        for commit in self.commits:
-            if commit.age > 10:
-                commit.age += 10
-            else:
-                commit.age -= 1
-
-
-    pass
 
 
     def __post_process_data(self):
@@ -481,12 +484,12 @@ class HotspotsUtil(object):
 
         # Algorithm for scoring temporal frequency
         for pair, count in self.working_couples.iteritems():
-            avg_of_pair = ((self.working_rev_counts[pair[0]] + self.working_rev_counts[pair[1]]) / 2.0)
+            avg_of_pair = (
+                (self.working_rev_counts[pair[0]] + self.working_rev_counts[pair[1]]) / 2.0)
             self.working_couples[pair] /= avg_of_pair
 
-
-        sorted_result = sorted(self.working_couples.items(), \
-                               key = lambda x: x[1], reverse=True)
+        sorted_result = sorted(self.working_couples.items(),
+                               key=lambda x: x[1], reverse=True)
 
         # TODO --- figure out how to normalize these temp. frequencies for viz
         # DEBUG
@@ -500,12 +503,14 @@ class HotspotsUtil(object):
             self.log.debug("Coupling between file %s and %s :", first, second)
             self.log.debug("Score: %s", score)
             self.log.debug("Joint Occurences: %s", debug_copy[pair])
-            self.log.debug("Total count for %s:  %s", first, self.working_rev_counts[first])
-            self.log.debug("Total count for %s:  %s", second, self.working_rev_counts[second])
+            self.log.debug("Total count for %s:  %s", first,
+                           self.working_rev_counts[first])
+            self.log.debug("Total count for %s:  %s", second,
+                           self.working_rev_counts[second])
 
         # Add data to self.completedData, pop an interval off
         self.log.debug("Popping off interval: %s. Adding dataset to completed data.",
-                                                                self.intervals[0])
+                       self.intervals[0])
 
         self.log.debug("Removing files smaller than threshhold...")
         files_to_filter = []
@@ -519,6 +524,7 @@ class HotspotsUtil(object):
 
         self.completedData.append(cached_data)
         self.intervals.pop(0)
+
 
 
     def __reset_working_data(self):

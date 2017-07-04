@@ -120,7 +120,7 @@ def get_hotspots():
     metrics = MetricsBuilder(mongo.db[project_name])
     hotspots_data = json_util.dumps(metrics.hotspots())
 
-    log.info('hotspots data: %s', hotspots_data)
+    # log.info('hotspots data: %s', hotspots_data) # DEBUG LINE 
 
     return jsonify(hotspots_data)
 
