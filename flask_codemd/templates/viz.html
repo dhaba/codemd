@@ -35,7 +35,7 @@
             console.log("finished fetching json data, building graphs...");
             $(".loader-mask").fadeOut(500);
             $(".loader").fadeOut(1000);
-            buildDashboards(data);
+            buildDashboards(data, projectName);
         });
     });
 </script>
@@ -149,7 +149,7 @@
                     <!-- Total Bugs -->
                     <div class="chart-wrapper">
                         <div class="chart-title">
-                            Total Bugs Selected
+                            Total Defects Selected
                         </div>
                         <div class="chart-stage metric">
                             <div id="total-bugs"></div>
@@ -169,7 +169,7 @@
                             <div id="code-frequency"></div>
                         </div>
                         <div class="chart-notes">
-                            Code frequency measures the numbers of additions and deletions to a system
+                            Code frequency measures the numbers of additions (green) and deletions (red) to the code base
                         </div>
                     </div>
                 </div>
@@ -183,7 +183,7 @@
                             <div id="total-loc"></div>
                         </div>
                         <div class="chart-notes">
-                            This can be a rough measure of overall complexity in the system.
+                            This can be a rough measure of overall complexity in the code base.
                         </div>
                     </div>
                 </div>

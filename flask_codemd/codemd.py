@@ -38,6 +38,26 @@ stream_handler.setFormatter(formatter)
 log.addHandler(file_handler)
 log.addHandler(stream_handler)
 
+
+def extract_interval_params(request_args):
+    """
+    Take a url request object and extracts the associated intervals and returns
+    them as a list of tuples
+
+    params request_args: an instance of request.args
+    return: A list of lists, ie [[start1, end1], [start2, end2]]
+    """
+    intervals = [[None, None], [None, None]]
+    start1, end1 = request_args.get("start1"), request_args.get("end1")
+    start2, end2 = request_args.get("start2"), request_args.get("end2")
+    if ((start1 and end1) and (start1 != 'null') and (end1 != 'null')):
+        intervals[0] = [int(start1), int(end1)]
+    if ((start2 and end2) and (start2 != 'null') and (end2 != 'null')):
+        intervals[1] = [int(start2), int(end2)]
+
+    return intervals
+
+
 # Debug
 @app.route("/test")
 def show_test():
@@ -53,6 +73,20 @@ def show_home():
 @app.route("/dashboards/<project_name>")
 def show_viz(project_name):
     return render_template("viz.html", project_name=project_name)
+
+
+# Routes for circle packing viz
+@app.route("/hotspots/<project_name>")
+def hotspots(project_name):
+
+    intervals = extract_interval_params(request.args)
+    log.debug("Getting info for project name: %s\nwith intervals: %s",
+              project_name, intervals)
+
+    log.debug("intervals:" + str(intervals))
+
+    return render_template("hotspots.html", project_name=project_name,
+                           intervals=intervals)
 
 
 # Route to fetch necessary data from github
@@ -111,6 +145,10 @@ def get_commits():
 @app.route("/api/hotspots")
 def get_hotspots():
     project_name = request.args.get('project_name')
+    intervals = extract_interval_params(request.args)
+
+    log.debug("(in api/hotspots/...) intervals = " + str(intervals))
+
     # Safety check to make sure we have the data in mongo
     if project_name not in mongo.db.collection_names():
         log.error("Data for project: %s not found. Go to homepage and \
@@ -118,18 +156,15 @@ def get_hotspots():
         return redirect(url_for('show_home'))
 
     metrics = MetricsBuilder(mongo.db[project_name])
-    hotspots_data = json_util.dumps(metrics.hotspots())
+    hotspots_data = json_util.dumps(metrics.hotspots(
+                                    interval1_start = intervals[0][0],
+                                    interval1_end = intervals[0][1],
+                                    interval2_start = intervals[1][0],
+                                    interval2_end = intervals[1][1]))
 
-    # log.info('hotspots data: %s', hotspots_data) # DEBUG LINE 
+    # log.info('hotspots data: %s', hotspots_data) # DEBUG LINE
 
     return jsonify(hotspots_data)
-
-
-# Test route for Circle Packing Hotspot viz TODO remove this
-@app.route("/hotspots/<project_name>")
-def hotspots(project_name):
-    log.debug("Getting info for project name: %s", project_name)
-    return render_template("hotspots.html", project_name=project_name)
 
 
 if __name__ == "__main__":

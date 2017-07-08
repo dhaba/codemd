@@ -46,14 +46,24 @@
 </body>
 
 <script>
-    console.log('script inside hotspots.html is running!');
-
+    // console.log('script inside hotspots.html is running!');
     var projectName = '{{ project_name }}';
+    var intervals = {{ intervals|tojson }};
+
     if (projectName === null) {
         projectName = this.pathname.split('/').pop();
         alert("project name was null. Setting it to " + projectName); // TODO -- remove this debug line
     }
-    var requestUrl = "/api/hotspots?project_name=" + projectName;
+    
+    var intervalParams = "";
+    if (intervals[0]) {
+      intervalParams += "&start1=" + intervals[0][0] + "&end1=" + intervals[0][1];
+    }
+    if (intervals[1]) {
+      intervalParams += "&start2=" + intervals[1][0] + "&end2=" + intervals[1][1];
+    }
+
+    var requestUrl = "/api/hotspots?project_name=" + projectName + intervalParams;
 
     console.log('request url: ' + requestUrl);
 

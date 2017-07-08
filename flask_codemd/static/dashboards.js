@@ -8,8 +8,8 @@ var ROW_LIM = 7000; // any more than this and we will have to bin by weeks
 
 var LEFT_COL_WIDTH = 290;
 
-function buildDashboards(data) {
-    console.log('Building dashboards...');
+function buildDashboards(data, projectName) {
+    console.log('Building dashboards for project ' + projectName);
     var commits_json = JSON.parse(data);
 
     if (Object.keys(commits_json).length < ROW_LIM) {
@@ -337,8 +337,6 @@ function buildDashboards(data) {
 
       codeFreq.xAxis().ticks(5);
 
-
-
     commitsTimeline.focusCharts = function(chartlist) {
         if (!arguments.length) {
             return this._focusCharts;
@@ -383,7 +381,13 @@ function buildDashboards(data) {
 
     // BIND BUTTONS
     $('#temp-coup-btn').on('click', function (e) {
-      alert("temp coup pressed...min date: " + dateDim.bottom(1)[0].date + "max date: " + dateDim.top(1)[0].date);
+      // alert("temp coup pressed...min date: " + dateDim.bottom(1)[0].date + "max date: " + dateDim.top(1)[0].date);
+      start1 = dateDim.bottom(1)[0].date.getTime() / 1000;
+      end1 = dateDim.top(1)[0].date.getTime() / 1000;
+      urlParams = projectName + "?start1=" + start1 + "&end1=" + end1;
+      hotspotsURL = "http://" + window.location.host + "/hotspots/" + urlParams;
+      console.log(hotspotsURL);
+      window.location.href = hotspotsURL;
    });
 }
 

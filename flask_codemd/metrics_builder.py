@@ -54,7 +54,8 @@ class MetricsBuilder(object):
                          'deletions': doc['deletions'], 'total_deletions': total_deletions,
                          'author': doc['author']})
 
-        # TODO -- calculate moving average on code churn metrics
+        # TODO -- calculate moving average on code churn metrics and store in
+        # inteveral tree or some other computationaly conveient data struct
 
         return docs
 
@@ -70,6 +71,7 @@ class MetricsBuilder(object):
                           "deletions": "$files_modified.deletions",
                           "message": 1, "author": 1, "date": 1, "_id": 0 }},
             { "$sort": {"date": 1} } ], allowDiskUse=True)
+        return cursor
 
 
     def defect_rates(self):
@@ -108,12 +110,10 @@ class MetricsBuilder(object):
         knowledge map, and code age. I should break this up but I'm way too tired
         lol.
 
-        Acceptable invocations: t.b.d.
-
         All dates are assumed to be in unix epoch format (parse them in the
                                                            view controllers)
 
-        !! Note !! I'm just assuming interval1_end is interval2_start to simplify
+        !! Note !! I'm just assuming interval1_end == interval2_start to simplify
         the edge cases for now
 
         TODO -- params, docstring, refactor, ect
@@ -134,15 +134,17 @@ class MetricsBuilder(object):
         scan_intervals = [(interval1_start, interval1_end)]
 
         if interval2_end is not None:
+            self.log.debug("\n\nINTERVAL 2 WAS NOT NULL!!!! IT WAS " + interval2_end + " ..of type: " + type(interval2_end) + "\n\n")
             scan_intervals.append((interval1_end, interval2_end))
 
         hotspots_util = HotspotsUtil(scan_intervals)
 
-        self.log.debug("Begin hotspot building process...")
+        self.log.debug("Begin circle packing building process...")
 
-        file_heirarchy = hotspots_util.execute_with_gen(self.file_history())
+        file_heirarchy = hotspots_util.execute_with_gen(self.file_history(scan_intervals[0][0],
+                                                        scan_intervals[-1][1]))
 
-        self.log.debug("Finished hotspot building process...")
+        self.log.debug("Finished circle packing building process...")
 
         # TODO -- check if this is empty and handle error
         # files = hotspots_util.completedData[0]
