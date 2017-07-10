@@ -30,13 +30,14 @@ log_name = 'logs/codemd_log_{}.log'.format(timestr)
 log = logging.getLogger('codemd')
 log.setLevel(logging.DEBUG)
 file_handler, stream_handler = logging.FileHandler(log_name), logging.StreamHandler()
-file_handler.setLevel(logging.DEBUG)
+file_handler.setLevel(logging.NOTSET)
 stream_handler.setLevel(logging.DEBUG)
 formatter = logging.Formatter('%(asctime)s %(name)-5s %(levelname)-8s %(message)s')
 file_handler.setFormatter(formatter)
 stream_handler.setFormatter(formatter)
 log.addHandler(file_handler)
 log.addHandler(stream_handler)
+
 
 
 def extract_interval_params(request_args):

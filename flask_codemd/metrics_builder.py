@@ -4,7 +4,7 @@ import fnmatch
 import logging
 import repo_analyser
 from hotspots_util import HotspotsUtil
-import datetime
+import json
 
 import pdb
 
@@ -80,7 +80,7 @@ class MetricsBuilder(object):
         number of defects
         """
 
-        self.log.debug("Building defects information.")
+        self.log.info("Building defects information.")
         interval1_start = 0
 
         last_entry = list(self.collection.find(
@@ -91,7 +91,7 @@ class MetricsBuilder(object):
 
         files_list = hotspots_util.execute_with_gen(self.file_history())
 
-        self.log.debug("Finished defects building process")
+        self.log.info("Finished defects building process")
 
         flat_data = []
         for fname, info in files_list[0].iteritems():
@@ -118,37 +118,32 @@ class MetricsBuilder(object):
 
         TODO -- params, docstring, refactor, ect
         """
-
-        self.log.debug("Building hotspots information.")
-
+        # Build appropriate interval (and handle edge cases)
         if interval1_start is None:
             interval1_start = 0
-            self.log.debug("Interval1_start was None. Defaulted to 0")
+            self.log.info("Interval1_start was None. Defaulted to 0")
 
         if interval1_end is None:
             last_entry = list(self.collection.find(
                         {'revision_id': {'$exists': True}}).sort('date', -1))[0]
             interval1_end = last_entry['date']
-            self.log.debug("Interval_end1 was none. Defaulted to last entry: %s", interval1_end)
+            self.log.info("Interval_end1 was none. Defaulted to last entry: %s", interval1_end)
 
         scan_intervals = [(interval1_start, interval1_end)]
 
         if interval2_end is not None:
-            self.log.debug("\n\nINTERVAL 2 WAS NOT NULL!!!! IT WAS " + interval2_end + " ..of type: " + type(interval2_end) + "\n\n")
+            self.log.warning("\n\nINTERVAL 2 WAS NOT NULL!!!! IT WAS " + interval2_end + " ..of type: " + type(interval2_end) + "\n\n")
             scan_intervals.append((interval1_end, interval2_end))
 
+        self.log.debug("Building circle packing metrics with interval: %s", scan_intervals)
+
         hotspots_util = HotspotsUtil(scan_intervals)
-
-        self.log.debug("Begin circle packing building process...")
-
         file_heirarchy = hotspots_util.execute_with_gen(self.file_history(scan_intervals[0][0],
                                                         scan_intervals[-1][1]))
 
         self.log.debug("Finished circle packing building process...")
 
-        # TODO -- check if this is empty and handle error
-        # files = hotspots_util.completedData[0]
-
+        # TODO -- handle multiple intervals with build_filetree
         return {"name": "root", "children": self.__build_filetree(file_heirarchy[0], attributes=['bug_score', 'loc'])}
 
 
@@ -156,11 +151,12 @@ class MetricsBuilder(object):
         """
         TODO -- add docstring
         """
-        # TODO -- add logic for fitlering between dates
+        # TODO -- add logic for filtering between dates
 
         #  NOTE: Dates from query are in unix epoch time
         return self.collection.aggregate([ \
-            { "$match" : {'revision_id': { '$exists': True }}},
+            { "$match" : {'revision_id': { '$exists': True },
+                          'date': { '$lte': end_date }}},
             { "$unwind": "$files_modified" },
             { "$project":{"filename": "$files_modified.filename",
                           "insertions": "$files_modified.insertions",
@@ -188,8 +184,7 @@ class MetricsBuilder(object):
 
         TODO -- Add docstring params and returns
         """
-
-        self.log.debug("Building object tree...")
+        self.log.debug("Starting object tree algorithm...")
         tree = []
         for filename, file_info in files.iteritems():
             components = filename.split(component_delim)
@@ -214,7 +209,7 @@ class MetricsBuilder(object):
                     else:
                         current_node.append(new_node)
                         current_node = new_node['children']
-        self.log.debug("Finished building object tree.")
+        self.log.debug("Finished building object tree: \n%s ... ", json.dumps(tree[0:2], indent=2))
         return tree
 
 

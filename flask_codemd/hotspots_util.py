@@ -65,7 +65,7 @@ class HotspotsUtil(object):
 
         # Check if file passed out of range
         if current_scope > end_scope:
-            self.log.info("Interval %s out of range for file date %s\n\nCopying data and \
+            self.log.debug("Interval %s out of range for file date %s\n\nCopying data and \
                            starting next interval (if any).", self.intervals[0], current_file)
             self.__post_process_data()
             # Recall this method if we still have work to do
