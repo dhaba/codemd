@@ -1,5 +1,5 @@
 import logging
-from hotspot_modules import FileInfoModule, BugModule
+from hotspot_modules import FileInfoModule, BugModule, TemporalModule
 
 # DEBUG -- remove this!
 # import json
@@ -115,4 +115,5 @@ class HotspotsUtil(object):
         # Reset modules data so they are fresh to recompute the next interval
         self.log.debug("Reseting modules data...")
         self.modules = [FileInfoModule(self.working_data, self.intervals),
-                        BugModule(self.working_data, self.intervals)]
+                        BugModule(self.working_data, self.intervals),
+                        TemporalModule(self.working_data, self.intervals)]

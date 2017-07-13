@@ -5,6 +5,8 @@ import math
 from collections import defaultdict
 from itertools import combinations
 
+import json
+
 # ::::  HEURISTICS ::::
 # Hard coded rules for inclusion/exclusion of files when calculated various metrics
 # Ideally these would be exposed to the user for custom tinkering
@@ -147,35 +149,36 @@ class TemporalModule(HotspotModule):
     analysis.
     """
 
+    # Module will only report the NUM_TOP_COUPLES highest entries scored by the
+    # temporal coupling algorithm
+    NUM_TOP_COUPLES = 20
+
+    # Ignore coupled test case files (ie 'moduleA' and 'moduleA_test')
+    IGNORE_TEST_CASE_COUPLES = True
+
     def __init__(self, working_data, intervals):
         HotspotModule.__init__(self, working_data, intervals)
-        self.working_couples = defaultdict(int)
-        self.working_rev_counts = defaultdict(int)
-        self.commits_buffer = {'commits': [], 'date':None}
+        self.working_couples = defaultdict(int) # (file1, file2) : # of mutual revisions
+        self.working_rev_counts = defaultdict(int) # (file) : # of revisions
+        self.commits_buffer = {'commits': [], 'revision_id':None}
 
     def process_file(self, current_file):
         # For this module, only worry about processing in our interval scope
         if not self.is_file_in_scope(current_file):
             return
-            
+
         # Increment revision count for file
         self.working_rev_counts[current_file['filename']] += 1
 
         # Hack(ish) to regroup the original files from a commit since
         # I unwound them in the original db query
-        if ((self.commits_buffer['date'] is not None) and
-            (self.commits_buffer['date'] != current_file['date'])):
+        if ((self.commits_buffer['revision_id'] is not None) and
+            (self.commits_buffer['revision_id'] != current_file['revision_id'])):
             # Process the buffer into temporal frequency counts
-            commits = self.commits_buffer['commits']
-
-            for pair in combinations(commits, 2):
-                ordered_pair = sorted(pair)
-                self.working_couples[(ordered_pair[0], ordered_pair[1])] += 1
-
-            self.commits_buffer = {'commits': [], 'date':None}
+            self.__process_commits_buffer()
 
         # Even if we have a full batch, still need to add a new one
-        self.commits_buffer['date'] = current_file['date']
+        self.commits_buffer['revision_id'] = current_file['revision_id']
         self.commits_buffer['commits'].append(current_file['filename'])
 
         # DEBUG
@@ -183,27 +186,59 @@ class TemporalModule(HotspotModule):
         # self.log.debug("\nend commits buffer\n")
 
     def post_process_data(self):
-        # Algorithm for scoring temporal frequency
-        for pair, count in self.working_couples.iteritems():
-            avg_of_pair = (
-                (self.working_rev_counts[pair[0]] + self.working_rev_counts[pair[1]]) / 2.0)
-            self.working_couples[pair] /= avg_of_pair
+        """
+        Algorithm for scoring temporal frequency
+        """
+        # Process batch of files (last commit)
+        self.__process_commits_buffer()
 
-        # TODO --- figure out how to normalize these temp. frequencies for viz
-        # DEBUG
-        # sorted_result = sorted(self.working_couples.items(),
-        #                        key=lambda x: x[1], reverse=True)
-        # self.log.info("\n\nTop 15 temporal frequencies: %s\n\n", sorted_result[:15])
-        # for result in sorted_result[0:25]:
-        #     pairs = result[0]
-        #     first = pairs[0]
-        #     second = pairs[1]
-        #     score = result[1]
-        #     self.log.debug("------------------------------------------------")
-        #     self.log.debug("Coupling between file %s and %s :", first, second)
-        #     self.log.debug("Score: %s", score)
-        #     self.log.debug("Joint Occurences: %s", debug_copy[pair])
-        #     self.log.debug("Total count for %s:  %s", first,
-        #                    self.working_rev_counts[first])
-        #     self.log.debug("Total count for %s:  %s", second,
-        #                    self.working_rev_counts[second])
+        couples = {}
+        for pair, count in self.working_couples.iteritems():
+            # Ignore files and their test cases if specified to do so
+            if self.IGNORE_TEST_CASE_COUPLES and self.__is_test_case(pair[0], pair[1]):
+                continue
+            avg_pair_revs = (self.working_rev_counts[pair[0]] + self.working_rev_counts[pair[1]]) / 2.0
+            score = count/avg_pair_revs * math.log(avg_pair_revs)
+            couples[pair] = {'score': score, 'total_mutual_revs' : count, 'avg_revs': avg_pair_revs,
+                             pair[0]: self.working_rev_counts[pair[0]],
+                             pair[1]: self.working_rev_counts[pair[1]]}
+
+
+        # for key, val in couples.iteritems():
+        #     self.log.debug("%s : %s", key, val)
+
+        sorted_result = sorted(couples.iteritems(),
+                               key=lambda (k,v): v['score'], reverse=True)
+
+        self.log.debug("Top %s temporal coupling results: %s",
+                        self.NUM_TOP_COUPLES,
+                        json.dumps(sorted_result[0:self.NUM_TOP_COUPLES], indent=2))
+        # self.log.debug("all couples: %s", json.dumps(sorted_result, indent=2))
+
+    def __process_commits_buffer(self):
+        """
+        Process current files batch in commits buffer
+        """
+        if self.commits_buffer['revision_id'] is not None:
+            for pair in combinations(self.commits_buffer['commits'], 2):
+                ordered_pair = sorted(pair)
+                ordered_tuple = (ordered_pair[0], ordered_pair[1])
+                self.working_couples[ordered_tuple] += 1
+
+                if ordered_tuple == ("pandas/computation/expr.py", "pandas/computation/ops.py"):
+                    # self.log.debug("COMMITS BUFFER: %s", self.commits_buffer)
+                    self.log.debug("---count thus far: %s\n commits_buffer: %s", self.working_couples[(ordered_pair[0], ordered_pair[1])], self.commits_buffer)
+
+            self.commits_buffer = {'commits': [], 'revision_id':None}
+        else:
+            self.log.warning("!!! __process_commits_buffer called on empty commits_buffer")
+
+    def __is_test_case(self, file1, file2):
+        """
+        Does some simple string matching to determine if file1 and file2 are module
+        and test (ie 'moduleA' and 'moduleA_test')
+        """
+        file1, file2 = file1.split('/')[-1], file2.split('/')[-1]
+        test_string = "test"
+        return (((file1 in file2) and test_string in file2) or
+               ((file2 in file1) and test_string in file1))

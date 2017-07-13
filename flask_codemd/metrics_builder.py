@@ -161,7 +161,8 @@ class MetricsBuilder(object):
             { "$project":{"filename": "$files_modified.filename",
                           "insertions": "$files_modified.insertions",
                           "deletions": "$files_modified.deletions",
-                          "message": 1, "author": 1, "date": 1, "_id": 0 }},
+                          "message": 1, "author": 1, "date": 1, "revision_id":1,
+                          "_id": 0 }},
             { "$sort": {"date": 1} } ], allowDiskUse=True)
 
 
@@ -209,7 +210,11 @@ class MetricsBuilder(object):
                     else:
                         current_node.append(new_node)
                         current_node = new_node['children']
-        self.log.debug("Finished building object tree: \n%s ... ", json.dumps(tree[0:2], indent=2))
+        self.log.debug("Finished building object tree")
+
+        # FOR DEBUGING (very verbose)
+        # self.log.debug("Object tree: \n%s ... ", json.dumps(tree[0:2], indent=2))
+
         return tree
 
 
