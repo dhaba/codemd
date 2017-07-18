@@ -50,10 +50,7 @@ class HotspotModule:
         """
         start_scope, end_scope = self.intervals[0][0], self.intervals[0][1]
         current_scope = current_file['date']
-        if ((current_scope >= start_scope) and (current_scope <= end_scope)):
-            return True
-        else:
-            return False
+        return ((current_scope >= start_scope) and (current_scope <= end_scope))
 
 
 class FileInfoModule(HotspotModule):
@@ -87,7 +84,7 @@ class FileInfoModule(HotspotModule):
                 files_to_filter.append(f_name)
         self.log.debug("Removing %s files", len(files_to_filter))
         for f in files_to_filter:
-            # self.log.debug("Removing file %s because it only had %s lines", f, files[f]['loc'])
+            # self.log.debug("Removing file %s because it only had %s lines", f, self.working_data[f]['loc'])
             self.working_data.pop(f, None)
 
 
@@ -151,10 +148,25 @@ class TemporalModule(HotspotModule):
 
     # Module will only report the NUM_TOP_COUPLES highest entries scored by the
     # temporal coupling algorithm
-    NUM_TOP_COUPLES = 20
+    NUM_TOP_COUPLES = 100
+
+    # Colors to use for cliques
+    CLIQUE_COLORS = ['#e31a1c', '#ff7f00', '#33a02c', '#6a3d9a', '#b15928', '#ffff99']
+
+    # Use distance in object graph as weight in scoring function
+    USE_MODULE_DISTANCE = True
+
+    # Specifies heuristics for ignoring files in the temporal coupling algorithm
+    MODULE_FILTERS = {
+        '__is_unit_test' : True, # Ignores all files with 'test' in their file path
+        '__is_test_case' : False, # Ignores coupled test case files (ie 'moduleA' and 'moduleA_test')
+        '__is_header_file' : True } # Ignores coupled headers for C files (ie 'moduleA.h' and 'moduleA.c')
 
     # Ignore coupled test case files (ie 'moduleA' and 'moduleA_test')
-    IGNORE_TEST_CASE_COUPLES = True
+    IGNORE_TEST_CASES = True
+
+    # Ignore coupled headers for C files (ie 'moduleA.h' and 'moduleA.c')
+    IGNORE_HEADERS = True
 
     def __init__(self, working_data, intervals):
         HotspotModule.__init__(self, working_data, intervals)
@@ -194,25 +206,30 @@ class TemporalModule(HotspotModule):
 
         couples = {}
         for pair, count in self.working_couples.iteritems():
-            # Ignore files and their test cases if specified to do so
-            if self.IGNORE_TEST_CASE_COUPLES and self.__is_test_case(pair[0], pair[1]):
+            # Ignore files if necessary
+            if self.__should_filter_files(pair[0], pair[1]):
+                # self.log.debug("Filtering files %s and %s", pair[0], pair[1])
                 continue
+            module_distance = self.__module_distance(pair[0], pair[1]) + 1
             avg_pair_revs = (self.working_rev_counts[pair[0]] + self.working_rev_counts[pair[1]]) / 2.0
-            score = count/avg_pair_revs * math.log(avg_pair_revs)
-            couples[pair] = {'score': score, 'total_mutual_revs' : count, 'avg_revs': avg_pair_revs,
+            score = count/avg_pair_revs * math.log(avg_pair_revs)# * (module_distance/2.0)
+            # score = count/avg_pair_revs * math.log(count) * math.log(avg_pair_revs) * module_distance
+            couples[pair] = {'score': score, 'total_mutual_revs' : count,
+                             'avg_revs': avg_pair_revs,
+                             'module_distance': module_distance,
+                             'percent_coupled': count/avg_pair_revs,
                              pair[0]: self.working_rev_counts[pair[0]],
                              pair[1]: self.working_rev_counts[pair[1]]}
-
-
-        # for key, val in couples.iteritems():
-        #     self.log.debug("%s : %s", key, val)
 
         sorted_result = sorted(couples.iteritems(),
                                key=lambda (k,v): v['score'], reverse=True)
 
-        self.log.debug("Top %s temporal coupling results: %s",
-                        self.NUM_TOP_COUPLES,
-                        json.dumps(sorted_result[0:self.NUM_TOP_COUPLES], indent=2))
+        self.__add_clique_colors(sorted_result[0:self.NUM_TOP_COUPLES])
+
+        # self.log.debug("Top %s temporal coupling results: %s",
+        #                 self.NUM_TOP_COUPLES,
+        #                 json.dumps(sorted_result[0:self.NUM_TOP_COUPLES], indent=2))
+        # self.log.info("%s", sorted_result[0:self.NUM_TOP_COUPLES])
         # self.log.debug("all couples: %s", json.dumps(sorted_result, indent=2))
 
     def __process_commits_buffer(self):
@@ -225,20 +242,171 @@ class TemporalModule(HotspotModule):
                 ordered_tuple = (ordered_pair[0], ordered_pair[1])
                 self.working_couples[ordered_tuple] += 1
 
-                if ordered_tuple == ("pandas/computation/expr.py", "pandas/computation/ops.py"):
-                    # self.log.debug("COMMITS BUFFER: %s", self.commits_buffer)
-                    self.log.debug("---count thus far: %s\n commits_buffer: %s", self.working_couples[(ordered_pair[0], ordered_pair[1])], self.commits_buffer)
-
             self.commits_buffer = {'commits': [], 'revision_id':None}
         else:
             self.log.warning("!!! __process_commits_buffer called on empty commits_buffer")
+
+    def __add_clique_colors(self, couples):
+        """
+        Adds a unique color parameter for each clique (in an undirected graph,
+        where modules are vertices, and 2 coupled modules indicates an edge)
+
+        :param couples: A list of tuples, where first element is a length 2 tuple
+        containing the coupled modules, and the second element is a dictionary
+        containing information about the couple
+        """
+        def add_temporal_data(couple, color):
+            """
+            Helper method to add temporal coupling information to self.working_data
+            """
+            SCORE_KEY_NAME = 'temporal_coupling_score'
+            data = couple[1]
+            for mod in couple[0]:
+                # Only update data if score is higher than current value
+                if ((SCORE_KEY_NAME in self.working_data[mod]) and
+                    (self.working_data[mod][SCORE_KEY_NAME] > data['score'])):
+                    coupled_module = filter(lambda x: x is not mod, couple[0])[0]
+                    # self.log.debug("Not writing score for module %s to %s because current" +
+                    #                 " score was less than that specified in couple:\n%s",
+                    #                 mod, coupled_module, couple)
+                else:
+                    coupled_module = filter(lambda x: x is not mod, couple[0])[0]
+                    self.working_data[mod][SCORE_KEY_NAME] = data['score']
+                    self.working_data[mod]['coupled_module'] = coupled_module
+                    self.working_data[mod]['num_revisions'] = data[mod]
+                    self.working_data[mod]['num_mutual_revisions'] = data['total_mutual_revs']
+                    self.working_data[mod]['temporal_coupling_color'] = color
+                    # self.log.debug("Appended temp coupling data to working data " +
+                    #                "module: %s, with data: %s", mod, self.working_data[mod])
+
+        # Build adjacency list from couples
+        adj_list = defaultdict(set)
+        for coup in couples:
+            mod1, mod2= coup[0][0], coup[0][1]
+            adj_list[mod1].add(mod2)
+            adj_list[mod2].add(mod1)
+
+        # DFS for determining cliques
+        cliques = [] # list of sets
+        for vertex, neighbors in adj_list.iteritems():
+            # If we already know about this guy, skip him
+            vertex_exists = False
+            for c in cliques:
+                if vertex in c:
+                    vertex_exists = True
+                    break
+            if vertex_exists:
+                continue
+            # Iterative DFS
+            stack = list(neighbors)
+            clique = set([vertex])
+            while len(stack) > 0:
+                current = stack.pop()
+                clique.add(current)
+                stack += [v for v in adj_list[current] if v not in clique]
+            cliques.append(clique)
+
+        # Limit number of cliques to number of clique colors by only picking
+        # highest scoring couples
+        colors = {}
+        for c in self.CLIQUE_COLORS: colors[c] = set()
+        for coup in couples:
+            mod1, mod2= coup[0][0], coup[0][1]
+            clique_found = False
+            for c in colors:
+                if mod1 in colors[c]:
+                    clique_found = True
+                    add_temporal_data(coup, c)
+                    break
+            if not clique_found:
+                empty_color = None
+                for c in colors:
+                    if len(colors[c]) == 0:
+                        empty_color = c
+                        break
+                if empty_color is None:
+                    pass
+                    # self.log.debug("All cliques were full, ignoring couple: %s, " +
+                    #                "with data %s", coup[0], coup[1])
+                    # self.log.debug("(cliques full) colors: %s", colors)
+                else:
+                    clique = None
+                    for c in cliques:
+                        if mod1 in c:
+                            clique = c
+                    if clique is None:
+                        self.log.error("!!! Clique not found for node %s!!!\n Cliques: %s", mod1, cliques)
+                    else:
+                        # self.log.debug("Assigning color %s to clique: %s", empty_color, clique)
+                        add_temporal_data(coup, empty_color)
+                        for v in clique:
+                            colors[empty_color].add(v)
+
+    def __module_distance(self, file1, file2):
+        """
+        Computes the distance between modules based on their file heirarchies by
+        counting the number of discrepensies in their path components
+        Ex)
+                component_1/component_2/module_A
+                component_1/component_2/module_B
+            would have a distance of 0
+
+                component_1/component_2/module_A
+                component_1/component_3/module_B
+            would have a distance of 1
+
+                component_1/component_2/module_A
+                component_3/component_4/component_5/module_B
+            would have a distance of 4
+        """
+        paths1, paths2 = file1.split('/')[0:-1], file2.split('/')[0:-1]
+        count = max(len(paths1), len(paths2))
+        for i in xrange(min(len(paths1), len(paths2))):
+            if paths1[i] == paths2[i]: count -= 1
+        return count
+
+    def __should_filter_files(self, file1, file2):
+        """
+        Determines if files should be ignored according to heuristics defined
+        as class constants
+
+        returns True if files should be ignored, false otherwise
+        """
+        # First make sure these files exist in working_data (they could have
+        # been removed for being too short for example)
+        if (not ((file1 in self.working_data) and (file2 in self.working_data))):
+            return True
+        # Now apply all optional filters
+        for func in [k for (k, v) in self.MODULE_FILTERS.iteritems() if v]:
+            func_name = '_' + self.__class__.__name__ + func
+            if getattr(self, func_name)(file1, file2): return True
+        return False
+
+    def __is_unit_test(self, file1, file2):
+        """
+        Checks if the string 'test' exists in the file path
+        """
+        test_string = "test"
+        return ((test_string in file1) or (test_string in file2))
 
     def __is_test_case(self, file1, file2):
         """
         Does some simple string matching to determine if file1 and file2 are module
         and test (ie 'moduleA' and 'moduleA_test')
         """
-        file1, file2 = file1.split('/')[-1], file2.split('/')[-1]
         test_string = "test"
+        file1, file2 = file1.split('/')[-1], file2.split('/')[-1]
         return (((file1 in file2) and test_string in file2) or
                ((file2 in file1) and test_string in file1))
+
+    def __is_header_file(self, file1, file2):
+        """
+        Does simple string matching to determine if file1 and file2 are header
+        and implementation files (ie 'moduleA.h' and 'moduleA.c')
+        """
+        # self.log.debug("calling is_header_file on %s and %s", file1, file2)
+        file1, file2 = file1.split('/')[-1], file2.split('/')[-1]
+        is_same_module = (file1.split(".")[0] == file2.split(".")[0])
+        f1_ext, f2_ext = file1.split(".")[-1], file2.split(".")[-1]
+        return (is_same_module and ((f1_ext == 'h' and f2_ext == 'c')
+               or (f1_ext == 'c' and f2_ext == 'h')))
