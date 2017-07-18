@@ -107,8 +107,7 @@ class MetricsBuilder(object):
     def hotspots(self, interval1_start=None, interval1_end=None, interval2_start=None, interval2_end=None):
         """
         All-in-one superhero method to calculate temporal frequency, bug score,
-        knowledge map, and code age. I should break this up but I'm way too tired
-        lol.
+        knowledge map, and code age, for use in circle packing viz.
 
         All dates are assumed to be in unix epoch format (parse them in the
                                                            view controllers)
@@ -153,8 +152,6 @@ class MetricsBuilder(object):
         """
         TODO -- add docstring
         """
-        # TODO -- add logic for filtering between dates
-
         #  NOTE: Dates from query are in unix epoch time
         return self.collection.aggregate([ \
             { "$match" : {'revision_id': { '$exists': True },
@@ -183,7 +180,7 @@ class MetricsBuilder(object):
         keeping a pointer to the current layer, and creating a node for each
         component that does not exist yet. When it gets to the terminal node
         (bottom-most layer) it will add the attributes indicated in the attributes parameter
-        This was surprisingly nontrivial lol.
+        This turned out to be slightly nontrivial lol (but v fun).
 
         TODO -- Add docstring params and returns
         """
@@ -213,10 +210,8 @@ class MetricsBuilder(object):
                         current_node.append(new_node)
                         current_node = new_node['children']
         self.log.debug("Finished building object tree")
-
-        # FOR DEBUGING (very verbose)
+        # FOR DEBUGING (verbose af)
         # self.log.debug("Object tree: \n%s ... ", json.dumps(tree[0:2], indent=2))
-
         return tree
 
 

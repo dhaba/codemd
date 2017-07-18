@@ -1,6 +1,4 @@
-
-{% extends "layout.html" %}
-{% block body %}
+ {% extends "layout.html" %} {% block body %}
 
 <link href="{{ url_for('static', filename='./bower_components/keen-dashboards/dist/keen-dashboards.css') }}" rel="stylesheet">
 <link href="{{ url_for('static', filename='./bower_components/dcjs/dc.css') }}" rel="stylesheet">
@@ -9,183 +7,235 @@
 <script src="{{ url_for('static', filename='./bower_components/crossfilter/crossfilter.js') }}"></script>
 <script src="{{ url_for('static', filename='./bower_components/reductio/reductio.js') }}"></script>
 <script src="{{ url_for('static', filename='./bower_components/dcjs/dc.js') }}"></script>
-
 <script src="{{ url_for('static', filename='./dashboards.js') }}"></script>
 
 <meta charset="utf-8">
 <style>
-    .node {
-        cursor: pointer;
-    }
+  .node {
+    cursor: pointer;
+  }
 
-    .node:hover {
-        stroke: #000;
-        stroke-width: 1.5px;
-    }
+  .node:hover {
+    stroke: #000;
+    stroke-width: 1.5px;
+  }
 
-    .node--root {
-        stroke: #777;
-        stroke-width: 2px;
-    }
+  .node--root {
+    stroke: #777;
+    stroke-width: 2px;
+  }
 
-    .node--leaf {
-        fill: white;
-        stroke: #777;
-        stroke-width: 1px;
-    }
+  .node--leaf {
+    fill: white;
+    stroke: #777;
+    stroke-width: 1px;
+  }
 
-    .label {
-        font: 14px "Helvetica Neue", Helvetica, Arial, sans-serif;
-        text-anchor: middle;
-        fill: black; //text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, -1px 0 0 #fff, 0 -1px 0 #fff; } .label, .node--root, .node--leaf { pointer-events: none; }
-    }
+  .label {
+    font: 14px "Helvetica Neue", Helvetica, Arial, sans-serif;
+    text-anchor: middle;
+    fill: black; //text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, -1px 0 0 #fff, 0 -1px 0 #fff; } .label, .node--root, .node--leaf { pointer-events: none; }
+  }
 </style>
 
 <body>
   <div></div>
+  <button id="temp-coup-btn" type="button" class="btn btn-primary btn-sm">Temporal Coupling</button>
+  <button id="bugs-btn" type="button" class="btn btn-primary btn-sm">Bugs</button>
+  <button id="none-btn" type="button" class="btn btn-primary btn-sm">None</button>
 </body>
 
 <script>
-    // console.log('script inside hotspots.html is running!');
-    var projectName = '{{ project_name }}';
-    var intervals = {{ intervals|tojson }};
+  // console.log('script inside hotspots.html is running!');
+  var packingData = null;
+  var PACKING_MODULES = {
+    BUGS: 0,
+    TEMPORAL_COUPLING: 1,
+    CODE_AGE: 2,
+    KNOWLEDGE_MAP: 3,
+    NONE: 4
+  };
 
-    if (projectName === null) {
-        projectName = this.pathname.split('/').pop();
-        alert("project name was null. Setting it to " + projectName); // TODO -- remove this debug line
-    }
-    
-    var intervalParams = "";
-    if (intervals[0]) {
-      intervalParams += "&start1=" + intervals[0][0] + "&end1=" + intervals[0][1];
-    }
-    if (intervals[1]) {
-      intervalParams += "&start2=" + intervals[1][0] + "&end2=" + intervals[1][1];
-    }
+  var projectName = '{{ project_name }}';
+  var intervals = {{ intervals | tojson }};
 
-    var requestUrl = "/api/hotspots?project_name=" + projectName + intervalParams;
+  if (projectName === null) {
+    projectName = this.pathname.split('/').pop();
+    alert("project name was null. Setting it to " + projectName); // TODO -- remove this debug line
+  }
 
-    console.log('request url: ' + requestUrl);
+  var intervalParams = "";
+  if (intervals[0]) {
+    intervalParams += "&start1=" + intervals[0][0] + "&end1=" + intervals[0][1];
+  }
+  if (intervals[1]) {
+    intervalParams += "&start2=" + intervals[1][0] + "&end2=" + intervals[1][1];
+  }
 
-    var margin = 5,
-        outerDiameter = 1000,
-        innerDiameter = outerDiameter - margin - margin;
+  var requestUrl = "/api/hotspots?project_name=" + projectName + intervalParams;
 
-    var x = d3.scale.linear()
-        .range([0, innerDiameter]);
+  console.log('request url: ' + requestUrl);
 
-    var y = d3.scale.linear()
-        .range([0, innerDiameter]);
+  var margin = 5,
+    outerDiameter = 1000,
+    innerDiameter = outerDiameter - margin - margin;
 
-    var color = d3.scale.linear()
-        .domain([-1, 5])
-        .range(["hsl(185,60%,99%)", "hsl(187,40%,70%)"])
-        .interpolate(d3.interpolateHcl);
+  var x = d3.scale.linear()
+    .range([0, innerDiameter]);
 
-    var pack = d3.layout.pack()
-        .padding(2)
-        .size([innerDiameter, innerDiameter])
-        .value(function(d) {
-            return d.loc;
-        });
+  var y = d3.scale.linear()
+    .range([0, innerDiameter]);
 
-    var svg = d3.select("body").append("svg")
-        .attr("width", outerDiameter)
-        .attr("height", outerDiameter)
-        .append("g")
-        .attr("transform", "translate(" + margin + "," + margin + ")");
+  var color = d3.scale.linear()
+    .domain([-1, 5])
+    .range(["hsl(185,60%,99%)", "hsl(187,40%,70%)"])
+    .interpolate(d3.interpolateHcl);
 
-    d3.json(requestUrl, function(error, root) {
-        root = JSON.parse(root);
-        console.log(root);
-        var focus = root,
-            nodes = pack.nodes(root);
-
-        svg.append("g").selectAll("circle")
-            .data(nodes)
-            .enter().append("circle")
-            .attr("class", function(d) {
-                return d.parent ? d.children ? "node" : "node node--leaf" : "node node--root";
-            })
-            .attr("transform", function(d) {
-                return "translate(" + d.x + "," + d.y + ")";
-            })
-            .attr("r", function(d) {
-                return d.r;
-            })
-            .style("fill", function(d) {
-                return d.bug_score > 0.0 ? "darkred" :
-                    d.children ? color(d.depth) : "WhiteSmoke";
-            })
-            .style("fill-opacity", function(d) {
-                return d.bug_score;
-            })
-            .on("click", function(d) {
-                return zoom(focus == d ? root : d);
-            })
-            .append("title").text(function(d) {
-                return d.name;
-            });
-
-        svg.append("g").selectAll("text")
-            .data(nodes)
-            .enter().append("text")
-            .attr("class", "label")
-            .attr("transform", function(d) {
-                return "translate(" + d.x + "," + d.y + ")";
-            })
-            .style("fill-opacity", function(d) {
-                return d.parent === root ? 1 : 0;
-            })
-            .style("display", function(d) {
-                return d.parent === root ? null : "none";
-            })
-            .text(function(d) {
-                return d.name;
-            });
-
-        d3.select(window)
-            .on("click", function() {
-                zoom(root);
-            });
-
-        function zoom(d, i) {
-            var focus0 = focus;
-            focus = d;
-
-            var k = innerDiameter / d.r / 2;
-            x.domain([d.x - d.r, d.x + d.r]);
-            y.domain([d.y - d.r, d.y + d.r]);
-            d3.event.stopPropagation();
-
-            var transition = d3.selectAll("text,circle").transition()
-                .duration(d3.event.altKey ? 7500 : 750)
-                .attr("transform", function(d) {
-                    return "translate(" + x(d.x) + "," + y(d.y) + ")";
-                });
-
-            transition.filter("circle")
-                .attr("r", function(d) {
-                    return k * d.r;
-                });
-
-            transition.filter("text")
-                .filter(function(d) {
-                    return d.parent === focus || d.parent === focus0;
-                })
-                .style("fill-opacity", function(d) {
-                    return d.parent === focus ? 1 : 0;
-                })
-                .each("start", function(d) {
-                    if (d.parent === focus) this.style.display = "inline";
-                })
-                .each("end", function(d) {
-                    if (d.parent !== focus) this.style.display = "none";
-                });
-        }
+  var pack = d3.layout.pack()
+    .padding(2)
+    .size([innerDiameter, innerDiameter])
+    .value(function(d) {
+      return d.loc;
     });
 
-    d3.select(self.frameElement).style("height", outerDiameter + "px");
+  var svg = d3.select("body").append("svg")
+    .attr("width", outerDiameter)
+    .attr("height", outerDiameter)
+    .append("g")
+    .attr("transform", "translate(" + margin + "," + margin + ")");
+
+  function colorCircles(packingMode) {
+    switch (packingMode) {
+      case PACKING_MODULES.NONE:
+        svg.selectAll("circle")
+          .style("fill", function(d) {
+            return d.children ? color(d.depth) : "WhiteSmoke";
+          })
+          .style("fill-opacity", function(d) {
+            return color(d.depth);
+          });
+          break;
+      case PACKING_MODULES.BUGS:
+        svg.selectAll("circle")
+          .style("fill", function(d) {
+            return d.bug_score > 0.0 ? "darkred" :
+              d.children ? color(d.depth) : "WhiteSmoke";
+          })
+          .style("fill-opacity", function(d) {
+            return d.bug_score;
+          });
+          break;
+      case PACKING_MODULES.TEMPORAL_COUPLING:
+        svg.selectAll("circle")
+          .style("fill", function(d) {
+            return d.temporal_coupling_score > 0.0 ? d3.rgb(d.temporal_coupling_color) :
+              d.children ? color(d.depth) : "WhiteSmoke";
+          })
+          .style("fill-opacity", function(d) {
+            return d.temporal_coupling_score;
+          });
+          break;
+    }
+  }
+
+  d3.json(requestUrl, function(error, root) {
+    root = JSON.parse(root);
+    packingData = root;
+    console.log(root);
+    var focus = root,
+      nodes = pack.nodes(root);
+
+    svg.append("g").selectAll("circle")
+      .data(nodes)
+      .enter().append("circle")
+      .attr("class", function(d) {
+        return d.parent ? d.children ? "node" : "node node--leaf" : "node node--root";
+      })
+      .attr("transform", function(d) {
+        return "translate(" + d.x + "," + d.y + ")";
+      })
+      .attr("r", function(d) {
+        return d.r;
+      })
+      .on("click", function(d) {
+        return zoom(focus == d ? root : d);
+      })
+      .append("title").text(function(d) {
+        return d.name;
+      });
+
+    svg.append("g").selectAll("text")
+      .data(nodes)
+      .enter().append("text")
+      .attr("class", "label")
+      .attr("transform", function(d) {
+        return "translate(" + d.x + "," + d.y + ")";
+      })
+      .style("fill-opacity", function(d) {
+        return d.parent === root ? 1 : 0;
+      })
+      .style("display", function(d) {
+        return d.parent === root ? null : "none";
+      })
+      .text(function(d) {
+        return d.name;
+      });
+
+    d3.select(window)
+      .on("click", function() {
+        zoom(root);
+      });
+
+    function zoom(d, i) {
+      var focus0 = focus;
+      focus = d;
+
+      var k = innerDiameter / d.r / 2;
+      x.domain([d.x - d.r, d.x + d.r]);
+      y.domain([d.y - d.r, d.y + d.r]);
+      d3.event.stopPropagation();
+
+      var transition = d3.selectAll("text,circle").transition()
+        .duration(d3.event.altKey ? 7500 : 750)
+        .attr("transform", function(d) {
+          return "translate(" + x(d.x) + "," + y(d.y) + ")";
+        });
+
+      transition.filter("circle")
+        .attr("r", function(d) {
+          return k * d.r;
+        });
+
+      transition.filter("text")
+        .filter(function(d) {
+          return d.parent === focus || d.parent === focus0;
+        })
+        .style("fill-opacity", function(d) {
+          return d.parent === focus ? 1 : 0;
+        })
+        .each("start", function(d) {
+          if (d.parent === focus) this.style.display = "inline";
+        })
+        .each("end", function(d) {
+          if (d.parent !== focus) this.style.display = "none";
+        });
+    }
+
+    // Default view is None
+    colorCircles(PACKING_MODULES.NONE);
+  });
+  d3.select(self.frameElement).style("height", outerDiameter + "px");
+
+  // Bind Buttons
+  $('#temp-coup-btn').on('click', function(e) {
+    colorCircles(PACKING_MODULES.TEMPORAL_COUPLING);
+  });
+  $('#bugs-btn').on('click', function(e) {
+    colorCircles(PACKING_MODULES.BUGS);
+  });
+  $('#none-btn').on('click', function(e) {
+    colorCircles(PACKING_MODULES.NONE);
+  });
 </script>
 
 <div id="debug-div"></div>
