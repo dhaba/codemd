@@ -144,7 +144,9 @@ class MetricsBuilder(object):
         self.log.debug("Finished circle packing building process...")
 
         # TODO -- handle multiple intervals with build_filetree
-        return {"name": "root", "children": self.__build_filetree(file_heirarchy[0], attributes=['bug_score', 'loc'])}
+        attrs = ['bug_score', 'loc', 'temporal_coupling_score', 'coupled_module',
+                 'num_revisions', 'num_mutual_revisions', 'temporal_coupling_color']
+        return {"name": "root", "children": self.__build_filetree(file_heirarchy[0], attributes=attrs)}
 
 
     def file_history(self, start_date=None, end_date=None):

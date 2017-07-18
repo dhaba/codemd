@@ -75,7 +75,7 @@ class FileInfoModule(HotspotModule):
         f['last_modified'] = current_file['date']
 
     def post_process_data(self):
-        self.log.debug("Starting post processing for FileInfoModule")
+        self.log.info("Starting post processing for FileInfoModule...")
         self.log.debug("Removing files smaller than threshhold...")
 
         files_to_filter = []
@@ -86,6 +86,7 @@ class FileInfoModule(HotspotModule):
         for f in files_to_filter:
             # self.log.debug("Removing file %s because it only had %s lines", f, self.working_data[f]['loc'])
             self.working_data.pop(f, None)
+        self.log.info("Finished post processing for FileInfoModule.")
 
 
 class BugModule(HotspotModule):
@@ -127,10 +128,11 @@ class BugModule(HotspotModule):
 
     def post_process_data(self):
         # Normalize bug scores
-        self.log.debug("Post processing bug info...normalizing bug scores")
+        self.log.info("Post processing BugInfoModule...")
         if self.max_bug_score != 0:
             for f in self.working_data:
                 self.working_data[f]['bug_score'] /= self.max_bug_score
+        self.log.info("Finished post processing for BugInfoModule")
 
     def __is_bug(self, message):
         """
@@ -145,6 +147,8 @@ class TemporalModule(HotspotModule):
     See GitHub page for description of the science behind temporal coupling
     analysis.
     """
+
+    SCORE_KEY_NAME = 'temporal_coupling_score'
 
     # Module will only report the NUM_TOP_COUPLES highest entries scored by the
     # temporal coupling algorithm
@@ -175,6 +179,14 @@ class TemporalModule(HotspotModule):
         self.commits_buffer = {'commits': [], 'revision_id':None}
 
     def process_file(self, current_file):
+        # Set default temporal coupling data
+        mod = current_file['filename']
+        self.working_data[mod][self.SCORE_KEY_NAME] = 0
+        self.working_data[mod]['coupled_module'] = None
+        self.working_data[mod]['num_revisions'] = None
+        self.working_data[mod]['num_mutual_revisions'] = None
+        self.working_data[mod]['temporal_coupling_color'] = None
+
         # For this module, only worry about processing in our interval scope
         if not self.is_file_in_scope(current_file):
             return
@@ -201,6 +213,7 @@ class TemporalModule(HotspotModule):
         """
         Algorithm for scoring temporal frequency
         """
+        self.log.info("Starting post processing for TemporalModule...")
         # Process batch of files (last commit)
         self.__process_commits_buffer()
 
@@ -224,8 +237,8 @@ class TemporalModule(HotspotModule):
         sorted_result = sorted(couples.iteritems(),
                                key=lambda (k,v): v['score'], reverse=True)
 
-        self.__add_clique_colors(sorted_result[0:self.NUM_TOP_COUPLES])
-
+        self.__augment_working_data(sorted_result[0:self.NUM_TOP_COUPLES])
+        self.log.info("Finished post processing for TemporalModule.")
         # self.log.debug("Top %s temporal coupling results: %s",
         #                 self.NUM_TOP_COUPLES,
         #                 json.dumps(sorted_result[0:self.NUM_TOP_COUPLES], indent=2))
@@ -246,32 +259,34 @@ class TemporalModule(HotspotModule):
         else:
             self.log.warning("!!! __process_commits_buffer called on empty commits_buffer")
 
-    def __add_clique_colors(self, couples):
+    def __augment_working_data(self, couples):
         """
-        Adds a unique color parameter for each clique (in an undirected graph,
-        where modules are vertices, and 2 coupled modules indicates an edge)
+        Adds temporal coupling data to self.working_data, including a unique color
+        parameter for each clique (in an undirected graph, where modules are
+        vertices, and 2 coupled modules indicates an edge).
 
         :param couples: A list of tuples, where first element is a length 2 tuple
         containing the coupled modules, and the second element is a dictionary
         containing information about the couple
         """
+        self.log.info("Starting to augment working data with temporal coupling info...")
+        max_score = couples[0][1]['score']
         def add_temporal_data(couple, color):
             """
             Helper method to add temporal coupling information to self.working_data
             """
-            SCORE_KEY_NAME = 'temporal_coupling_score'
             data = couple[1]
             for mod in couple[0]:
                 # Only update data if score is higher than current value
-                if ((SCORE_KEY_NAME in self.working_data[mod]) and
-                    (self.working_data[mod][SCORE_KEY_NAME] > data['score'])):
+                if ((self.SCORE_KEY_NAME in self.working_data[mod]) and
+                    (self.working_data[mod][self.SCORE_KEY_NAME] > data['score'])):
                     coupled_module = filter(lambda x: x is not mod, couple[0])[0]
                     # self.log.debug("Not writing score for module %s to %s because current" +
                     #                 " score was less than that specified in couple:\n%s",
                     #                 mod, coupled_module, couple)
                 else:
                     coupled_module = filter(lambda x: x is not mod, couple[0])[0]
-                    self.working_data[mod][SCORE_KEY_NAME] = data['score']
+                    self.working_data[mod][self.SCORE_KEY_NAME] = data['score']/max_score
                     self.working_data[mod]['coupled_module'] = coupled_module
                     self.working_data[mod]['num_revisions'] = data[mod]
                     self.working_data[mod]['num_mutual_revisions'] = data['total_mutual_revs']
@@ -311,7 +326,7 @@ class TemporalModule(HotspotModule):
         colors = {}
         for c in self.CLIQUE_COLORS: colors[c] = set()
         for coup in couples:
-            mod1, mod2= coup[0][0], coup[0][1]
+            mod1, mod2 = coup[0][0], coup[0][1]
             clique_found = False
             for c in colors:
                 if mod1 in colors[c]:
@@ -325,10 +340,10 @@ class TemporalModule(HotspotModule):
                         empty_color = c
                         break
                 if empty_color is None:
-                    pass
                     # self.log.debug("All cliques were full, ignoring couple: %s, " +
                     #                "with data %s", coup[0], coup[1])
                     # self.log.debug("(cliques full) colors: %s", colors)
+                    add_temporal_data(coup, None)
                 else:
                     clique = None
                     for c in cliques:
@@ -341,6 +356,7 @@ class TemporalModule(HotspotModule):
                         add_temporal_data(coup, empty_color)
                         for v in clique:
                             colors[empty_color].add(v)
+        self.log.info("Finished augmenting working data with temporal coupling info")
 
     def __module_distance(self, file1, file2):
         """
