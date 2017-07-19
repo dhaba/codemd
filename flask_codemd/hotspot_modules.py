@@ -148,14 +148,17 @@ class TemporalModule(HotspotModule):
     analysis.
     """
 
-    SCORE_KEY_NAME = 'temporal_coupling_score'
+    SCORE_KEY_NAME = 'tc_score'
 
     # Module will only report the NUM_TOP_COUPLES highest entries scored by the
     # temporal coupling algorithm
-    NUM_TOP_COUPLES = 100
+    NUM_TOP_COUPLES = 64
+
+    # Ignore commits with more than MAX_COMMIT_SIZE files changed
+    MAX_COMMIT_SIZE = 8
 
     # Colors to use for cliques
-    CLIQUE_COLORS = ['#e31a1c', '#ff7f00', '#33a02c', '#6a3d9a', '#b15928', '#ffff99']
+    CLIQUE_COLORS = ['#e31a1c',  '#6a3d9a', '#33a02c', '#0082c8', '#ffe119', '#000000']
 
     # Use distance in object graph as weight in scoring function
     USE_MODULE_DISTANCE = True
@@ -182,10 +185,11 @@ class TemporalModule(HotspotModule):
         # Set default temporal coupling data
         mod = current_file['filename']
         self.working_data[mod][self.SCORE_KEY_NAME] = 0
+        self.working_data[mod]['tc_color_opacity'] = 0
         self.working_data[mod]['coupled_module'] = None
         self.working_data[mod]['num_revisions'] = None
         self.working_data[mod]['num_mutual_revisions'] = None
-        self.working_data[mod]['temporal_coupling_color'] = None
+        self.working_data[mod]['tc_color'] = None
 
         # For this module, only worry about processing in our interval scope
         if not self.is_file_in_scope(current_file):
@@ -225,7 +229,7 @@ class TemporalModule(HotspotModule):
                 continue
             module_distance = self.__module_distance(pair[0], pair[1]) + 1
             avg_pair_revs = (self.working_rev_counts[pair[0]] + self.working_rev_counts[pair[1]]) / 2.0
-            score = count/avg_pair_revs * math.log(avg_pair_revs)# * (module_distance/2.0)
+            score = count/avg_pair_revs * math.log(avg_pair_revs) #* (module_distance/12.0)
             # score = count/avg_pair_revs * math.log(count) * math.log(avg_pair_revs) * module_distance
             couples[pair] = {'score': score, 'total_mutual_revs' : count,
                              'avg_revs': avg_pair_revs,
@@ -239,9 +243,9 @@ class TemporalModule(HotspotModule):
 
         self.__augment_working_data(sorted_result[0:self.NUM_TOP_COUPLES])
         self.log.info("Finished post processing for TemporalModule.")
-        # self.log.debug("Top %s temporal coupling results: %s",
-        #                 self.NUM_TOP_COUPLES,
-        #                 json.dumps(sorted_result[0:self.NUM_TOP_COUPLES], indent=2))
+        self.log.debug("Top %s temporal coupling results: %s",
+                        self.NUM_TOP_COUPLES,
+                        json.dumps(sorted_result[0:self.NUM_TOP_COUPLES], indent=2))
         # self.log.info("%s", sorted_result[0:self.NUM_TOP_COUPLES])
         # self.log.debug("all couples: %s", json.dumps(sorted_result, indent=2))
 
@@ -249,6 +253,11 @@ class TemporalModule(HotspotModule):
         """
         Process current files batch in commits buffer
         """
+        if len(self.commits_buffer['revision_id']) < self.MAX_COMMIT_SIZE:
+            self.log.debug("Ignoring commit that exceeded max size: %s", self.commits_buffer['commits'])
+            self.commits_buffer = {'commits': [], 'revision_id':None}
+            return
+
         if self.commits_buffer['revision_id'] is not None:
             for pair in combinations(self.commits_buffer['commits'], 2):
                 ordered_pair = sorted(pair)
@@ -270,7 +279,8 @@ class TemporalModule(HotspotModule):
         containing information about the couple
         """
         self.log.info("Starting to augment working data with temporal coupling info...")
-        max_score = couples[0][1]['score']
+        max_score = couples[0][1]['score'] # For normalizing scores to set as opacity values
+        self.log.debug("Top scorer: %s", couples[0])
         def add_temporal_data(couple, color):
             """
             Helper method to add temporal coupling information to self.working_data
@@ -286,45 +296,64 @@ class TemporalModule(HotspotModule):
                     #                 mod, coupled_module, couple)
                 else:
                     coupled_module = filter(lambda x: x is not mod, couple[0])[0]
-                    self.working_data[mod][self.SCORE_KEY_NAME] = data['score']/max_score
+                    self.working_data[mod][self.SCORE_KEY_NAME] = data['score']
+                    self.working_data[mod]['tc_color_opacity'] = data['score']/max_score
                     self.working_data[mod]['coupled_module'] = coupled_module
                     self.working_data[mod]['num_revisions'] = data[mod]
                     self.working_data[mod]['num_mutual_revisions'] = data['total_mutual_revs']
-                    self.working_data[mod]['temporal_coupling_color'] = color
+                    self.working_data[mod]['tc_color'] = color
                     # self.log.debug("Appended temp coupling data to working data " +
                     #                "module: %s, with data: %s", mod, self.working_data[mod])
 
-        # Build adjacency list from couples
-        adj_list = defaultdict(set)
-        for coup in couples:
-            mod1, mod2= coup[0][0], coup[0][1]
-            adj_list[mod1].add(mod2)
-            adj_list[mod2].add(mod1)
+        def adj_list_from_couples(couples):
+            """
+            Helper method to build an adjacency list from couples
+            """
+            adj_list = defaultdict(set)
+            for coup in couples:
+                mod1, mod2= coup[0][0], coup[0][1]
+                adj_list[mod1].add(mod2)
+                adj_list[mod2].add(mod1)
+            return adj_list
 
-        # DFS for determining cliques
-        cliques = [] # list of sets
-        for vertex, neighbors in adj_list.iteritems():
-            # If we already know about this guy, skip him
-            vertex_exists = False
-            for c in cliques:
-                if vertex in c:
-                    vertex_exists = True
-                    break
-            if vertex_exists:
-                continue
-            # Iterative DFS
-            stack = list(neighbors)
-            clique = set([vertex])
-            while len(stack) > 0:
-                current = stack.pop()
-                clique.add(current)
-                stack += [v for v in adj_list[current] if v not in clique]
-            cliques.append(clique)
+        def cliques_from_adj_list(adj_list):
+            """
+            Helper method to detect cliques from and adjacency list.
+
+            :return A list of sets, where each set contains a distinct clique
+            """
+            cliques = [] # list of sets
+            for vertex, neighbors in adj_list.iteritems():
+                # If we already know about this guy, skip him
+                vertex_exists = False
+                for c in cliques:
+                    if vertex in c:
+                        vertex_exists = True
+                        break
+                if vertex_exists:
+                    continue
+                # Iterative DFS
+                stack = list(neighbors)
+                clique = set([vertex])
+                while len(stack) > 0:
+                    current = stack.pop()
+                    clique.add(current)
+                    stack += [v for v in adj_list[current] if v not in clique]
+                cliques.append(clique)
+            return cliques
+
+        # Determine cliques for appropriate coloring in circle packing
+        cliques = cliques_from_adj_list(adj_list_from_couples(couples))
+
+        colors = {} # dict where keys are colors and vals are sets containing modules
+        max_scores = {} # holds max score for each color to normalize values
+        for c in self.CLIQUE_COLORS:
+            colors[c] = set()
+            max_scores
+
 
         # Limit number of cliques to number of clique colors by only picking
         # highest scoring couples
-        colors = {}
-        for c in self.CLIQUE_COLORS: colors[c] = set()
         for coup in couples:
             mod1, mod2 = coup[0][0], coup[0][1]
             clique_found = False
@@ -335,7 +364,7 @@ class TemporalModule(HotspotModule):
                     break
             if not clique_found:
                 empty_color = None
-                for c in colors:
+                for c in self.CLIQUE_COLORS:
                     if len(colors[c]) == 0:
                         empty_color = c
                         break
@@ -343,7 +372,8 @@ class TemporalModule(HotspotModule):
                     # self.log.debug("All cliques were full, ignoring couple: %s, " +
                     #                "with data %s", coup[0], coup[1])
                     # self.log.debug("(cliques full) colors: %s", colors)
-                    add_temporal_data(coup, None)
+                    # add_temporal_data(coup, None)
+                    pass
                 else:
                     clique = None
                     for c in cliques:
@@ -356,6 +386,12 @@ class TemporalModule(HotspotModule):
                         add_temporal_data(coup, empty_color)
                         for v in clique:
                             colors[empty_color].add(v)
+        # DEBUGGING
+        for c in colors:
+            self.log.debug("%s", c)
+            for obj in colors[c]:
+                self.log.debug("\t%s", obj)
+
         self.log.info("Finished augmenting working data with temporal coupling info")
 
     def __module_distance(self, file1, file2):

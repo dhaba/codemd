@@ -40,7 +40,7 @@
     fill: black;
     /*text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, -1px 0 0 #fff, 0 -1px 0 #fff;*/
     }
-    /*.label, .node--root { pointer-events: none; }*/
+    .label, .node--root { pointer-events: none; }
   }
 </style>
 
@@ -124,13 +124,13 @@
         case PACKING_MODULES.TEMPORAL_COUPLING:
           svg.selectAll("circle")
             var html = baseHTML + "<span>Temporal Coupling Score: </span>";
-            if (d.temporal_coupling_score > 0) {
-              html += "<span style='color:red'>" + Math.round(d.temporal_coupling_score*100)/100 +
+            if (d.tc_score > 0) {
+              html += "<span style='color:red'>" + Math.round(d.tc_score*100)/100 +
                       "</span></br><span>Number of Revisions: " + d.num_revisions + "</span>" +
                       "</span><br/><span>Coupled Module: " + d.coupled_module + "</span></br>" +
                       "<span>Number of Mutual Revisions: " + d.num_mutual_revisions + "</span>";
             } else {
-              html += "<span>" + d.temporal_coupling_score + "</span>";
+              html += "<span>" + d.tc_score + "</span>";
             }
             return html;
             break;
@@ -162,11 +162,11 @@
       case PACKING_MODULES.TEMPORAL_COUPLING:
         svg.selectAll("circle")
           .style("fill", function(d) {
-            return d.temporal_coupling_score > 0.0 ? d3.rgb(d.temporal_coupling_color) :
+            return d.tc_score > 0.0 ? d3.rgb(d.tc_color) :
               d.children ? color(d.depth) : "WhiteSmoke";
           })
           .style("fill-opacity", function(d) {
-            return d.temporal_coupling_score;
+            return d.tc_color_opacity;
           });
           break;
     }
@@ -287,12 +287,12 @@
 
 <style>
 .d3-tip {
-  line-height: 1;
+  line-height: 115%;
   font-weight: normal;
   padding: 8px;
   background: rgba(0, 0, 0, 0.8);
   color: #fff;
-  border-radius: 2px;
+  border-radius: 4px;
 }
 
 /* Creates a small triangle extender for the tooltip */
