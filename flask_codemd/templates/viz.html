@@ -1,24 +1,23 @@
 <!DOCTYPE html>
 <html>
 
-<head>
-    <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no' />
-
-    <link href="{{ url_for('static', filename='./bower_components/keen-dashboards/dist/keen-dashboards.css') }}" rel="stylesheet">
-    <link href="{{ url_for('static', filename='./bower_components/colorbrewer/colorbrewer.css') }}" rel="stylesheet">
-    <link href="{{ url_for('static', filename='./bower_components/dcjs/dc.css') }}" rel="stylesheet">
-
-    <script src="{{ url_for('static', filename='./bower_components/crossfilter/crossfilter.js') }}"></script>
-    <script src="{{ url_for('static', filename='./bower_components/d3/d3.js') }}"></script>
-    <script src="{{ url_for('static', filename='./bower_components/dcjs/dc.js') }}"></script>
-    <script src="{{ url_for('static', filename='./bower_components/reductio/reductio.js') }}"></script>
-    <script src="{{ url_for('static', filename='./bower_components/colorbrewer/colorbrewer.js') }}"></script>
-    <script src="{{ url_for('static', filename='./dashboards.js') }}"></script>
-
-    <link href="{{ url_for('static', filename='./dash-styles.css') }}" rel="stylesheet">
-</head>
-
 {% extends "layout.html" %} {% block body %}
+
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no' />
+
+<link href="{{ url_for('static', filename='./bower_components/keen-dashboards/dist/keen-dashboards.css') }}" rel="stylesheet">
+<link href="{{ url_for('static', filename='./bower_components/colorbrewer/colorbrewer.css') }}" rel="stylesheet">
+<link href="{{ url_for('static', filename='./bower_components/dcjs/dc.css') }}" rel="stylesheet">
+
+<script src="{{ url_for('static', filename='./bower_components/crossfilter/crossfilter.js') }}"></script>
+<script src="{{ url_for('static', filename='./bower_components/d3/d3.js') }}"></script>
+<script src="{{ url_for('static', filename='./bower_components/dcjs/dc.js') }}"></script>
+<script src="{{ url_for('static', filename='./bower_components/reductio/reductio.js') }}"></script>
+<script src="{{ url_for('static', filename='./bower_components/colorbrewer/colorbrewer.js') }}"></script>
+<script src="{{ url_for('static', filename='./dashboards.js') }}"></script>
+
+<link href="{{ url_for('static', filename='./dash-styles.css') }}" rel="stylesheet">
+
 
 <script>
     $(function() {

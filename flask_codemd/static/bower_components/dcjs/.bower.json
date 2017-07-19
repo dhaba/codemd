@@ -25,12 +25,12 @@
     "crossfilter2": "~1.3"
   },
   "homepage": "https://github.com/NickQiZhu/dc.js",
-  "version": "2.0.1",
-  "_release": "2.0.1",
+  "version": "2.0.5",
+  "_release": "2.0.5",
   "_resolution": {
     "type": "version",
-    "tag": "2.0.1",
-    "commit": "92093f1a00c9b9458e5f00e8a5c349703b91f7bd"
+    "tag": "2.0.5",
+    "commit": "a7291b25cd1314689be6d33bd89d60eab4261788"
   },
   "_source": "https://github.com/NickQiZhu/dc.js.git",
   "_target": "2.0",

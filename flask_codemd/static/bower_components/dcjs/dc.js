@@ -1,5 +1,5 @@
 /*!
- *  dc 2.0.1
+ *  dc 2.0.5
  *  http://dc-js.github.io/dc.js/
  *  Copyright 2012-2016 Nick Zhu & the dc.js Developers
  *  https://github.com/dc-js/dc.js/blob/master/AUTHORS
@@ -29,7 +29,7 @@
  * such as {@link dc.baseMixin#svg .svg} and {@link dc.coordinateGridMixin#xAxis .xAxis},
  * return values that are themselves chainable d3 objects.
  * @namespace dc
- * @version 2.0.1
+ * @version 2.0.5
  * @example
  * // Example chaining
  * chart.width(300)
@@ -38,7 +38,7 @@
  */
 /*jshint -W079*/
 var dc = {
-    version: '2.0.1',
+    version: '2.0.5',
     constants: {
         CHART_CLASS: 'dc-chart',
         DEBUG_GROUP_CLASS: 'debug',
@@ -1981,6 +1981,7 @@ dc.baseMixin = function (_chart) {
     _chart.replaceFilter = function (filter) {
         _filters = _resetFilterHandler(_filters);
         _chart.filter(filter);
+        return _chart;
     };
 
     /**
@@ -3806,7 +3807,7 @@ dc.coordinateGridMixin = function (_chart) {
     };
 
     function getClipPathId () {
-        return _chart.anchorName().replace(/[ .#=\[\]]/g, '-') + '-clip';
+        return _chart.anchorName().replace(/[ .#=\[\]"]/g, '-') + '-clip';
     }
 
     /**
@@ -4098,9 +4099,10 @@ dc.stackMixin = function (_chart) {
     var _titles = {};
 
     var _hidableStacks = false;
+    var _evadeDomainFilter = false;
 
     function domainFilter () {
-        if (!_chart.x()) {
+        if (!_chart.x() || _evadeDomainFilter) {
             return d3.functor(true);
         }
         var xDomain = _chart.x().domain();
@@ -4326,6 +4328,30 @@ dc.stackMixin = function (_chart) {
         if (_stackLayout.values() === d3.layout.stack().values()) {
             _stackLayout.values(prepareValues);
         }
+        return _chart;
+    };
+
+    /**
+     * Since dc.js 2.0, there has been {@link https://github.com/dc-js/dc.js/issues/949 an issue}
+     * where points are filtered to the current domain. While this is a useful optimization, it is
+     * incorrectly implemented: the next point outside the domain is required in order to draw lines
+     * that are clipped to the bounds, as well as bars that are partly clipped.
+     *
+     * A fix will be included in dc.js 2.1.x, but a workaround is needed for dc.js 2.0 and until
+     * that fix is published, so set this flag to skip any filtering of points.
+     *
+     * Once the bug is fixed, this flag will have no effect, and it will be deprecated.
+     * @method evadeDomainFilter
+     * @memberof dc.stackMixin
+     * @instance
+     * @param {Boolean} [evadeDomainFilter=false]
+     * @returns {Boolean|dc.stackMixin}
+     */
+    _chart.evadeDomainFilter = function (evadeDomainFilter) {
+        if (!arguments.length) {
+            return _evadeDomainFilter;
+        }
+        _evadeDomainFilter = evadeDomainFilter;
         return _chart;
     };
 
@@ -4882,8 +4908,9 @@ dc.pieChart = function (parent, chartGroup) {
     };
 
     function drawChart () {
-        // set radius on basis of chart dimension if missing
-        _radius = _givenRadius ? _givenRadius : d3.min([_chart.width(), _chart.height()]) / 2;
+        // set radius from chart size if none given, or if given radius is too large
+        var maxRadius =  d3.min([_chart.width(), _chart.height()]) / 2;
+        _radius = _givenRadius && _givenRadius < maxRadius ? _givenRadius : maxRadius;
 
         var arc = buildArcs();
 
@@ -9222,7 +9249,7 @@ dc.scatterPlot = function (parent, chartGroup) {
     var _emptyColor = null;
     var _filtered = [];
 
-    _symbol.size(function (d, i) {
+    function elementSize (d, i) {
         if (!_existenceAccessor(d)) {
             return Math.pow(_emptySize, 2);
         } else if (_filtered[i]) {
@@ -9230,7 +9257,8 @@ dc.scatterPlot = function (parent, chartGroup) {
         } else {
             return Math.pow(_excludedSize, 2);
         }
-    });
+    }
+    _symbol.size(elementSize);
 
     dc.override(_chart, '_filter', function (filter) {
         if (!arguments.length) {
@@ -9338,6 +9366,29 @@ dc.scatterPlot = function (parent, chartGroup) {
             return _symbol.type();
         }
         _symbol.type(type);
+        return _chart;
+    };
+
+    /**
+     * Get or set the symbol generator. By default `dc.scatterPlot` will use
+     * {@link https://github.com/d3/d3-3.x-api-reference/blob/master/SVG-Shapes.md#symbol d3.svg.symbol()}
+     * to generate symbols. `dc.scatterPlot` will set the
+     * {@link https://github.com/d3/d3-3.x-api-reference/blob/master/SVG-Shapes.md#symbol_size size accessor}
+     * on the symbol generator.
+     * @method customSymbol
+     * @memberof dc.scatterPlot
+     * @instance
+     * @see {@link https://github.com/d3/d3-3.x-api-reference/blob/master/SVG-Shapes.md#symbol d3.svg.symbol}
+     * @see {@link https://stackoverflow.com/questions/25332120/create-additional-d3-js-symbols Create additional D3.js symbols}
+     * @param {String|Function} [customSymbol=d3.svg.symbol()]
+     * @returns {String|Function|dc.scatterPlot}
+     */
+    _chart.customSymbol = function (customSymbol) {
+        if (!arguments.length) {
+            return _symbol;
+        }
+        _symbol = customSymbol;
+        _symbol.size(elementSize);
         return _chart;
     };
 
@@ -9503,7 +9554,7 @@ dc.scatterPlot = function (parent, chartGroup) {
         resizeSymbolsWhere(function (symbol) {
             return symbol.attr('fill') === d.color;
         }, _highlightedSize);
-        _chart.selectAll('.chart-body path.symbol').filter(function () {
+        _chart.chartBodyG().selectAll('.chart-body path.symbol').filter(function () {
             return d3.select(this).attr('fill') !== d.color;
         }).classed('fadeout', true);
     };
@@ -9512,13 +9563,13 @@ dc.scatterPlot = function (parent, chartGroup) {
         resizeSymbolsWhere(function (symbol) {
             return symbol.attr('fill') === d.color;
         }, _symbolSize);
-        _chart.selectAll('.chart-body path.symbol').filter(function () {
+        _chart.chartBodyG().selectAll('.chart-body path.symbol').filter(function () {
             return d3.select(this).attr('fill') !== d.color;
         }).classed('fadeout', false);
     };
 
     function resizeSymbolsWhere (condition, size) {
-        var symbols = _chart.selectAll('.chart-body path.symbol').filter(function () {
+        var symbols = _chart.chartBodyG().selectAll('.chart-body path.symbol').filter(function () {
             return condition(d3.select(this));
         });
         var oldSize = _symbol.size();
@@ -10704,7 +10755,7 @@ dc.crossfilter = crossfilter;
 
 return dc;}
     if(typeof define === "function" && define.amd) {
-        define(["d3", "crossfilter"], _dc);
+        define(["d3", "crossfilter2"], _dc);
     } else if(typeof module === "object" && module.exports) {
         var _d3 = require('d3');
         var _crossfilter = require('crossfilter2');
