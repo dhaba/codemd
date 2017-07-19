@@ -49,9 +49,6 @@
 <button id="none-btn" type="button" class="btn btn-primary btn-sm">None</button>
 
 <script>
-  // Disable default <a> tooltips
-  $('.titleHidden').removeAttr('title');
-
   var packingData = null;
   var PACKING_MODULES = {
     BUGS: 0,
@@ -61,6 +58,7 @@
     NONE: 4
   };
 
+  var mode = PACKING_MODULES.NONE;
   var projectName = '{{ project_name }}';
   var intervals = {{ intervals | tojson }};
 
@@ -113,18 +111,42 @@
     .attr('class', 'd3-tip')
     .offset([-10, 0])
     .html(function(d) {
-      return "<strong>Bug Score:</strong> <span style='color:red'>" + d.bug_score + "</span>";
+      var baseHTML = "<strong>" + d.name + "</strong><br style='line-height:150%'/>"
+      switch (mode) {
+        case PACKING_MODULES.NONE:
+          return baseHTML + "<span> Lines of Code: " + d.loc;
+          break;
+        case PACKING_MODULES.BUGS:
+          svg.selectAll("circle")
+            return baseHTML + "<span>Bug Score: </span><span style='color:red'>"
+                            + Math.round(d.bug_score*100)/100 + "</span>";
+            break;
+        case PACKING_MODULES.TEMPORAL_COUPLING:
+          svg.selectAll("circle")
+            var html = baseHTML + "<span>Temporal Coupling Score: </span>";
+            if (d.temporal_coupling_score > 0) {
+              html += "<span style='color:red'>" + Math.round(d.temporal_coupling_score*100)/100 +
+                      "</span></br><span>Number of Revisions: " + d.num_revisions + "</span>" +
+                      "</span><br/><span>Coupled Module: " + d.coupled_module + "</span></br>" +
+                      "<span>Number of Mutual Revisions: " + d.num_mutual_revisions + "</span>";
+            } else {
+              html += "<span>" + d.temporal_coupling_score + "</span>";
+            }
+            return html;
+            break;
+      }
+      //return <span>Bug Score: </span><span style='color:red'>" + d.bug_score + "</span>";
     })
 
-  function colorCircles(packingMode) {
-    switch (packingMode) {
+  function colorCircles() {
+    switch (mode) {
       case PACKING_MODULES.NONE:
         svg.selectAll("circle")
           .style("fill", function(d) {
             return d.children ? color(d.depth) : "WhiteSmoke";
           })
           .style("fill-opacity", function(d) {
-            return color(d.depth);
+            return d.children ? color(d.depth) : 1;
           });
           break;
       case PACKING_MODULES.BUGS:
@@ -174,8 +196,6 @@
       .on("click", function(d) {
         return zoom(focus == d ? root : d);
       })
-      // .on('mouseover', tip.show)
-      // .on('mouseout', tip.hide)
       .append("title").text(function(d) {
         return d.name;
       });
@@ -245,19 +265,22 @@
     }
 
     // Default view is None
-    colorCircles(PACKING_MODULES.NONE);
+    colorCircles(mode);
   });
   d3.select(self.frameElement).style("height", outerDiameter + "px");
 
   // Bind Buttons
   $('#temp-coup-btn').on('click', function(e) {
-    colorCircles(PACKING_MODULES.TEMPORAL_COUPLING);
+    mode = PACKING_MODULES.TEMPORAL_COUPLING;
+    colorCircles();
   });
   $('#bugs-btn').on('click', function(e) {
-    colorCircles(PACKING_MODULES.BUGS);
+    mode = PACKING_MODULES.BUGS;
+    colorCircles();
   });
   $('#none-btn').on('click', function(e) {
-    colorCircles(PACKING_MODULES.NONE);
+    mode = PACKING_MODULES.NONE;
+    colorCircles();
   });
 </script>
 
@@ -265,8 +288,8 @@
 <style>
 .d3-tip {
   line-height: 1;
-  font-weight: bold;
-  padding: 12px;
+  font-weight: normal;
+  padding: 8px;
   background: rgba(0, 0, 0, 0.8);
   color: #fff;
   border-radius: 2px;
