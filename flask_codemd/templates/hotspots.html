@@ -119,7 +119,8 @@
         case PACKING_MODULES.BUGS:
           svg.selectAll("circle")
             return baseHTML + "<span>Bug Score: </span><span style='color:red'>"
-                            + Math.round(d.bug_score*100)/100 + "</span>";
+                            + Math.round(d.bug_score*100)/100 + "</span></br>"
+                            + "<span>Number of Bugs: " + d.bug_count + "</span>";
             break;
         case PACKING_MODULES.TEMPORAL_COUPLING:
           svg.selectAll("circle")
@@ -127,15 +128,16 @@
             if (d.tc_score > 0) {
               html += "<span style='color:red'>" + Math.round(d.tc_score*100)/100 +
                       "</span></br><span>Number of Revisions: " + d.num_revisions + "</span>" +
-                      "</span><br/><span>Coupled Module: " + d.coupled_module + "</span></br>" +
-                      "<span>Number of Mutual Revisions: " + d.num_mutual_revisions + "</span>";
+                      "</span><br/><span>Coupled Module: </span><span style='color:red'>"
+                      + d.coupled_module + "</span></br>" + "<span>Number of Mutual Revisions: "
+                      + d.num_mutual_revisions + "</span></br>" + "<span>Percent Coupled: </span>"
+                      + "<span style='color:red'>" + Math.round(d.tc_percent*100)/100 + "</span>";
             } else {
               html += "<span>" + d.tc_score + "</span>";
             }
             return html;
             break;
       }
-      //return <span>Bug Score: </span><span style='color:red'>" + d.bug_score + "</span>";
     })
 
   function colorCircles() {

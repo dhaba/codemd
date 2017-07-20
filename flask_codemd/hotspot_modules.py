@@ -185,6 +185,7 @@ class TemporalModule(HotspotModule):
         # Set default temporal coupling data
         mod = current_file['filename']
         self.working_data[mod][self.SCORE_KEY_NAME] = 0
+        self.working_data[mod]['tc_percent'] = 0
         self.working_data[mod]['tc_color_opacity'] = 0
         self.working_data[mod]['coupled_module'] = None
         self.working_data[mod]['num_revisions'] = None
@@ -238,8 +239,10 @@ class TemporalModule(HotspotModule):
                              pair[0]: self.working_rev_counts[pair[0]],
                              pair[1]: self.working_rev_counts[pair[1]]}
 
-        sorted_result = sorted(couples.iteritems(),
+        self.log.info("Sorting couples...")
+        sorted_result = sorted(couples.iteritems(), # TODO -- implement partial sorting
                                key=lambda (k,v): v['score'], reverse=True)
+        self.log.info("Finished sorting couples.")
 
         self.__augment_working_data(sorted_result[0:self.NUM_TOP_COUPLES])
         self.log.info("Finished post processing for TemporalModule.")
@@ -287,6 +290,7 @@ class TemporalModule(HotspotModule):
             """
             data = couple[1]
             for mod in couple[0]:
+                self.log.debug("couple: %s\ndata: %s", couple, data)
                 # Only update data if score is higher than current value
                 if ((self.SCORE_KEY_NAME in self.working_data[mod]) and
                     (self.working_data[mod][self.SCORE_KEY_NAME] > data['score'])):
@@ -302,6 +306,7 @@ class TemporalModule(HotspotModule):
                     self.working_data[mod]['num_revisions'] = data[mod]
                     self.working_data[mod]['num_mutual_revisions'] = data['total_mutual_revs']
                     self.working_data[mod]['tc_color'] = color
+                    self.working_data[mod]['tc_percent'] = data['percent_coupled']
                     # self.log.debug("Appended temp coupling data to working data " +
                     #                "module: %s, with data: %s", mod, self.working_data[mod])
 
@@ -346,11 +351,8 @@ class TemporalModule(HotspotModule):
         cliques = cliques_from_adj_list(adj_list_from_couples(couples))
 
         colors = {} # dict where keys are colors and vals are sets containing modules
-        max_scores = {} # holds max score for each color to normalize values
         for c in self.CLIQUE_COLORS:
             colors[c] = set()
-            max_scores
-
 
         # Limit number of cliques to number of clique colors by only picking
         # highest scoring couples
@@ -372,7 +374,6 @@ class TemporalModule(HotspotModule):
                     # self.log.debug("All cliques were full, ignoring couple: %s, " +
                     #                "with data %s", coup[0], coup[1])
                     # self.log.debug("(cliques full) colors: %s", colors)
-                    # add_temporal_data(coup, None)
                     pass
                 else:
                     clique = None
