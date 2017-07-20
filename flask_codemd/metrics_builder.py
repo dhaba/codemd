@@ -145,7 +145,7 @@ class MetricsBuilder(object):
         # TODO -- handle multiple intervals with build_filetree
         attrs = ['loc', 'bug_score', 'bug_count', 'tc_score', 'coupled_module',
                  'num_revisions', 'num_mutual_revisions', 'tc_color',
-                 'tc_color_opacity', 'tc_percent']
+                 'tc_color_opacity', 'tc_percent', 'top_authors', 'author_color']
         return {"name": "root", "children": self.__build_filetree(file_heirarchy[0], attributes=attrs)}
 
 

@@ -246,9 +246,9 @@ class TemporalModule(HotspotModule):
 
         self.__augment_working_data(sorted_result[0:self.NUM_TOP_COUPLES])
         self.log.info("Finished post processing for TemporalModule.")
-        self.log.debug("Top %s temporal coupling results: %s",
-                        self.NUM_TOP_COUPLES,
-                        json.dumps(sorted_result[0:self.NUM_TOP_COUPLES], indent=2))
+        # self.log.debug("Top %s temporal coupling results: %s",
+        #                 self.NUM_TOP_COUPLES,
+        #                 json.dumps(sorted_result[0:self.NUM_TOP_COUPLES], indent=2))
         # self.log.info("%s", sorted_result[0:self.NUM_TOP_COUPLES])
         # self.log.debug("all couples: %s", json.dumps(sorted_result, indent=2))
 
@@ -283,14 +283,12 @@ class TemporalModule(HotspotModule):
         """
         self.log.info("Starting to augment working data with temporal coupling info...")
         max_score = couples[0][1]['score'] # For normalizing scores to set as opacity values
-        self.log.debug("Top scorer: %s", couples[0])
         def add_temporal_data(couple, color):
             """
             Helper method to add temporal coupling information to self.working_data
             """
             data = couple[1]
             for mod in couple[0]:
-                self.log.debug("couple: %s\ndata: %s", couple, data)
                 # Only update data if score is higher than current value
                 if ((self.SCORE_KEY_NAME in self.working_data[mod]) and
                     (self.working_data[mod][self.SCORE_KEY_NAME] > data['score'])):
@@ -388,10 +386,10 @@ class TemporalModule(HotspotModule):
                         for v in clique:
                             colors[empty_color].add(v)
         # DEBUGGING
-        for c in colors:
-            self.log.debug("%s", c)
-            for obj in colors[c]:
-                self.log.debug("\t%s", obj)
+        # for c in colors:
+        #     self.log.debug("%s", c)
+        #     for obj in colors[c]:
+        #         self.log.debug("\t%s", obj)
 
         self.log.info("Finished augmenting working data with temporal coupling info")
 
@@ -463,3 +461,62 @@ class TemporalModule(HotspotModule):
         f1_ext, f2_ext = file1.split(".")[-1], file2.split(".")[-1]
         return (is_same_module and ((f1_ext == 'h' and f2_ext == 'c')
                or (f1_ext == 'c' and f2_ext == 'h')))
+
+class KnowledgeMapModule(HotspotModule):
+    """
+    Extracts top contributors for each module
+    """
+
+    # 21 optimally distinct colors of maximum contrast based on research by Kenneth Kelly
+    AUTHOR_COLORS = ['#BE0032', '#F3C300', '#875692', '#F38400',
+                  '#A1CAF1', '#BE0032', '#C2B280', '#848482', '#008856', '#E68FAC',
+                  '#0067A5', '#F99379', '#604E97', '#F6A600', '#B3446C', '#DCD300',
+                  '#882D17', '#8DB600', '#654522', '#E25822', '#2B3D26', '#222222']
+    # If we run out of colors above, use off white for 'other' author
+    OTHER_COLOR = '#F2F3F4'
+
+    def __init__(self, working_data, intervals):
+        HotspotModule.__init__(self, working_data, intervals)
+        self.authors_key = {}
+        self.top_authors_count = defaultdict(int)
+
+    def process_file(self, current_file):
+        # For this module, only worry about processing in our interval scope
+        if not self.is_file_in_scope(current_file):
+            return
+
+        module = self.working_data[current_file['filename']]
+        if 'top_authors' not in module:
+            module['top_authors'] = defaultdict(int)
+
+        num_changes = current_file['insertions'] + current_file['deletions']
+        module['top_authors'][current_file['author']] += num_changes
+
+    def post_process_data(self):
+        # Get top few contributors for each file
+        self.log.info("Starting post processing for KnowledgeMap." +
+                      " Sorting modules for top authors...")
+        for module in self.working_data.itervalues():
+            sorted_authors = sorted(module['top_authors'].iteritems(),
+                                    key = lambda (k, v): v, reverse=True)
+            self.top_authors_count[sorted_authors[0][0]] += 1
+            module['top_authors'] = sorted_authors[0:3]#{k:v for k, v in sorted_authors[0:3]}
+
+        self.log.info("Finished sorting modules for top authors." +
+                      " Determining appropriate color map...")
+        sorted_top_authors = sorted(self.top_authors_count.iteritems(),
+                                    key = lambda (k, v): v, reverse=True)
+        for i in range(len(self.AUTHOR_COLORS)):
+            self.authors_key[sorted_top_authors[i][0]] = self.AUTHOR_COLORS[i]
+        for module in self.working_data.itervalues():
+            top_author = module['top_authors'][0][0]
+            if top_author in self.authors_key:
+                module['author_color'] = self.authors_key[top_author]
+            else:
+                module['author_color'] = self.OTHER_COLOR
+            # Convert top_authors to a dict for front end
+            module['top_authors'] = {k:v for k, v in module['top_authors']}
+
+        # self.log.debug("Author key: %s", json.dumps(self.authors_key, indent=2))
+        # self.log.debug("Top Authors: %s", json.dumps(self.authors_key, indent=2))
+        self.log.info("Finished post processing for KnowLedgeMap")
