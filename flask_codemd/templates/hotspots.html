@@ -44,8 +44,9 @@
   }
 </style>
 
-<button id="temp-coup-btn" type="button" class="btn btn-primary btn-sm">Temporal Coupling</button>
 <button id="bugs-btn" type="button" class="btn btn-primary btn-sm">Bugs</button>
+<button id="temp-coup-btn" type="button" class="btn btn-primary btn-sm">Temporal Coupling</button>
+<button id="knowledge-map-btn" type="button" class="btn btn-primary btn-sm">Knowledge Map</button>
 <button id="none-btn" type="button" class="btn btn-primary btn-sm">None</button>
 
 <script>
@@ -111,32 +112,43 @@
     .attr('class', 'd3-tip')
     .offset([-10, 0])
     .html(function(d) {
-      var baseHTML = "<strong>" + d.name + "</strong><br style='line-height:150%'/>"
+      var baseHTML = "<strong style='font-size:18px'>" + d.name +
+                     "</strong><br style='line-height:160%'/>"
       switch (mode) {
         case PACKING_MODULES.NONE:
           return baseHTML + "<span> Lines of Code: " + d.loc;
           break;
         case PACKING_MODULES.BUGS:
-          svg.selectAll("circle")
-            return baseHTML + "<span>Bug Score: </span><span style='color:red'>"
-                            + Math.round(d.bug_score*100)/100 + "</span></br>"
-                            + "<span>Number of Bugs: " + d.bug_count + "</span>";
-            break;
+          return baseHTML + "<span>Bug Score: </span><span style='color:red'>"
+                          + Math.round(d.bug_score*100)/100 + "</span></br>"
+                          + "<span>Number of Bugs: " + d.bug_count + "</span>";
+          break;
         case PACKING_MODULES.TEMPORAL_COUPLING:
-          svg.selectAll("circle")
-            var html = baseHTML + "<span>Temporal Coupling Score: </span>";
-            if (d.tc_score > 0) {
-              html += "<span style='color:red'>" + Math.round(d.tc_score*100)/100 +
-                      "</span></br><span>Number of Revisions: " + d.num_revisions + "</span>" +
-                      "</span><br/><span>Coupled Module: </span><span style='color:red'>"
-                      + d.coupled_module + "</span></br>" + "<span>Number of Mutual Revisions: "
-                      + d.num_mutual_revisions + "</span></br>" + "<span>Percent Coupled: </span>"
-                      + "<span style='color:red'>" + Math.round(d.tc_percent*100)/100 + "</span>";
-            } else {
-              html += "<span>" + d.tc_score + "</span>";
-            }
-            return html;
-            break;
+          var html = baseHTML + "<span>Temporal Coupling Score: </span>";
+          if (d.tc_score > 0) {
+            html += "<span style='color:red'>" + Math.round(d.tc_score*100)/100 +
+                    "</span></br><span>Number of Revisions: " + d.num_revisions + "</span>" +
+                    "</span><br/><span>Coupled Module: </span><span style='color:red'>"
+                    + d.coupled_module + "</span></br>" + "<span>Number of Mutual Revisions: "
+                    + d.num_mutual_revisions + "</span></br>" + "<span>Percent Coupled: </span>"
+                    + "<span style='color:red'>" + Math.round(d.tc_percent*100)/100 + "</span>";
+          } else {
+            html += "<span>" + d.tc_score + "</span>";
+          }
+          return html;
+          break;
+        case PACKING_MODULES.KNOWLEDGE_MAP:
+          var sorted_authors = [];
+          for (var key in d.top_authors) { sorted_authors.push([key, d.top_authors[key]]); }
+          sorted_authors.sort(function(a, b) { return b[1] - a[1]; })
+          var html = baseHTML + "<strong>Top Contributors</strong></br style='line-height:135%'><ul style='margin-bottom:0px;'>";
+          for (var i in sorted_authors) {
+            var author = sorted_authors[i]
+            html += "<li><b>" + author[0] + "</b> with<b> " + author[1] + "</b> changes</li>";
+          }
+          html += "</ul>";
+          return html;
+          break;
       }
     })
 
@@ -169,6 +181,15 @@
           })
           .style("fill-opacity", function(d) {
             return d.tc_color_opacity;
+          });
+          break
+      case PACKING_MODULES.KNOWLEDGE_MAP:
+        svg.selectAll("circle")
+          .style("fill", function(d) {
+            return d.children ? color(d.depth) : d3.rgb(d.author_color);
+          })
+          .style("fill-opacity", function(d) {
+            return d.children ? color(d.depth) : 1;
           });
           break;
     }
@@ -284,13 +305,17 @@
     mode = PACKING_MODULES.NONE;
     colorCircles();
   });
+  $('#knowledge-map-btn').on('click', function(e) {
+    mode = PACKING_MODULES.KNOWLEDGE_MAP;
+    colorCircles();
+  });
 </script>
 
 
 <style>
 .d3-tip {
-  line-height: 115%;
-  font-weight: normal;
+  line-height: 125%;
+  font-weight: lighter;
   padding: 8px;
   background: rgba(0, 0, 0, 0.8);
   color: #fff;
@@ -316,6 +341,7 @@
   top: 100%;
   left: 0;
 }
+
 </style>
 
 {% endblock %}

@@ -481,10 +481,6 @@ class KnowledgeMapModule(HotspotModule):
         self.top_authors_count = defaultdict(int)
 
     def process_file(self, current_file):
-        # For this module, only worry about processing in our interval scope
-        if not self.is_file_in_scope(current_file):
-            return
-
         module = self.working_data[current_file['filename']]
         if 'top_authors' not in module:
             module['top_authors'] = defaultdict(int)
@@ -500,7 +496,7 @@ class KnowledgeMapModule(HotspotModule):
             sorted_authors = sorted(module['top_authors'].iteritems(),
                                     key = lambda (k, v): v, reverse=True)
             self.top_authors_count[sorted_authors[0][0]] += 1
-            module['top_authors'] = sorted_authors[0:3]#{k:v for k, v in sorted_authors[0:3]}
+            module['top_authors'] = sorted_authors[0:3]
 
         self.log.info("Finished sorting modules for top authors." +
                       " Determining appropriate color map...")
@@ -516,7 +512,8 @@ class KnowledgeMapModule(HotspotModule):
                 module['author_color'] = self.OTHER_COLOR
             # Convert top_authors to a dict for front end
             module['top_authors'] = {k:v for k, v in module['top_authors']}
+        self.log.info("Finished building author color map.")
 
         # self.log.debug("Author key: %s", json.dumps(self.authors_key, indent=2))
         # self.log.debug("Top Authors: %s", json.dumps(self.authors_key, indent=2))
-        self.log.info("Finished post processing for KnowLedgeMap")
+        self.log.info("Finished post processing for KnowledgeMap.")
