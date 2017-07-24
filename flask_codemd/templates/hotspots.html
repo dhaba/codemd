@@ -311,6 +311,12 @@ rect {
       .style("display", function(d) {
         return d.parent === root ? null : "none";
       })
+      .style("opacity", function(d) {
+        return d.r > 20 ? 1 : 0;
+      })
+      .style("font-weight", function(d) {
+        return d.children ? "bold" : "normal";
+      })
       .text(function(d) {
         return d.name;
       });
@@ -330,11 +336,11 @@ rect {
 
       var focus0 = focus;
       focus = d;
+      var updateCounter = 0;
 
       var k = innerDiameter / d.r / 2;
       x.domain([d.x - d.r, d.x + d.r]);
       y.domain([d.y - d.r, d.y + d.r]);
-      d3.event.stopPropagation();
 
       var transition = d3.selectAll("text,circle").transition()
         .duration(d3.event.altKey ? 7500 : 750)
@@ -348,18 +354,62 @@ rect {
         });
 
       transition.filter("text")
+        .style("opacity", 0)
         .filter(function(d) {
           return d.parent === focus || d.parent === focus0;
         })
         .style("fill-opacity", function(d) {
           return d.parent === focus ? 1 : 0;
         })
-        .each("start", function(d) {
+        .each("start", function(d, i) {
           if (d.parent === focus) this.style.display = "inline";
+          this.style.opacity = 0;
+          updateCounter++;
         })
-        .each("end", function(d) {
+        .each("end", function(d, i) {
           if (d.parent !== focus) this.style.display = "none";
+          updateCounter--;
+          if (updateCounter == 0) {
+            console.log("time to update labels!");
+            adjustLabels(k);
+          }
         });
+
+      d3.event.stopPropagation();
+    }
+
+    function adjustLabels(k) {
+        svg.selectAll("text")
+            .style("opacity", function(d) {
+                return k * d.r > 20 ? 1 : 0;
+            })
+            .text(function(d) {
+                return d.name;
+            })
+            .filter(function(d) {
+                d.tw = this.getComputedTextLength();
+                return (Math.PI*(k*d.r)/2) < d.tw;
+            })
+            .each(function(d) {
+                // Only truncate labels for child elements
+                if (d.children) {
+                  d3.select(this).text(d.name);
+                  return;
+                }
+                var proposedLabel = d.name;
+                var proposedLabelArray = proposedLabel.split('');
+                while ((d.tw > (Math.PI*(k*d.r)/2) && proposedLabelArray.length)) {
+                    // pull out 3 chars at a time to speed things up (one at a time is too slow)
+                    proposedLabelArray.pop();proposedLabelArray.pop(); proposedLabelArray.pop();
+                    if (proposedLabelArray.length===0) {
+                        proposedLabel = "";
+                    } else {
+                        proposedLabel = proposedLabelArray.join('') + "..."; // manually truncate with ellipsis
+                    }
+                    d3.select(this).text(proposedLabel);
+                    d.tw = this.getComputedTextLength();
+                }
+            });
     }
 
     colorCircles(mode);
