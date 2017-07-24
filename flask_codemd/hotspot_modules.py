@@ -467,10 +467,10 @@ class KnowledgeMapModule(HotspotModule):
     Extracts top contributors for each module
     """
 
-    # 21 optimally distinct colors of maximum contrast based on research by Kenneth Kelly
-    AUTHOR_COLORS = ['#BE0032', '#F3C300', '#875692', '#F38400',
-                  '#A1CAF1', '#BE0032', '#C2B280', '#848482', '#008856', '#E68FAC',
-                  '#0067A5', '#F99379', '#604E97', '#F6A600', '#B3446C', '#DCD300',
+    # Optimally distinct colors of maximum contrast based on research by Kenneth Kelly
+    AUTHOR_COLORS = ['#BE0032', '#F3C300', '#F38400',
+                  '#A1CAF1', '#C2B280', '#848482', '#008856', '#E68FAC',
+                  '#0067A5', '#F99379', '#604E97', '#B3446C', '#DCD300',
                   '#882D17', '#8DB600', '#654522', '#E25822', '#2B3D26', '#222222']
     # If we run out of colors above, use off white for 'other' author
     OTHER_COLOR = '#F2F3F4'
@@ -497,15 +497,16 @@ class KnowledgeMapModule(HotspotModule):
                                     key = lambda (k, v): v, reverse=True)
             self.top_authors_count[sorted_authors[0][0]] += 1
             module['top_authors'] = sorted_authors[0:3]
+            module['author'] = sorted_authors[0][0]
 
         self.log.info("Finished sorting modules for top authors." +
                       " Determining appropriate color map...")
         sorted_top_authors = sorted(self.top_authors_count.iteritems(),
                                     key = lambda (k, v): v, reverse=True)
-        for i in range(len(self.AUTHOR_COLORS)):
+        for i in xrange(min(len(sorted_top_authors), len(self.AUTHOR_COLORS))):
             self.authors_key[sorted_top_authors[i][0]] = self.AUTHOR_COLORS[i]
         for module in self.working_data.itervalues():
-            top_author = module['top_authors'][0][0]
+            top_author = module['author']
             if top_author in self.authors_key:
                 module['author_color'] = self.authors_key[top_author]
             else:

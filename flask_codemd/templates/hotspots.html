@@ -42,12 +42,31 @@
     }
     .label, .node--root { pointer-events: none; }
   }
+
+.legend {
+  font-size: 12px;
+}
+
+rect {
+  stroke-width: 2;
+}
+
+#ruler {
+   visibility: hidden;
+   white-space: nowrap;
+ }
+
 </style>
 
 <button id="bugs-btn" type="button" class="btn btn-primary btn-sm">Bugs</button>
 <button id="temp-coup-btn" type="button" class="btn btn-primary btn-sm">Temporal Coupling</button>
 <button id="knowledge-map-btn" type="button" class="btn btn-primary btn-sm">Knowledge Map</button>
 <button id="none-btn" type="button" class="btn btn-primary btn-sm">None</button>
+
+<div id="circle-packing"></div>
+<div id="legend"></div>
+
+<span id="ruler"></span>
 
 <script>
   var packingData = null;
@@ -58,10 +77,13 @@
     KNOWLEDGE_MAP: 3,
     NONE: 4
   };
-
   var mode = PACKING_MODULES.NONE;
+
   var projectName = '{{ project_name }}';
   var intervals = {{ intervals | tojson }};
+
+  var authorKey = {};
+  var legendDrawn = false;
 
   if (projectName === null) {
     projectName = this.pathname.split('/').pop();
@@ -102,7 +124,7 @@
       return d.loc;
     });
 
-  var svg = d3.select("body").append("svg")
+  var svg = d3.select("#circle-packing").append("svg")
     .attr("width", outerDiameter)
     .attr("height", outerDiameter)
     .append("g")
@@ -116,13 +138,11 @@
                      "</strong><br style='line-height:160%'/>"
       switch (mode) {
         case PACKING_MODULES.NONE:
-          return baseHTML + "<span> Lines of Code: " + d.loc;
-          break;
+          return baseHTML + "<span>Lines of Code: " + d.loc + "</span>"
         case PACKING_MODULES.BUGS:
           return baseHTML + "<span>Bug Score: </span><span style='color:red'>"
                           + Math.round(d.bug_score*100)/100 + "</span></br>"
                           + "<span>Number of Bugs: " + d.bug_count + "</span>";
-          break;
         case PACKING_MODULES.TEMPORAL_COUPLING:
           var html = baseHTML + "<span>Temporal Coupling Score: </span>";
           if (d.tc_score > 0) {
@@ -136,23 +156,64 @@
             html += "<span>" + d.tc_score + "</span>";
           }
           return html;
-          break;
         case PACKING_MODULES.KNOWLEDGE_MAP:
           var sorted_authors = [];
           for (var key in d.top_authors) { sorted_authors.push([key, d.top_authors[key]]); }
           sorted_authors.sort(function(a, b) { return b[1] - a[1]; })
-          var html = baseHTML + "<strong>Top Contributors</strong></br style='line-height:135%'><ul style='margin-bottom:0px;'>";
+          var html = baseHTML + "<strong>Top Contributors</strong>"
+                              + "</br style='line-height:135%'><ul style='margin-bottom:0px;'>";
           for (var i in sorted_authors) {
             var author = sorted_authors[i]
-            html += "<li><b>" + author[0] + "</b> with<b> " + author[1] + "</b> changes</li>";
+            html += "<li><b style='color:" + authorKey[author[0]] + "'>" + author[0] + "</b> with<b> " + author[1] + "</b> changes</li>";
           }
           html += "</ul>";
           return html;
-          break;
       }
     })
 
+  function drawLegend() {
+    if (legendDrawn) {
+      console.log("legend already drawn; returning");
+      return;
+    }
+    var offsetX = 5;
+    var offsetY = 5;
+    var legendWidth = 250;
+    var legendHeight = outerDiameter;
+    var legendRectSize = 18;
+    var legendSpacing = 4;
+    var legendSVG = d3.select("#legend").append("svg")
+      .attr("width", legendWidth)
+      .attr("height", legendHeight)
+      .append("g")
+      .attr("transform", "translate(" + offsetX + "," + offsetY + ")");
+    var legend = legendSVG.selectAll('.legend')
+          .data(Object.keys(authorKey))
+          .enter()
+          .append('g')
+          .attr('class', 'legend')
+          .attr('transform', function(d, i) {
+            var height = legendRectSize + legendSpacing;
+            return "translate(" + 0 + "," + i*(height) + ")";
+          });
+    legend.append('rect')
+      .attr('width', legendRectSize)
+      .attr('height', legendRectSize)
+      .style('fill', function(d){
+        return authorKey[d];
+      })
+      .style('stroke', function(d){
+        return authorKey[d];
+      });
+    legend.append('text')
+      .attr('x', legendRectSize + legendSpacing)
+      .attr('y', legendRectSize - legendSpacing)
+      .text(function(d) { return d; });
+    legendDrawn = true;
+  }
+
   function colorCircles() {
+    $('#legend').hide();
     switch (mode) {
       case PACKING_MODULES.NONE:
         svg.selectAll("circle")
@@ -182,15 +243,32 @@
           .style("fill-opacity", function(d) {
             return d.tc_color_opacity;
           });
-          break
+          break;
       case PACKING_MODULES.KNOWLEDGE_MAP:
         svg.selectAll("circle")
           .style("fill", function(d) {
-            return d.children ? color(d.depth) : d3.rgb(d.author_color);
+            if (d.children) {
+              return color(d.depth);
+            } else {
+              if ((d.author_color in authorKey) && (authorKey[d.author_color] != d.author)) {
+                authorKey[d.author_color] = "Other";
+              } else {
+                authorKey[d.author_color] = d.author;
+              }
+              return d3.rgb(d.author_color);
+            }
           })
           .style("fill-opacity", function(d) {
             return d.children ? color(d.depth) : 1;
           });
+          // Reverse keys and values for D3 legend
+          var reversed = {};
+          for (c in authorKey) {
+            reversed[authorKey[c]] = c;
+          }
+          authorKey = reversed;
+          drawLegend();
+          $('#legend').show();
           break;
     }
   }
@@ -218,9 +296,6 @@
       })
       .on("click", function(d) {
         return zoom(focus == d ? root : d);
-      })
-      .append("title").text(function(d) {
-        return d.name;
       });
 
     svg.append("g").selectAll("text")
@@ -287,7 +362,6 @@
         });
     }
 
-    // Default view is None
     colorCircles(mode);
   });
   d3.select(self.frameElement).style("height", outerDiameter + "px");
