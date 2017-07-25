@@ -1,7 +1,8 @@
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta, abstractmethod, abstractproperty
 import logging
 import re
 import math
+import copy
 from collections import defaultdict
 from itertools import combinations
 
@@ -23,6 +24,14 @@ class HotspotModule:
     for each interval. For only one interval, pass an array with one element.
     """
     __metaclass__ = ABCMeta
+
+    @abstractproperty
+    def MODULE_KEY(self):
+        pass
+
+    @abstractproperty
+    def DEFAULT_DATA(self):
+        pass
 
     @abstractmethod
     def __init__(self, working_data, intervals):
@@ -47,10 +56,10 @@ class HotspotModule:
         current_scope = current_file['date']
         return ((current_scope >= start_scope) and (current_scope <= end_scope))
 
-    def get_or_create_key(self, file_name, key, default_data={}):
+    def get_or_create_key(self, file_name, key=None, default_data=None):
         """
         Utility method to either create a key for a specific module in working_data
-        , or return it if it already exists.
+        or return it if it already exists.
 
         :param file_name: The filename to lookup in self.working_data
         :param key: The key name to return or create
@@ -60,10 +69,15 @@ class HotspotModule:
 
         :return self.working_data[file_name][key] (which is a dictionary)
         """
+        if key is None:
+            key = self.MODULE_KEY
+        if default_data is None:
+            default_data = self.DEFAULT_DATA
+
         if file_name not in self.working_data.keys():
             self.working_data[file_name] = {}
         if key not in self.working_data[file_name]:
-            self.working_data[file_name][key] = default_data.copy()
+            self.working_data[file_name][key] = copy.deepcopy(default_data)
         return self.working_data[file_name][key]
 
 class FileInfoModule(HotspotModule):
@@ -90,8 +104,7 @@ class FileInfoModule(HotspotModule):
         default_data = self.DEFAULT_DATA
         default_data['creation_date'] = current_file['date']
 
-        f = self.get_or_create_key(current_file['filename'], self.MODULE_KEY,
-                                   default_data = default_data)
+        f = self.get_or_create_key(current_file['filename'], default_data = default_data)
         f['loc'] += current_file['insertions'] - current_file['deletions']
         f['total_revisions'] += 1
         f['last_modified'] = current_file['date']
@@ -128,7 +141,7 @@ class BugModule(HotspotModule):
         Responsible for parsing bug score related information out of the file
         """
         file_name = current_file['filename']
-        bug_info = self.get_or_create_key(file_name, self.MODULE_KEY, self.DEFAULT_DATA)
+        bug_info = self.get_or_create_key(file_name)
         # For this module, only worry about processing in our interval scope
         if not self.is_file_in_scope(current_file):
             return
@@ -219,8 +232,7 @@ class TemporalModule(HotspotModule):
 
     def process_file(self, current_file):
         # Set default temporal coupling data
-        tc_info = self.get_or_create_key(current_file['filename'], self.MODULE_KEY,
-                                         default_data=self.DEFAULT_DATA)
+        tc_info = self.get_or_create_key(current_file['filename'])
 
         # For this module, only worry about processing in our interval scope
         if not self.is_file_in_scope(current_file):
@@ -239,10 +251,6 @@ class TemporalModule(HotspotModule):
         # Even if we have a full batch, still need to add a new one
         self.commits_buffer['revision_id'] = current_file['revision_id']
         self.commits_buffer['commits'].append(current_file['filename'])
-
-        # DEBUG
-        # self.log.debug("\n\nCommits buffer: %s", self.commits_buffer)
-        # self.log.debug("\nend commits buffer\n")
 
     def post_process_data(self):
         """
@@ -423,6 +431,7 @@ class TemporalModule(HotspotModule):
         # Add data for remaining (non colored) couples
         for coup in other_couples:
             add_temporal_data(coup, None)
+
         # DEBUGGING
         # for c in colors:
         #     self.log.debug("%s", c)
@@ -505,6 +514,10 @@ class KnowledgeMapModule(HotspotModule):
     Extracts top contributors for each module
     """
 
+    MODULE_KEY = "knowledge_info"
+    DEFAULT_DATA = {"author": None, "color": None,
+                    "top_authors": defaultdict(int)}
+
     # Optimally distinct colors of maximum contrast based on research by Kenneth Kelly
     AUTHOR_COLORS = ['#BE0032', '#F3C300', '#F38400',
                   '#A1CAF1', '#C2B280', '#848482', '#008856', '#E68FAC',
@@ -519,23 +532,21 @@ class KnowledgeMapModule(HotspotModule):
         self.top_authors_count = defaultdict(int)
 
     def process_file(self, current_file):
-        module = self.working_data[current_file['filename']]
-        if 'top_authors' not in module:
-            module['top_authors'] = defaultdict(int)
-
+        knowledge_info = self.get_or_create_key(current_file['filename'])
         num_changes = current_file['insertions'] + current_file['deletions']
-        module['top_authors'][current_file['author']] += num_changes
+        knowledge_info['top_authors'][current_file['author']] += num_changes
 
     def post_process_data(self):
         # Get top few contributors for each file
         self.log.info("Starting post processing for KnowledgeMap." +
                       " Sorting modules for top authors...")
-        for module in self.working_data.itervalues():
-            sorted_authors = sorted(module['top_authors'].iteritems(),
+        for module in self.working_data:
+            knowledge_info = self.get_or_create_key(module)
+            sorted_authors = sorted(knowledge_info['top_authors'].iteritems(),
                                     key = lambda (k, v): v, reverse=True)
             self.top_authors_count[sorted_authors[0][0]] += 1
-            module['top_authors'] = sorted_authors[0:3]
-            module['author'] = sorted_authors[0][0]
+            knowledge_info['top_authors'] = sorted_authors[0:3]
+            knowledge_info['author'] = sorted_authors[0][0]
 
         self.log.info("Finished sorting modules for top authors." +
                       " Determining appropriate color map...")
@@ -543,16 +554,19 @@ class KnowledgeMapModule(HotspotModule):
                                     key = lambda (k, v): v, reverse=True)
         for i in xrange(min(len(sorted_top_authors), len(self.AUTHOR_COLORS))):
             self.authors_key[sorted_top_authors[i][0]] = self.AUTHOR_COLORS[i]
-        for module in self.working_data.itervalues():
-            top_author = module['author']
+        for module in self.working_data:
+            knowledge_info = self.get_or_create_key(module)
+            top_author = knowledge_info['author']
             if top_author in self.authors_key:
-                module['author_color'] = self.authors_key[top_author]
+                knowledge_info['color'] = self.authors_key[top_author]
             else:
-                module['author_color'] = self.OTHER_COLOR
+                knowledge_info['color'] = self.OTHER_COLOR
             # Convert top_authors to a dict for front end
-            module['top_authors'] = {k:v for k, v in module['top_authors']}
-        self.log.info("Finished building author color map.")
+            knowledge_info['top_authors'] = {k:v for k, v in knowledge_info['top_authors']}
+            # DEBUG
+            # self.log.debug("module %s with working_data: %s", module, self.working_data[module])
 
+        self.log.info("Finished building author color map.")
         # self.log.debug("Author key: %s", json.dumps(self.authors_key, indent=2))
         # self.log.debug("Top Authors: %s", json.dumps(self.authors_key, indent=2))
         self.log.info("Finished post processing for KnowledgeMap.")

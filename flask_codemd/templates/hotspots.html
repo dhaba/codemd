@@ -170,7 +170,7 @@ rect {
           return html;
         case PACKING_MODULES.KNOWLEDGE_MAP:
           var sorted_authors = [];
-          for (var key in d.top_authors) { sorted_authors.push([key, d.top_authors[key]]); }
+          for (var key in d.knowledge_info.top_authors) { sorted_authors.push([key, d.knowledge_info.top_authors[key]]); }
           sorted_authors.sort(function(a, b) { return b[1] - a[1]; })
           var html = baseHTML + "<strong>Top Contributors</strong>"
                               + "</br style='line-height:135%'><ul style='margin-bottom:0px;'>";
@@ -268,12 +268,12 @@ rect {
             if (d.children) {
               return color(d.depth);
             } else {
-              if ((d.author_color in authorKey) && (authorKey[d.author_color] != d.author)) {
-                authorKey[d.author_color] = "Other";
+              if ((d.knowledge_info.color in authorKey) && (authorKey[d.knowledge_info.color] != d.knowledge_info.author)) {
+                authorKey[d.knowledge_info.color] = "Other";
               } else {
-                authorKey[d.author_color] = d.author;
+                authorKey[d.knowledge_info.color] = d.knowledge_info.author;
               }
-              return d3.rgb(d.author_color);
+              return d3.rgb(d.knowledge_info.color);
             }
           })
           .style("fill-opacity", function(d) {

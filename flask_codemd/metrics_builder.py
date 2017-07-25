@@ -143,7 +143,7 @@ class MetricsBuilder(object):
 
         # TODO -- handle multiple intervals with build_filetree
         attrs = [FileInfoModule.MODULE_KEY, BugModule.MODULE_KEY, TemporalModule.MODULE_KEY,
-                'top_authors', 'author', 'author_color']
+                KnowledgeMapModule.MODULE_KEY]
         return {"name": "root", "children": self.__build_filetree(file_heirarchy[0], attributes=attrs)}
 
 
