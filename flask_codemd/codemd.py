@@ -10,11 +10,12 @@ from flask import Flask, request, session, g, redirect, url_for, abort, \
 
 from repo_analyser import RepoAnalyser
 from metrics_builder import MetricsBuilder
+from secret_key import SECRET_KEY
 
 
 # Create app instance
 app = Flask(__name__)
-app.secret_key = "somesupersecretkeythatnoonewilleverguess"
+app.secret_key = SECRET_KEY
 
 
 # Set db configuration options
