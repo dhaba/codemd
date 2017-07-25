@@ -62,7 +62,7 @@ rect {
 <button id="bugs-btn" type="button" class="btn btn-primary btn-sm">Bugs</button>
 <button id="temp-coup-btn" type="button" class="btn btn-primary btn-sm">Temporal Coupling</button>
 <button id="knowledge-map-btn" type="button" class="btn btn-primary btn-sm">Knowledge Map</button>
-<button id="none-btn" type="button" class="btn btn-primary btn-sm">None</button>
+<button id="none-btn" type="button" class="btn btn-primary btn-sm">File Info</button>
 
 <div id="circle-packing"></div>
 <div id="legend"></div>
@@ -76,9 +76,9 @@ rect {
     TEMPORAL_COUPLING: 1,
     CODE_AGE: 2,
     KNOWLEDGE_MAP: 3,
-    NONE: 4
+    FILE_INFO: 4
   };
-  var mode = PACKING_MODULES.NONE;
+  var mode = PACKING_MODULES.KNOWLEDGE_MAP;
 
   var projectName = '{{ project_name }}';
   var intervals = {{ intervals | tojson }};
@@ -138,7 +138,7 @@ rect {
       var baseHTML = "<strong style='font-size:18px'>" + d.name +
                      "</strong><br style='line-height:160%'/>"
       switch (mode) {
-        case PACKING_MODULES.NONE:
+        case PACKING_MODULES.FILE_INFO:
           // Convert epoch times to dates
           if (!(d.file_info.creation_date instanceof moment)) {
             d.file_info.creation_date = moment(1000 * d.file_info.creation_date);
@@ -227,7 +227,7 @@ rect {
   function colorCircles() {
     $('#legend').hide();
     switch (mode) {
-      case PACKING_MODULES.NONE:
+      case PACKING_MODULES.FILE_INFO:
         svg.selectAll("circle")
           .style("fill", function(d) {
             return d.children ? color(d.depth) : "WhiteSmoke";
@@ -246,7 +246,7 @@ rect {
             }
           })
           .style("fill-opacity", function(d) {
-            return d.children ? 1 : d.bug_info.score;
+            return d.children ? 1 : d.bug_info.opacity;
           });
           break;
       case PACKING_MODULES.TEMPORAL_COUPLING:
@@ -259,7 +259,7 @@ rect {
             }
           })
           .style("fill-opacity", function(d) {
-            return d.children ? 1 : d.tc_info.opacity;
+            return d.children ? 1 : d.tc_info.color === null ? 0 : d.tc_info.opacity;
           });
           break;
       case PACKING_MODULES.KNOWLEDGE_MAP:
@@ -444,7 +444,7 @@ rect {
     colorCircles();
   });
   $('#none-btn').on('click', function(e) {
-    mode = PACKING_MODULES.NONE;
+    mode = PACKING_MODULES.FILE_INFO;
     colorCircles();
   });
   $('#knowledge-map-btn').on('click', function(e) {

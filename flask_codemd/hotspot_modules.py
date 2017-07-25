@@ -116,7 +116,7 @@ class FileInfoModule(HotspotModule):
 class BugModule(HotspotModule):
 
     MODULE_KEY = 'bug_info'
-    DEFAULT_DATA = {'count': 0, 'score': 0}
+    DEFAULT_DATA = {'count': 0, 'score': 0, 'opacity': 0}
 
     def __init__(self, working_data, intervals):
         HotspotModule.__init__(self, working_data, intervals)
@@ -160,7 +160,8 @@ class BugModule(HotspotModule):
         self.log.info("Post processing BugInfoModule...")
         if self.max_bug_score != 0:
             for f in self.working_data:
-                self.working_data[f][self.MODULE_KEY]['score'] /= self.max_bug_score
+                bug_info = self.working_data[f][self.MODULE_KEY]
+                bug_info['opacity'] = bug_info['score']/self.max_bug_score
         self.log.info("Finished post processing for BugInfoModule")
 
     def __is_bug(self, message):
