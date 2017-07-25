@@ -343,11 +343,6 @@ rect {
       .on('mouseover', tip.show)
       .on('mouseout', tip.hide);
 
-    d3.select(window)
-      .on("click", function() {
-        zoom(root);
-      });
-
     function zoom(d, i) {
       // Do not allow leafs to zoom
       if(!d.children) { d = d.parent; }
