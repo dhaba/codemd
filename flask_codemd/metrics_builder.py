@@ -142,9 +142,8 @@ class MetricsBuilder(object):
         self.log.debug("Finished circle packing building process...")
 
         # TODO -- handle multiple intervals with build_filetree
-        attrs = [FileInfoModule.MODULE_KEY, BugModule.MODULE_KEY, 'tc_score', 'coupled_module',
-                 'num_revisions', 'num_mutual_revisions', 'tc_color',
-                 'tc_color_opacity', 'tc_percent', 'top_authors', 'author', 'author_color']
+        attrs = [FileInfoModule.MODULE_KEY, BugModule.MODULE_KEY, TemporalModule.MODULE_KEY,
+                'top_authors', 'author', 'author_color']
         return {"name": "root", "children": self.__build_filetree(file_heirarchy[0], attributes=attrs)}
 
 

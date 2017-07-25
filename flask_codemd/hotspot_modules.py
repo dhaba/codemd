@@ -81,7 +81,7 @@ class FileInfoModule(HotspotModule):
     DEFAULT_DATA = {'creation_date': None, 'loc': 0, 'total_revisions': 0}
 
      # Minimum number of lines to be considered in circle packing
-    LOC_THRESHOLD = 1
+    LOC_THRESHOLD = 8
 
     def __init__(self, working_data, intervals):
         HotspotModule.__init__(self, working_data, intervals)
@@ -135,12 +135,11 @@ class BugModule(HotspotModule):
 
         if self.__is_bug(current_file['message']):
             file_info = self.working_data[file_name][FileInfoModule.MODULE_KEY]
-            # bug_info = self.get_or_create_key(current_file['filename'], self.MODULE_KEY, self.DEFAULT_DATA)
+            bug_info['count'] += 1
 
-            # just for debugging really
+            # just for debugging really (note: need to init lists first)
             # f['bug_messages'].append(mod_file['message'])
             # f['bug_dates'].append(mod_file['date'])
-            bug_info['count'] += 1
 
             # Add score to each file. Scoring function based on research from Chris
             # Lewis and Rong Ou at Google
@@ -178,7 +177,11 @@ class TemporalModule(HotspotModule):
     analysis.
     """
 
-    SCORE_KEY_NAME = 'tc_score'
+    MODULE_KEY = 'tc_info'
+
+    DEFAULT_DATA = {'score': 0, 'percent': 0, 'color_opacity': 0,
+                    'coupled_module': None, 'num_revisions': 0,
+                    'num_mutual_revisions': 0, 'color': None}
 
     # Module will only report the NUM_TOP_COUPLES highest entries scored by the
     # temporal coupling algorithm
@@ -188,10 +191,11 @@ class TemporalModule(HotspotModule):
     MAX_COMMIT_SIZE = 8
 
     # Colors to use for cliques
-    CLIQUE_COLORS = ['#e31a1c',  '#6a3d9a', '#33a02c', '#0082c8', '#ffe119', '#000000']
+    CLIQUE_COLORS = ['#e31a1c',  '#6a3d9a', '#33a02c', '#0082c8', '#ffe119',
+                     '#df57d9', '#6e4c19', '#dbc488', '#000000']
 
     # Use distance in object graph as weight in scoring function
-    USE_MODULE_DISTANCE = True
+    USE_MODULE_DISTANCE = False
 
     # Specifies heuristics for ignoring files in the temporal coupling algorithm
     MODULE_FILTERS = {
@@ -210,26 +214,20 @@ class TemporalModule(HotspotModule):
         self.working_couples = defaultdict(int) # (file1, file2) : # of mutual revisions
         self.working_rev_counts = defaultdict(int) # (file) : # of revisions
         self.commits_buffer = {'commits': [], 'revision_id':None}
+        self.num_ignored_commits = 0
 
     def process_file(self, current_file):
         # Set default temporal coupling data
-        mod = current_file['filename']
-        if self.SCORE_KEY_NAME not in self.working_data[mod]:
-            self.working_data[mod][self.SCORE_KEY_NAME] = 0
-            self.working_data[mod]['tc_percent'] = 0
-            self.working_data[mod]['tc_color_opacity'] = 0
-            self.working_data[mod]['coupled_module'] = None
-            self.working_data[mod]['num_revisions'] = None
-            self.working_data[mod]['num_mutual_revisions'] = None
-            self.working_data[mod]['tc_color'] = None
+        tc_info = self.get_or_create_key(current_file['filename'], self.MODULE_KEY,
+                                         default_data=self.DEFAULT_DATA)
 
         # For this module, only worry about processing in our interval scope
         if not self.is_file_in_scope(current_file):
             return
 
-        # Increment revision count for file
+        # Increment revision count for file. This is different from the revision
+        # count in the general info because this count is scoped to the current interval
         self.working_rev_counts[current_file['filename']] += 1
-
         # Hack(ish) to regroup the original files from a commit since
         # I unwound them in the original db query
         if ((self.commits_buffer['revision_id'] is not None) and
@@ -252,35 +250,43 @@ class TemporalModule(HotspotModule):
         self.log.info("Starting post processing for TemporalModule...")
         # Process batch of files (last commit)
         self.__process_commits_buffer()
+        self.log.info("Number of ignored commits: %s", self.num_ignored_commits)
 
         couples = {}
         for pair, count in self.working_couples.iteritems():
+            mod1, mod2 = pair[0], pair[1]
             # Ignore files if necessary
-            if self.__should_filter_files(pair[0], pair[1]):
-                # self.log.debug("Filtering files %s and %s", pair[0], pair[1])
+            if self.__should_filter_files(mod1, mod2):
+                # self.log.debug("Filtering files %s and %s", mod1, mod2)
                 continue
-            module_distance = self.__module_distance(pair[0], pair[1]) + 1
-            avg_pair_revs = (self.working_rev_counts[pair[0]] + self.working_rev_counts[pair[1]]) / 2.0
-            score = count/avg_pair_revs * math.log(avg_pair_revs) #* (module_distance/12.0)
-            # score = count/avg_pair_revs * math.log(count) * math.log(avg_pair_revs) * module_distance
+
+            module_distance = self.__module_distance(mod1, mod2) + 1
+            avg_pair_revs = (self.working_rev_counts[mod1] + self.working_rev_counts[mod2]) / 2.0
+            score = count/avg_pair_revs * math.log(avg_pair_revs)
+            if (self.USE_MODULE_DISTANCE):
+                score *= (module_distance/12.0)
+
             couples[pair] = {'score': score, 'total_mutual_revs' : count,
                              'avg_revs': avg_pair_revs,
                              'module_distance': module_distance,
                              'percent_coupled': count/avg_pair_revs,
-                             pair[0]: self.working_rev_counts[pair[0]],
-                             pair[1]: self.working_rev_counts[pair[1]]}
+                             mod1: self.working_rev_counts[mod1],
+                             mod2: self.working_rev_counts[mod2]}
 
         self.log.info("Sorting couples...")
         sorted_result = sorted(couples.iteritems(), # TODO -- implement partial sorting
                                key=lambda (k,v): v['score'], reverse=True)
         self.log.info("Finished sorting couples.")
 
-        self.__augment_working_data(sorted_result[0:self.NUM_TOP_COUPLES])
+        self.__augment_working_data(sorted_result)
+
         self.log.info("Finished post processing for TemporalModule.")
+
+        # FOR DEBUGGING
         # self.log.debug("Top %s temporal coupling results: %s",
         #                 self.NUM_TOP_COUPLES,
         #                 json.dumps(sorted_result[0:self.NUM_TOP_COUPLES], indent=2))
-        # self.log.info("%s", sorted_result[0:self.NUM_TOP_COUPLES])
+        # self.log.info("Sorted results: %s", sorted_result[0:self.NUM_TOP_COUPLES])
         # self.log.debug("all couples: %s", json.dumps(sorted_result, indent=2))
 
     def __process_commits_buffer(self):
@@ -289,6 +295,7 @@ class TemporalModule(HotspotModule):
         """
         if len(self.commits_buffer['revision_id']) < self.MAX_COMMIT_SIZE:
             self.log.debug("Ignoring commit that exceeded max size: %s", self.commits_buffer['commits'])
+            self.num_ignored_commits += 1
             self.commits_buffer = {'commits': [], 'revision_id':None}
             return
 
@@ -302,7 +309,7 @@ class TemporalModule(HotspotModule):
         else:
             self.log.warning("!!! __process_commits_buffer called on empty commits_buffer")
 
-    def __augment_working_data(self, couples):
+    def __augment_working_data(self, sorted_couples):
         """
         Adds temporal coupling data to self.working_data, including a unique color
         parameter for each clique (in an undirected graph, where modules are
@@ -313,7 +320,12 @@ class TemporalModule(HotspotModule):
         containing information about the couple
         """
         self.log.info("Starting to augment working data with temporal coupling info...")
+
+        # Only use top NUM_TOP_COUPLES for circle packing coloring
+        couples = sorted_couples[0:self.NUM_TOP_COUPLES]
+        other_couples = sorted_couples[self.NUM_TOP_COUPLES:]
         max_score = couples[0][1]['score'] # For normalizing scores to set as opacity values
+
         def add_temporal_data(couple, color):
             """
             Helper method to add temporal coupling information to self.working_data
@@ -321,21 +333,16 @@ class TemporalModule(HotspotModule):
             data = couple[1]
             for mod in couple[0]:
                 # Only update data if score is higher than current value
-                if ((self.SCORE_KEY_NAME in self.working_data[mod]) and
-                    (self.working_data[mod][self.SCORE_KEY_NAME] > data['score'])):
+                tc_info = self.working_data[mod][self.MODULE_KEY]
+                if tc_info['score'] < data['score']:
                     coupled_module = filter(lambda x: x is not mod, couple[0])[0]
-                    # self.log.debug("Not writing score for module %s to %s because current" +
-                    #                 " score was less than that specified in couple:\n%s",
-                    #                 mod, coupled_module, couple)
-                else:
-                    coupled_module = filter(lambda x: x is not mod, couple[0])[0]
-                    self.working_data[mod][self.SCORE_KEY_NAME] = data['score']
-                    self.working_data[mod]['tc_color_opacity'] = data['score']/max_score
-                    self.working_data[mod]['coupled_module'] = coupled_module
-                    self.working_data[mod]['num_revisions'] = data[mod]
-                    self.working_data[mod]['num_mutual_revisions'] = data['total_mutual_revs']
-                    self.working_data[mod]['tc_color'] = color
-                    self.working_data[mod]['tc_percent'] = data['percent_coupled']
+                    tc_info['score'] = data['score']
+                    tc_info['opacity'] = data['score']/max_score
+                    tc_info['coupled_module'] = coupled_module
+                    tc_info['num_revisions'] = data[mod]
+                    tc_info['num_mutual_revisions'] = data['total_mutual_revs']
+                    tc_info['color'] = color
+                    tc_info['percent'] = data['percent_coupled']
                     # self.log.debug("Appended temp coupling data to working data " +
                     #                "module: %s, with data: %s", mod, self.working_data[mod])
 
@@ -399,12 +406,7 @@ class TemporalModule(HotspotModule):
                     if len(colors[c]) == 0:
                         empty_color = c
                         break
-                if empty_color is None:
-                    # self.log.debug("All cliques were full, ignoring couple: %s, " +
-                    #                "with data %s", coup[0], coup[1])
-                    # self.log.debug("(cliques full) colors: %s", colors)
-                    pass
-                else:
+                if empty_color is not None:
                     clique = None
                     for c in cliques:
                         if mod1 in c:
@@ -416,6 +418,10 @@ class TemporalModule(HotspotModule):
                         add_temporal_data(coup, empty_color)
                         for v in clique:
                             colors[empty_color].add(v)
+
+        # Add data for remaining (non colored) couples
+        for coup in other_couples:
+            add_temporal_data(coup, None)
         # DEBUGGING
         # for c in colors:
         #     self.log.debug("%s", c)

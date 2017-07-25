@@ -157,15 +157,15 @@ rect {
                           + "<span>Number of Bugs: " + d.bug_info.count + "</span>";
         case PACKING_MODULES.TEMPORAL_COUPLING:
           var html = baseHTML + "<span>Temporal Coupling Score: </span>";
-          if (d.tc_score > 0) {
-            html += "<span style='color:red'>" + Math.round(d.tc_score*100)/100 +
-                    "</span></br><span>Number of Revisions: " + d.num_revisions + "</span>" +
+          if (d.tc_info.score > 0) {
+            html += "<span style='color:red'>" + Math.round(d.tc_info.score*100)/100 +
+                    "</span></br><span>Number of Revisions: " + d.tc_info.num_revisions + "</span>" +
                     "</span><br/><span>Coupled Module: </span><span style='color:red'>"
-                    + d.coupled_module + "</span></br>" + "<span>Number of Mutual Revisions: "
-                    + d.num_mutual_revisions + "</span></br>" + "<span>Percent Coupled: </span>"
-                    + "<span style='color:red'>" + Math.round(d.tc_percent*100)/100 + "</span>";
+                    + d.tc_info.coupled_module + "</span></br>" + "<span>Number of Mutual Revisions: "
+                    + d.tc_info.num_mutual_revisions + "</span></br>" + "<span>Percent Coupled: </span>"
+                    + "<span style='color:red'>" + Math.round(d.tc_info.percent*100)/100 + "</span>";
           } else {
-            html += "<span>" + d.tc_score + "</span>";
+            html += "<span>" + d.tc_info.score + "</span>";
           }
           return html;
         case PACKING_MODULES.KNOWLEDGE_MAP:
@@ -242,21 +242,24 @@ rect {
             if (d.children) {
               return color(d.depth);
             } else {
-              return d.bug_info.score > 0.0 ? "darkred" : "WhiteSmoke"
+              return d.bug_info.score > 0.0 ? "darkred" : "WhiteSmoke";
             }
           })
           .style("fill-opacity", function(d) {
-            return d.children ? 1 : d.bug_info.score
+            return d.children ? 1 : d.bug_info.score;
           });
           break;
       case PACKING_MODULES.TEMPORAL_COUPLING:
         svg.selectAll("circle")
           .style("fill", function(d) {
-            return d.tc_score > 0.0 ? d3.rgb(d.tc_color) :
-              d.children ? color(d.depth) : "WhiteSmoke";
+            if (d.children) {
+              return color(d.depth);
+            } else {
+              return d.tc_info.color === null ? "WhiteSmoke" : d3.rgb(d.tc_info.color);
+            }
           })
           .style("fill-opacity", function(d) {
-              return d.tc_color_opacity;
+            return d.children ? 1 : d.tc_info.opacity;
           });
           break;
       case PACKING_MODULES.KNOWLEDGE_MAP:
