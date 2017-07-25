@@ -24,6 +24,7 @@ class HotspotsUtil(object):
         self.intervals = intervals
         self.working_data = {} # high level file info, dict of dicts. key is filename
         self.modules = []
+        self.counter = 0
 
         # working data will be appended after an interval is popped
         self.completedData = []
@@ -56,6 +57,10 @@ class HotspotsUtil(object):
         # TODO -- parralelize processing... add input queue to this feed_file
         # this could all be made a lot quicker
 
+        self.counter += 1
+        if self.counter % 2048 == 0:
+            self.log.info("Processing files ... files complete so far: %s", self.counter)
+
         start_scope, end_scope = self.intervals[0][0], self.intervals[0][1]
         current_scope = current_file['date']
 
@@ -65,7 +70,7 @@ class HotspotsUtil(object):
 
         # Check if file passed out of range
         if current_scope > end_scope:
-            self.log.debug("Interval %s out of range for file date %s\n\nCopying data and \
+            self.log.info("Interval %s out of range for file date %s\n\nCopying data and \
                            starting next interval (if any).", self.intervals[0], current_file)
             self.__post_process_data()
             # Recall this method if we still have work to do
@@ -74,7 +79,6 @@ class HotspotsUtil(object):
                 self.__feed_file(current_file)
             else:
                 return
-
 
         # Sanity check 1
         if (self.intervals[0][1] < current_file['date']):
