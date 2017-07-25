@@ -7,11 +7,6 @@ from itertools import combinations
 
 import json
 
-# ::::  HEURISTICS ::::
-# Hard coded rules for inclusion/exclusion of files when calculated various metrics
-# Ideally these would be exposed to the user for custom tinkering
-LOC_THRESHOLD = 24 # min number of lines to be considered in circle packing
-
 class HotspotModule:
     """
     Abstract class for processing files to build metrics for circle packing viz
@@ -52,26 +47,53 @@ class HotspotModule:
         current_scope = current_file['date']
         return ((current_scope >= start_scope) and (current_scope <= end_scope))
 
+    def get_or_create_key(self, file_name, key, default_data={}):
+        """
+        Utility method to either create a key for a specific module in working_data
+        , or return it if it already exists.
+
+        :param file_name: The filename to lookup in self.working_data
+        :param key: The key name to return or create
+                    (ie self.working_data[file_name][key])
+        :param defaultData: A dictionary containing the default values for key
+                            (ie self.working_data[file_name][key] = defaultData)
+
+        :return self.working_data[file_name][key] (which is a dictionary)
+        """
+        if file_name not in self.working_data.keys():
+            self.working_data[file_name] = {}
+        if key not in self.working_data[file_name]:
+            self.working_data[file_name][key] = default_data.copy()
+        return self.working_data[file_name][key]
 
 class FileInfoModule(HotspotModule):
     """
     Extract high level information including:
         - lines of code (LOC)
         - filename
+        - number of revisions
         - date last modified.
     """
+
+    MODULE_KEY = 'file_info'
+
+    # Default data for module specific data in working_data
+    DEFAULT_DATA = {'creation_date': None, 'loc': 0, 'total_revisions': 0}
+
+     # Minimum number of lines to be considered in circle packing
+    LOC_THRESHOLD = 1
 
     def __init__(self, working_data, intervals):
         HotspotModule.__init__(self, working_data, intervals)
 
     def process_file(self, current_file):
-        if current_file['filename'] not in self.working_data.keys():
-            self.working_data[current_file['filename']] = {'creation_date': current_file['date'],
-                                            #    'bug_dates': [], 'bug_messages': [],
-                                                'loc': 0, 'bug_score': 0, 'bug_count': 0}
+        default_data = self.DEFAULT_DATA
+        default_data['creation_date'] = current_file['date']
 
-        f = self.working_data[current_file['filename']]
+        f = self.get_or_create_key(current_file['filename'], self.MODULE_KEY,
+                                   default_data = default_data)
         f['loc'] += current_file['insertions'] - current_file['deletions']
+        f['total_revisions'] += 1
         f['last_modified'] = current_file['date']
 
     def post_process_data(self):
@@ -79,10 +101,12 @@ class FileInfoModule(HotspotModule):
         self.log.debug("Removing files smaller than threshhold...")
 
         files_to_filter = []
-        for f_name, f_info in self.working_data.iteritems():
-            if f_info['loc'] < LOC_THRESHOLD:
+        for f_name, data in self.working_data.iteritems():
+            f_info = data[self.MODULE_KEY]
+            if f_info['loc'] < self.LOC_THRESHOLD:
                 files_to_filter.append(f_name)
-        self.log.debug("Removing %s files", len(files_to_filter))
+        self.log.debug("Removing %s files for being less than %s lines of code",
+                       len(files_to_filter), self.LOC_THRESHOLD)
         for f in files_to_filter:
             # self.log.debug("Removing file %s because it only had %s lines", f, self.working_data[f]['loc'])
             self.working_data.pop(f, None)
@@ -90,6 +114,9 @@ class FileInfoModule(HotspotModule):
 
 
 class BugModule(HotspotModule):
+
+    MODULE_KEY = 'bug_info'
+    DEFAULT_DATA = {'count': 0, 'score': 0}
 
     def __init__(self, working_data, intervals):
         HotspotModule.__init__(self, working_data, intervals)
@@ -100,38 +127,41 @@ class BugModule(HotspotModule):
         """
         Responsible for parsing bug score related information out of the file
         """
+        file_name = current_file['filename']
+        bug_info = self.get_or_create_key(file_name, self.MODULE_KEY, self.DEFAULT_DATA)
         # For this module, only worry about processing in our interval scope
         if not self.is_file_in_scope(current_file):
             return
 
         if self.__is_bug(current_file['message']):
-            f = self.working_data[current_file['filename']]
+            file_info = self.working_data[file_name][FileInfoModule.MODULE_KEY]
+            # bug_info = self.get_or_create_key(current_file['filename'], self.MODULE_KEY, self.DEFAULT_DATA)
 
             # just for debugging really
             # f['bug_messages'].append(mod_file['message'])
             # f['bug_dates'].append(mod_file['date'])
-            f['bug_count'] += 1
+            bug_info['count'] += 1
 
             # Add score to each file. Scoring function based on research from Chris
             # Lewis and Rong Ou at Google
             end_date = self.intervals[0][1]
             fix_date = current_file['date']
-            time_delta = end_date - f['creation_date']
+            time_delta = end_date - file_info['creation_date']
             if time_delta <= 0:
                 norm_time = 1.0
             else:
                 norm_time = 1 - (float(end_date - fix_date) / (time_delta))
-            f['bug_score'] += 1 / (1 + math.exp(-12 * norm_time + 12))
+            bug_info['score'] += 1 / (1 + math.exp(-12 * norm_time + 12))
 
-            if f['bug_score'] > self.max_bug_score:
-                self.max_bug_score = f['bug_score']
+            if bug_info['score'] > self.max_bug_score:
+                self.max_bug_score = bug_info['score']
 
     def post_process_data(self):
         # Normalize bug scores
         self.log.info("Post processing BugInfoModule...")
         if self.max_bug_score != 0:
             for f in self.working_data:
-                self.working_data[f]['bug_score'] /= self.max_bug_score
+                self.working_data[f][self.MODULE_KEY]['score'] /= self.max_bug_score
         self.log.info("Finished post processing for BugInfoModule")
 
     def __is_bug(self, message):
@@ -184,13 +214,14 @@ class TemporalModule(HotspotModule):
     def process_file(self, current_file):
         # Set default temporal coupling data
         mod = current_file['filename']
-        self.working_data[mod][self.SCORE_KEY_NAME] = 0
-        self.working_data[mod]['tc_percent'] = 0
-        self.working_data[mod]['tc_color_opacity'] = 0
-        self.working_data[mod]['coupled_module'] = None
-        self.working_data[mod]['num_revisions'] = None
-        self.working_data[mod]['num_mutual_revisions'] = None
-        self.working_data[mod]['tc_color'] = None
+        if self.SCORE_KEY_NAME not in self.working_data[mod]:
+            self.working_data[mod][self.SCORE_KEY_NAME] = 0
+            self.working_data[mod]['tc_percent'] = 0
+            self.working_data[mod]['tc_color_opacity'] = 0
+            self.working_data[mod]['coupled_module'] = None
+            self.working_data[mod]['num_revisions'] = None
+            self.working_data[mod]['num_mutual_revisions'] = None
+            self.working_data[mod]['tc_color'] = None
 
         # For this module, only worry about processing in our interval scope
         if not self.is_file_in_scope(current_file):

@@ -8,6 +8,7 @@
 <script src="{{ url_for('static', filename='./bower_components/d3-tip/index.js') }}"></script>
 <script src="{{ url_for('static', filename='./bower_components/crossfilter/crossfilter.js') }}"></script>
 <script src="{{ url_for('static', filename='./bower_components/reductio/reductio.js') }}"></script>
+<script src="{{ url_for('static', filename='./bower_components/moment/moment.js') }}"></script>
 <script src="{{ url_for('static', filename='./bower_components/dcjs/dc.js') }}"></script>
 <script src="{{ url_for('static', filename='./dashboards.js') }}"></script>
 
@@ -121,7 +122,7 @@ rect {
     .padding(2)
     .size([innerDiameter, innerDiameter])
     .value(function(d) {
-      return d.loc;
+      return d.file_info.loc;
     });
 
   var svg = d3.select("#circle-packing").append("svg")
@@ -138,11 +139,22 @@ rect {
                      "</strong><br style='line-height:160%'/>"
       switch (mode) {
         case PACKING_MODULES.NONE:
-          return baseHTML + "<span>Lines of Code: " + d.loc + "</span>"
+          // Convert epoch times to dates
+          if (!(d.file_info.creation_date instanceof moment)) {
+            d.file_info.creation_date = moment(1000 * d.file_info.creation_date);
+            d.file_info.last_modified = moment(1000 * d.file_info.last_modified);
+          }
+          return baseHTML + "<span>Lines of Code: " + d.file_info.loc + "</span>"
+                          + "</br><span>Total Revisions: " + d.file_info.total_revisions
+                          + "</span></br><span>Creation Date:  "
+                          + d.file_info.creation_date.format("M/D/YY")
+                          + "</span></br><span> Last Modified:  "
+                          + d.file_info.last_modified.format("M/D/YY")
+                          + "</span>"
         case PACKING_MODULES.BUGS:
           return baseHTML + "<span>Bug Score: </span><span style='color:red'>"
-                          + Math.round(d.bug_score*100)/100 + "</span></br>"
-                          + "<span>Number of Bugs: " + d.bug_count + "</span>";
+                          + Math.round(d.bug_info.score*100)/100 + "</span></br>"
+                          + "<span>Number of Bugs: " + d.bug_info.count + "</span>";
         case PACKING_MODULES.TEMPORAL_COUPLING:
           var html = baseHTML + "<span>Temporal Coupling Score: </span>";
           if (d.tc_score > 0) {
@@ -227,11 +239,14 @@ rect {
       case PACKING_MODULES.BUGS:
         svg.selectAll("circle")
           .style("fill", function(d) {
-            return d.bug_score > 0.0 ? "darkred" :
-              d.children ? color(d.depth) : "WhiteSmoke";
+            if (d.children) {
+              return color(d.depth);
+            } else {
+              return d.bug_info.score > 0.0 ? "darkred" : "WhiteSmoke"
+            }
           })
           .style("fill-opacity", function(d) {
-            return d.bug_score;
+            return d.children ? 1 : d.bug_info.score
           });
           break;
       case PACKING_MODULES.TEMPORAL_COUPLING:
@@ -241,7 +256,7 @@ rect {
               d.children ? color(d.depth) : "WhiteSmoke";
           })
           .style("fill-opacity", function(d) {
-            return d.tc_color_opacity;
+              return d.tc_color_opacity;
           });
           break;
       case PACKING_MODULES.KNOWLEDGE_MAP:
@@ -342,7 +357,7 @@ rect {
       x.domain([d.x - d.r, d.x + d.r]);
       y.domain([d.y - d.r, d.y + d.r]);
 
-      var transition = d3.selectAll("text,circle").transition()
+      var transition = svg.selectAll("text,circle").transition()
         .duration(d3.event.altKey ? 7500 : 750)
         .attr("transform", function(d) {
           return "translate(" + x(d.x) + "," + y(d.y) + ")";

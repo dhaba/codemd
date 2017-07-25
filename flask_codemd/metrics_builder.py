@@ -4,6 +4,7 @@ import fnmatch
 import logging
 import repo_analyser
 from hotspots_util import HotspotsUtil
+from hotspot_modules import FileInfoModule, BugModule, TemporalModule, KnowledgeMapModule
 import json
 
 import pdb
@@ -16,8 +17,6 @@ class MetricsBuilder(object):
     def __init__(self, mongo_collection):
         self.collection = mongo_collection
         self.log = logging.getLogger('codemd.MetricsBuilder')
-        self.regex = re.compile(r'\b(fix(es|ed)?|close(s|d)?)\b')
-
 
     def commits(self):
         """
@@ -49,7 +48,7 @@ class MetricsBuilder(object):
         for doc in cursor:
             total_insertions += doc['insertions']
             total_deletions += doc['deletions']
-            docs.append({'bug': self.is_bug(doc['message']), 'date': doc['date'],
+            docs.append({'date': doc['date'],
                          'insertions': doc['insertions'], 'total_insertions': total_insertions,
                          'deletions': doc['deletions'], 'total_deletions': total_deletions,
                          'author': doc['author']})
@@ -107,7 +106,7 @@ class MetricsBuilder(object):
     def hotspots(self, interval1_start=None, interval1_end=None, interval2_start=None, interval2_end=None):
         """
         All-in-one superhero method to calculate temporal frequency, bug score,
-        knowledge map, and code age, for use in circle packing viz.
+        knowledge map, and code age for use in circle packing viz.
 
         All dates are assumed to be in unix epoch format (parse them in the
                                                            view controllers)
@@ -143,7 +142,7 @@ class MetricsBuilder(object):
         self.log.debug("Finished circle packing building process...")
 
         # TODO -- handle multiple intervals with build_filetree
-        attrs = ['loc', 'bug_score', 'bug_count', 'tc_score', 'coupled_module',
+        attrs = [FileInfoModule.MODULE_KEY, BugModule.MODULE_KEY, 'tc_score', 'coupled_module',
                  'num_revisions', 'num_mutual_revisions', 'tc_color',
                  'tc_color_opacity', 'tc_percent', 'top_authors', 'author', 'author_color']
         return {"name": "root", "children": self.__build_filetree(file_heirarchy[0], attributes=attrs)}
@@ -214,13 +213,6 @@ class MetricsBuilder(object):
         # FOR DEBUGING (verbose af)
         # self.log.debug("Object tree: \n%s ... ", json.dumps(tree[0:2], indent=2))
         return tree
-
-
-    def is_bug(self, message):
-        """
-        DOCSTRING
-        """
-        return self.regex.match(message) != None
 
     def fix_fuckups(self, collection_name):
         # Dirty hack to alter previously created documents and filter things I
