@@ -107,10 +107,8 @@ class RepoAnalyser(object):
         # This is advantageous b/c we can leverage Mongo's insert_many, which should
         # prevent us from having to open/close a db connection repeatedly
         def gen_commit_docs():
-            # DEBUG CODE TODO -- delete this
-            INCREMENT = 1000
+            INCREMENT = 1024
             count = 0
-            # END DEBUG
             self.log.info("Starting iteration over commits...")
             for c in self.commits_iterator():
                 # Ignoring merges, as all the info will be contained in upstream
