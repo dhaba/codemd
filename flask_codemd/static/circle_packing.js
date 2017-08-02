@@ -11,8 +11,10 @@ var PACKING_MODULES = {
 };
 var mode = PACKING_MODULES.KNOWLEDGE_MAP;
 
+var containerWidth = $("#packing-container").width();
+
 var margin = 5,
-  outerDiameter = 1000,
+  outerDiameter = containerWidth,
   innerDiameter = outerDiameter - margin - margin;
 
 var x = d3.scale.linear()
@@ -33,7 +35,7 @@ var pack = d3.layout.pack()
     return d.file_info.loc;
   });
 
-var svg = d3.select("#circle-packing").append("svg")
+var svg = d3.select("#packing-container").append("svg")
   .attr("width", outerDiameter)
   .attr("height", outerDiameter)
   .append("g")
@@ -71,7 +73,7 @@ var tip = d3.tip()
                   "</span><br/><span>Coupled Module: </span><span style='color:red'>"
                   + d.tc_info.coupled_module + "</span></br>" + "<span>Number of Mutual Revisions: "
                   + d.tc_info.num_mutual_revisions + "</span></br>" + "<span>Percent Coupled: </span>"
-                  + "<span style='color:red'>" + Math.round(d.tc_info.percent*100)/100 + "</span>";
+                  + "<span style='color:red'>" + Math.round(d.tc_info.percent*100) + "%</span>";
         } else {
           html += "<span>" + d.tc_info.score + "</span>";
         }
@@ -93,18 +95,28 @@ var tip = d3.tip()
 
 function drawLegend() {
   if (legendDrawn) {
-    console.log("legend already drawn; returning");
     return;
   }
   var offsetX = 5;
   var offsetY = 5;
-  var legendWidth = 250;
-  var legendHeight = outerDiameter;
   var legendRectSize = 18;
   var legendSpacing = 4;
+  var keyHeight = legendRectSize + legendSpacing;
+  var colTextWidth = 150;
+  var numKeys = Object.keys(authorKey).length;
+  var keyWidth = colTextWidth + legendRectSize;
+  var numCols = Math.floor(containerWidth/keyWidth);
+  var keysPerCol = Math.ceil(numKeys/numCols);
+
+  var legendWidth = Math.ceil(numKeys/keysPerCol) * keyWidth + offsetX;
+  var legendHeight = keysPerCol * keyHeight + offsetY;
+
   var legendSVG = d3.select("#legend").append("svg")
     .attr("width", legendWidth)
     .attr("height", legendHeight)
+    // .style('overflow', 'visible')
+    .style('margin', 'auto')
+    .style('display', 'block')
     .append("g")
     .attr("transform", "translate(" + offsetX + "," + offsetY + ")");
   var legend = legendSVG.selectAll('.legend')
@@ -113,8 +125,9 @@ function drawLegend() {
         .append('g')
         .attr('class', 'legend')
         .attr('transform', function(d, i) {
-          var height = legendRectSize + legendSpacing;
-          return "translate(" + 0 + "," + i*(height) + ")";
+          var col = Math.floor(i/keysPerCol);
+          var row = i % keysPerCol;
+          return "translate(" + col*keyWidth + "," + row*keyHeight + ")";
         });
   legend.append('rect')
     .attr('width', legendRectSize)
@@ -128,6 +141,8 @@ function drawLegend() {
   legend.append('text')
     .attr('x', legendRectSize + legendSpacing)
     .attr('y', legendRectSize - legendSpacing)
+    .style('fill', 'white')
+    .style('font-size', '14px')
     .text(function(d) { return d; });
   legendDrawn = true;
 }
@@ -284,9 +299,11 @@ function buildViz(requestUrl) {
   d3.json(requestUrl, function(error, root) {
     root = JSON.parse(root);
     packingData = root;
-    console.log(root);
     focus = root,
       nodes = pack.nodes(root);
+
+    // DEBUG
+    // console.log(root);
 
     svg.append("g").selectAll("circle")
       .data(nodes)
@@ -334,7 +351,28 @@ function buildViz(requestUrl) {
       .on('mouseout', tip.hide);
 
     colorCircles(mode);
+    $(".loader-mask").fadeOut(250);
+    $(".loader").fadeOut(500);
   });
 
   d3.select(self.frameElement).style("height", outerDiameter + "px");
+}
+
+function bindButtons() {
+  $('#temp-coup-btn').on('click', function(e) {
+    mode = PACKING_MODULES.TEMPORAL_COUPLING;
+    colorCircles();
+  });
+  $('#bugs-btn').on('click', function(e) {
+    mode = PACKING_MODULES.BUGS;
+    colorCircles();
+  });
+  $('#file-info-btn').on('click', function(e) {
+    mode = PACKING_MODULES.FILE_INFO;
+    colorCircles();
+  });
+  $('#knowledge-map-btn').on('click', function(e) {
+    mode = PACKING_MODULES.KNOWLEDGE_MAP;
+    colorCircles();
+  });
 }

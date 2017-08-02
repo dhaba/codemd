@@ -6,62 +6,88 @@
 <script src="{{ url_for('static', filename='./bower_components/d3/d3.js') }}"></script>
 <script src="{{ url_for('static', filename='./bower_components/d3-tip/index.js') }}"></script>
 <script src="{{ url_for('static', filename='./bower_components/moment/moment.js') }}"></script>
-<!-- <script src="{{ url_for('static', filename='./circle_packing.js') }}"></script> -->
-
-<link href="{{ url_for('static', filename='./bower_components/keen-dashboards/dist/keen-dashboards.css') }}" rel="stylesheet">
 <link href="{{ url_for('static', filename='./circle_packing.css') }}" rel="stylesheet">
 
-<button id="bugs-btn" type="button" class="btn btn-primary btn-sm">Bugs</button>
-<button id="temp-coup-btn" type="button" class="btn btn-primary btn-sm">Temporal Coupling</button>
-<button id="knowledge-map-btn" type="button" class="btn btn-primary btn-sm">Knowledge Map</button>
-<button id="none-btn" type="button" class="btn btn-primary btn-sm">File Info</button>
 
-<div id="circle-packing"></div>
-<div id="legend"></div>
+<div class="loader-mask">
+    <div class="loader"></div>
+</div>
 
-<span id="ruler"></span>
+<div class="container">
+  <!-- TOP ROW -->
+  <div class="row project-info-row">
+    <div class="col-xs-6 text-left">
+      <h2 id="project-name">Project Name</h2>
+    </div>
+    <div class="col-xs-6 text-right dates-div">
+      <h4 id="project-dates"></h4>
+    </div>
+  </div>
+  <!-- AUTHOR LEGEND -->
+  <div class="row">
+    <div class="col-xs-12" id="legend" ></div>
+  </div>
+  <!-- CIRCLE PACKING -->
+  <div class="row">
+    <div class="col-xs-12" id="packing-container"></div>
+  </div>
+  <!-- MODE PILLS -->
+  <div class="row">
+    <div class="col-xs-12 text-center">
+      <ul class="nav nav-pills center-pills">
+        <li class=""><a id="file-info-btn" href="#file-info" data-toggle="tab" aria-expanded="false">File Info</a></li>
+        <li class=""><a id="bugs-btn" href="#bugs" data-toggle="tab" aria-expanded="false">Bugs</a></li>
+        <li class="active"><a id="knowledge-map-btn" href="#knowledge-map" data-toggle="tab" aria-expanded="true">Knowledge Map</a></li>
+        <li class=""><a id="temp-coup-btn" href="#temp-coup" data-toggle="tab" aria-expanded="false">Temporal Coupling</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-xs-12">
+      <div id="infoContent" class="tab-content">
+        <div class="tab-pane fade" id="file-info">
+          <p>File Info description</p>
+        </div>
+        <div class="tab-pane fade" id="bugs">
+          <p>Bugs description</p>
+        </div>
+        <div class="tab-pane fade active in" id="knowledge-map">
+          <p>Knowledge map description</p>
+        </div>
+        <div class="tab-pane fade" id="temp-coup">
+          <p>Temporal Coupling description</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script>
+$(document).ready(function() {
+  $.getScript("{{ url_for('static', filename='./circle_packing.js') }}", function(){
+    var projectName = '{{ project_name }}';
+    var intervals = {{ intervals | tojson }};
+    if (projectName === null) {
+      projectName = this.pathname.split('/').pop();
+    }
+    $("#project-name").text(projectName);
+    var intervalParams = "";
+    if (intervals[0][0] != null) {
+      intervalParams += "&start1=" + intervals[0][0] + "&end1=" + intervals[0][1];
+      var startDate = moment(1000 * intervals[0][0]).format("M/D/YY");
+      var endDate = moment(1000 * intervals[0][1]).format("M/D/YY");
+      $("#project-dates").text(startDate + " - " + endDate);
+    }
+    if (intervals[1][0] != null) {
+      intervalParams += "&start2=" + intervals[1][0] + "&end2=" + intervals[1][1];
+    }
+    var requestUrl = "/api/hotspots?project_name=" + projectName + intervalParams;
 
-$.getScript("{{ url_for('static', filename='./circle_packing.js') }}", function(){
-  var projectName = '{{ project_name }}';
-  var intervals = {{ intervals | tojson }};
-  if (projectName === null) {
-    projectName = this.pathname.split('/').pop();
-    console.log("project name was null. Setting it to " + projectName);
-  }
-
-  var intervalParams = "";
-  if (intervals[0]) {
-    intervalParams += "&start1=" + intervals[0][0] + "&end1=" + intervals[0][1];
-  }
-  if (intervals[1]) {
-    intervalParams += "&start2=" + intervals[1][0] + "&end2=" + intervals[1][1];
-  }
-  var requestUrl = "/api/hotspots?project_name=" + projectName + intervalParams;
-
-  console.log('Request url: ' + requestUrl);
-
-  buildViz(requestUrl);
+    bindButtons();
+    buildViz(requestUrl);
+  });
 });
 
-// Bind Buttons
-$('#temp-coup-btn').on('click', function(e) {
-  mode = PACKING_MODULES.TEMPORAL_COUPLING;
-  colorCircles();
-});
-$('#bugs-btn').on('click', function(e) {
-  mode = PACKING_MODULES.BUGS;
-  colorCircles();
-});
-$('#none-btn').on('click', function(e) {
-  mode = PACKING_MODULES.FILE_INFO;
-  colorCircles();
-});
-$('#knowledge-map-btn').on('click', function(e) {
-  mode = PACKING_MODULES.KNOWLEDGE_MAP;
-  colorCircles();
-});
 </script>
 
 {% endblock %}

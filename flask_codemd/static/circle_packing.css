@@ -1,3 +1,23 @@
+.center-pills {
+  display: inline-block;
+}
+
+.project-info-row {
+  position: relative;
+  z-index: 9999;
+}
+
+.dates-div {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+}
+
+#packing-container {
+  padding-left: 0;
+  padding-right: 0;
+}
+
 .node {
   cursor: pointer;
 }
@@ -24,10 +44,6 @@
   fill: black;
   pointer-events: none;
   /*text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, -1px 0 0 #fff, 0 -1px 0 #fff;*/
-}
-
-.legend {
-  font-size: 12px;
 }
 
 rect {
@@ -66,3 +82,37 @@ rect {
   top: 100%;
   left: 0;
 }
+
+.loader {
+  border: 16px solid #f3f3f3;
+  border-radius: 50%;
+  border-top: 16px solid #00bc8c;
+  width: 120px;
+  height: 120px;
+  -webkit-animation: spin 2s linear infinite;
+  animation: spin 2s linear infinite;
+  z-index: 9999;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 200px;
+}
+
+.loader-mask {
+  position: fixed;
+  height: 100%;
+  width: 100%;
+  top: 0;
+  left: 0;
+  background: #222222;
+  z-index: 9000;
+}
+
+
+/*DEBUG*/
+
+
+/*[class*="col-"] {
+  border-color: red;
+  border-width: 1px;
+  border-style: solid;
+}*/
