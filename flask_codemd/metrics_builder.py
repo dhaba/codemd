@@ -17,6 +17,7 @@ class MetricsBuilder(object):
     def __init__(self, mongo_collection):
         self.collection = mongo_collection
         self.log = logging.getLogger('codemd.MetricsBuilder')
+        self.regex = re.compile(r'\b(fix(es|ed)?|close(s|d)?)\b')
 
     def commits(self):
         """
@@ -48,10 +49,10 @@ class MetricsBuilder(object):
         for doc in cursor:
             total_insertions += doc['insertions']
             total_deletions += doc['deletions']
-            docs.append({'date': doc['date'],
+            docs.append({'bug': self.is_bug(doc['message']),
+                         'date': doc['date'], 'author': doc['author'],
                          'insertions': doc['insertions'], 'total_insertions': total_insertions,
-                         'deletions': doc['deletions'], 'total_deletions': total_deletions,
-                         'author': doc['author']})
+                         'deletions': doc['deletions'], 'total_deletions': total_deletions })
 
         # TODO -- calculate moving average on code churn metrics and store in
         # inteveral tree or some other computationaly conveient data struct
@@ -212,6 +213,13 @@ class MetricsBuilder(object):
         # FOR DEBUGING (verbose af)
         # self.log.debug("Object tree: \n%s ... ", json.dumps(tree[0:2], indent=2))
         return tree
+
+    def is_bug(self, message):
+        """
+        Uses a regular expression to check if commit message indicates a defect
+        was fixed
+        """
+        return self.regex.match(message) != None
 
     def fix_fuckups(self, collection_name):
         # Dirty hack to alter previously created documents and filter things I
