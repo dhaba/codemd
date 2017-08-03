@@ -157,8 +157,9 @@ class BugModule(HotspotModule):
             # Add score to each file. Scoring function based on research from Chris
             # Lewis and Rong Ou at Google
             end_date = self.intervals[0][1]
+            start_date = self.intervals[0][0]
             fix_date = current_file['date']
-            time_delta = end_date - file_info['creation_date']
+            time_delta = end_date - start_date
             if time_delta <= 0:
                 norm_time = 1.0
             else:
