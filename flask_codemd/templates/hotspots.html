@@ -1,24 +1,54 @@
-<!DOCTYPE html>
-
+{% extends "layout.html" %}
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-{% extends "layout.html" %} {% block body %}
+{% block head %}
+  {{ super() }}
+  <script src="{{ url_for('static', filename='./bower_components/d3/d3.js') }}"></script>
+  <script src="{{ url_for('static', filename='./bower_components/d3-tip/index.js') }}"></script>
+  <script src="{{ url_for('static', filename='./bower_components/moment/moment.js') }}"></script>
+  <!-- <script src="{{ url_for('static', filename='./bower_components/MathJax/MathJax.js') }}"></script> -->
+  <link href="{{ url_for('static', filename='./circle_packing.css') }}" rel="stylesheet">
 
-<script src="{{ url_for('static', filename='./bower_components/d3/d3.js') }}"></script>
-<script src="{{ url_for('static', filename='./bower_components/d3-tip/index.js') }}"></script>
-<script src="{{ url_for('static', filename='./bower_components/moment/moment.js') }}"></script>
-<!-- <script src="{{ url_for('static', filename='./bower_components/MathJax/MathJax.js') }}"></script> -->
-<link href="{{ url_for('static', filename='./circle_packing.css') }}" rel="stylesheet">
+  <script type="text/javascript" async
+    src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML">
+  </script>
 
-<script type="text/javascript" async
-  src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML">
-</script>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      tex2jax: {inlineMath: [["$","$"],["\\(","\\)"]]}
+    });
+  </script>
 
-<script type="text/x-mathjax-config">
-  MathJax.Hub.Config({
-    tex2jax: {inlineMath: [["$","$"],["\\(","\\)"]]}
+  <script type="text/javascript">
+  $(document).ready(function() {
+    $.getScript("{{ url_for('static', filename='./circle_packing.js') }}", function(){
+      var projectName = '{{ project_name }}';
+      var intervals = {{ intervals | tojson }};
+      if (projectName === null) {
+        projectName = this.pathname.split('/').pop();
+      }
+      $("#project-name").text(projectName);
+      var intervalParams = "";
+      if (intervals[0][0] != null) {
+        intervalParams += "&start1=" + intervals[0][0] + "&end1=" + intervals[0][1];
+        var startDate = moment(1000 * intervals[0][0]).format("M/D/YY");
+        var endDate = moment(1000 * intervals[0][1]).format("M/D/YY");
+        $("#project-dates").text(startDate + " - " + endDate);
+      }
+      if (intervals[1][0] != null) {
+        intervalParams += "&start2=" + intervals[1][0] + "&end2=" + intervals[1][1];
+      }
+      var requestUrl = "/api/hotspots?project_name=" + projectName + intervalParams;
+
+      bindButtons();
+      buildViz(requestUrl);
+    });
   });
-</script>
+
+  </script>
+{% endblock %}
+
+{% block body %}
 
 <p>
 When $a \ne 0$, there are two solutions to \(ax^2 + bx + c = 0\) and they are
@@ -79,33 +109,5 @@ $$x = {-b \pm \sqrt{b^2-4ac} \over 2a}.$$
     </div>
   </div>
 </div>
-
-<script>
-$(document).ready(function() {
-  $.getScript("{{ url_for('static', filename='./circle_packing.js') }}", function(){
-    var projectName = '{{ project_name }}';
-    var intervals = {{ intervals | tojson }};
-    if (projectName === null) {
-      projectName = this.pathname.split('/').pop();
-    }
-    $("#project-name").text(projectName);
-    var intervalParams = "";
-    if (intervals[0][0] != null) {
-      intervalParams += "&start1=" + intervals[0][0] + "&end1=" + intervals[0][1];
-      var startDate = moment(1000 * intervals[0][0]).format("M/D/YY");
-      var endDate = moment(1000 * intervals[0][1]).format("M/D/YY");
-      $("#project-dates").text(startDate + " - " + endDate);
-    }
-    if (intervals[1][0] != null) {
-      intervalParams += "&start2=" + intervals[1][0] + "&end2=" + intervals[1][1];
-    }
-    var requestUrl = "/api/hotspots?project_name=" + projectName + intervalParams;
-
-    bindButtons();
-    buildViz(requestUrl);
-  });
-});
-
-</script>
 
 {% endblock %}

@@ -1,23 +1,27 @@
+<!DOCTYPE html>
 <html>
-<head>
 
+<title>Code, MD</title>
+<head>
+  {% block head %}
+  <script src="{{ url_for('static', filename='./bower_components/jquery/dist/jquery.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='./bower_components/bootstrap/dist/js/bootstrap.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='./bower_components/d3/d3.js') }}"></script>
+
+  <link href="{{ url_for('static', filename='./bower_components/bootstrap/dist/css/bootstrap.min.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='./style.css') }}" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css?family=Lato" rel="stylesheet">
   <style>
     h1 {
       font-family: 'Lato', sans-serif;
   }
   </style>
+  {% endblock %}
 </head>
-<title>Code, MD</title>
-<script src="{{ url_for('static', filename='./bower_components/jquery/dist/jquery.min.js') }}"></script>
-<script src="{{ url_for('static', filename='./bower_components/bootstrap/dist/js/bootstrap.min.js') }}"></script>
-<script src="{{ url_for('static', filename='./bower_components/d3/d3.js') }}"></script>
 
-<link href="{{ url_for('static', filename='./bower_components/bootstrap/dist/css/bootstrap.min.css') }}" rel="stylesheet">
-<link href="{{ url_for('static', filename='./style.css') }}" rel="stylesheet">
-
-{% block body %}
-
-{% endblock %}
+<body>
+  {% block body %}
+  {% endblock %}
+</body>
 
 </html>

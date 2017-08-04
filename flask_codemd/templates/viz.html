@@ -1,43 +1,48 @@
 <!DOCTYPE html>
 <html>
 
-{% extends "layout.html" %} {% block body %}
+{% extends "layout.html" %}
 
-<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no' />
+{% block head %}
+  {{ super() }}
+  <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no' />
 
-<link href="{{ url_for('static', filename='./bower_components/keen-dashboards/dist/keen-dashboards.css') }}" rel="stylesheet">
-<link href="{{ url_for('static', filename='./bower_components/colorbrewer/colorbrewer.css') }}" rel="stylesheet">
-<link href="{{ url_for('static', filename='./bower_components/dcjs/dc.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='./bower_components/keen-dashboards/dist/keen-dashboards.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='./bower_components/colorbrewer/colorbrewer.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='./bower_components/dcjs/dc.css') }}" rel="stylesheet">
 
-<script src="{{ url_for('static', filename='./bower_components/crossfilter/crossfilter.js') }}"></script>
-<script src="{{ url_for('static', filename='./bower_components/d3/d3.js') }}"></script>
-<script src="{{ url_for('static', filename='./bower_components/dcjs/dc.js') }}"></script>
-<script src="{{ url_for('static', filename='./bower_components/reductio/reductio.js') }}"></script>
-<script src="{{ url_for('static', filename='./bower_components/colorbrewer/colorbrewer.js') }}"></script>
-<script src="{{ url_for('static', filename='./dashboards.js') }}"></script>
+  <script src="{{ url_for('static', filename='./bower_components/crossfilter/crossfilter.js') }}"></script>
+  <script src="{{ url_for('static', filename='./bower_components/d3/d3.js') }}"></script>
+  <script src="{{ url_for('static', filename='./bower_components/dcjs/dc.js') }}"></script>
+  <script src="{{ url_for('static', filename='./bower_components/reductio/reductio.js') }}"></script>
+  <script src="{{ url_for('static', filename='./bower_components/colorbrewer/colorbrewer.js') }}"></script>
+  <script src="{{ url_for('static', filename='./dashboards.js') }}"></script>
 
-<link href="{{ url_for('static', filename='./dash-styles.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='./dash-styles.css') }}" rel="stylesheet">
 
 
-<script>
-    $(function() {
-        var projectName = '{{ project_name }}';
-        if (projectName === null) {
-            projectName = this.pathname.split('/').pop();
-            alert("project name was null. Setting it to " + projectName); // TODO -- remove this debug line
-        }
+  <script>
+      $(function() {
+          var projectName = '{{ project_name }}';
+          if (projectName === null) {
+              projectName = this.pathname.split('/').pop();
+              alert("project name was null. Setting it to " + projectName); // TODO -- remove this debug line
+          }
 
-        var requestUrl = "/api/commits?project_name=" + projectName;
-        $('#project-name').text(projectName);
+          var requestUrl = "/api/commits?project_name=" + projectName;
+          $('#project-name').text(projectName);
 
-        $.getJSON(requestUrl, function(data) {
-            console.log("finished fetching json data, building graphs...");
-            $(".loader-mask").fadeOut(500);
-            $(".loader").fadeOut(1000);
-            buildDashboards(data, projectName);
-        });
-    });
-</script>
+          $.getJSON(requestUrl, function(data) {
+              console.log("finished fetching json data, building graphs...");
+              $(".loader-mask").fadeOut(500);
+              $(".loader").fadeOut(1000);
+              buildDashboards(data, projectName);
+          });
+      });
+  </script>
+{% endblock %}
+
+{% block body %}
 
 <div class="navbar navbar-inverse navbar-fixed-top" role="navigation" style="z-index:9999;">
     <div class="container-fluid">
@@ -186,8 +191,5 @@
     </div>
     <p class="small text-muted offset-left" style="text-align:center">Built by Davis Haba, as a part of a 2 week capstone project for the Galvanize Data Science Immersive program.</p>
 </div>
-
-
-
 
 {% endblock %}
