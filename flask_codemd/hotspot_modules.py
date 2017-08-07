@@ -272,7 +272,7 @@ class TemporalModule(HotspotModule):
 
             module_distance = self.__module_distance(mod1, mod2) + 1
             avg_pair_revs = (self.working_rev_counts[mod1] + self.working_rev_counts[mod2]) / 2.0
-            score = count/avg_pair_revs * math.log(avg_pair_revs)
+            score = count/avg_pair_revs * math.log((self.working_rev_counts[mod1] + self.working_rev_counts[mod2]))
             if (self.USE_MODULE_DISTANCE):
                 score *= (module_distance/12.0)
 

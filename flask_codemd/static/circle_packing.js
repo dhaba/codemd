@@ -70,7 +70,7 @@ var tip = d3.tip()
         if (d.tc_info.score > 0) {
           html += "<span style='color:red'>" + Math.round(d.tc_info.score*100)/100 +
                   "</span></br><span>Number of Revisions: " + d.tc_info.num_revisions + "</span>" +
-                  "</span><br/><span>Coupled Module: </span><span style='color:red'>"
+                  "</span><br/><span>Coupled File: </span><span style='color:red'>"
                   + d.tc_info.coupled_module + "</span></br>" + "<span>Number of Mutual Revisions: "
                   + d.tc_info.num_mutual_revisions + "</span></br>" + "<span>Percent Coupled: </span>"
                   + "<span style='color:red'>" + Math.round(d.tc_info.percent*100) + "%</span>";

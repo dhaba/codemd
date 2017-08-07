@@ -13,7 +13,16 @@
   right: 0;
 }
 
+.large-equation {
+  font-size: 150%;
+}
+
+.MathJax_Display {
+  margin: 4px 4px !important;
+}
+
 #packing-container {
+  margin-top: 10px;
   padding-left: 0;
   padding-right: 0;
 }
