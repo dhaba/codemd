@@ -37,8 +37,12 @@
         var startDate = moment(1000 * intervals[0][0]).format("M/D/YY");
         var endDate = moment(1000 * intervals[0][1]).format("M/D/YY");
         $("#project-dates").text(startDate + " - " + endDate);
+      } else {
+          $("#project-dates").text("entire project history");
       }
+
       if (intervals[1][0] != null) {
+        // TODO implement support for side-by-side intervals
         intervalParams += "&start2=" + intervals[1][0] + "&end2=" + intervals[1][1];
       }
       var requestUrl = "/api/hotspots?project_name=" + projectName + intervalParams;
@@ -47,7 +51,6 @@
       buildViz(requestUrl);
     });
   });
-
   </script>
 {% endblock %}
 
