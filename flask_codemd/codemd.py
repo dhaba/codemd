@@ -7,16 +7,23 @@ import json
 from flask_pymongo import PyMongo
 from flask import Flask, request, session, g, redirect, url_for, abort, \
      render_template, flash, jsonify
+from flask_s3 import FlaskS3, create_all
 
 from repo_analyser import RepoAnalyser
 from metrics_builder import MetricsBuilder
-from secret_key import SECRET_KEY
+
+import keys
 
 
 # Create app instance
 app = Flask(__name__)
-app.secret_key = SECRET_KEY
+app.secret_key = keys.SECRET_KEY
 
+# Setup S3
+app.config['AWS_ACCESS_KEY_ID'] = keys.AWS_ACCESS_KEY_ID
+app.config['AWS_SECRET_ACCESS_KEY'] = keys.AWS_SECRET_ACCESS_KEY
+app.config['FLASKS3_BUCKET_NAME'] = keys.FLASKS3_BUCKET_NAME
+s3 = FlaskS3(app)
 
 # Set db configuration options
 app.config['MONGO_DBNAME'] = 'codemd'
@@ -65,6 +72,12 @@ def extract_interval_params(request_args):
 def show_test():
     return render_template('test_dash.html')
 
+# Debug -- for uploading statics
+@app.route("/upload")
+def upload_statics():
+    create_all(app)
+    return "Finished uploading statics"
+
 # Home page
 @app.route("/")
 def show_home():
@@ -84,8 +97,6 @@ def hotspots(project_name):
     intervals = extract_interval_params(request.args)
     log.debug("Getting info for project name: %s\nwith intervals: %s",
               project_name, intervals)
-
-    log.debug("intervals:" + str(intervals))
 
     return render_template("hotspots.html", project_name=project_name,
                            intervals=intervals)
