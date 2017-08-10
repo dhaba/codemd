@@ -5,9 +5,7 @@ import logging
 import repo_analyser
 from hotspots_util import HotspotsUtil
 from hotspot_modules import FileInfoModule, BugModule, TemporalModule, KnowledgeMapModule
-import json
-
-import pdb
+from s3_handler import S3Handler
 
 class MetricsBuilder(object):
     """
@@ -54,10 +52,13 @@ class MetricsBuilder(object):
                          'insertions': doc['insertions'], 'total_insertions': total_insertions,
                          'deletions': doc['deletions'], 'total_deletions': total_deletions })
 
-        # TODO -- calculate moving average on code churn metrics and store in
-        # inteveral tree or some other computationaly conveient data struct
-
         return docs
+
+    def save_commits(self):
+        docs = self.commits()
+        self.log.info("Saving commits data for project: %s", self.collection.name)
+        handler = S3Handler(self.collection.name)
+        handler.save_dashboard_data(docs)
 
 
     def file_complexity_history(self, filename):

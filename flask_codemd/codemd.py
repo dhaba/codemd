@@ -11,9 +11,9 @@ from flask_s3 import FlaskS3, create_all
 
 from repo_analyser import RepoAnalyser
 from metrics_builder import MetricsBuilder
+from s3_handler import S3Handler
 
 import keys
-
 
 # Create app instance
 app = Flask(__name__)
@@ -22,7 +22,7 @@ app.secret_key = keys.SECRET_KEY
 # Setup S3
 app.config['AWS_ACCESS_KEY_ID'] = keys.AWS_ACCESS_KEY_ID
 app.config['AWS_SECRET_ACCESS_KEY'] = keys.AWS_SECRET_ACCESS_KEY
-app.config['FLASKS3_BUCKET_NAME'] = keys.FLASKS3_BUCKET_NAME
+app.config['FLASKS3_BUCKET_NAME'] = keys.STATIC_BUCKET_NAME
 s3 = FlaskS3(app)
 
 # Set db configuration options
@@ -78,6 +78,15 @@ def upload_statics():
     create_all(app)
     return "Finished uploading statics"
 
+# Debug -- for creating dashboard data
+@app.route("/create_dash_data")
+def create_dash_data():
+    for col in mongo.db.collection_names():
+        log.debug("Creating dashboard data for collection: %s", col)
+        metrics = MetricsBuilder(mongo.db[col])
+        metrics.save_commits()
+    return "Done!"
+
 # Home page
 @app.route("/")
 def show_home():
@@ -114,6 +123,9 @@ def fetchdata():
         log.info("Data for project " + project_name + " not found. Fetching data...")
         repo = RepoAnalyser(git_url, mongo)
         repo.persist_commits_data()
+        # Save viz data for fast loading times
+        metrics = MetricsBuilder(mongo.db[project_name])
+        metrics.save_commits()
     else:
         log.info("Data for git project " + project_name + " found.")
 
@@ -133,26 +145,26 @@ def get_commits():
         return redirect(url_for('show_home'))
 
     # Check if we have JSON already
-    file_path = "./json_data/" + project_name
-    if os.path.isfile(file_path):
-        log.debug("Found file for commits data at path at %s. \
-                   Serving to page...", file_path)
-        commits_json = json_util.loads(file_path)
-        return jsonify(commits_json)
-
-    log.debug("File not found at path %s. Extracting from db...", file_path)
-    metrics = MetricsBuilder(mongo.db[project_name])
-    commits_data = metrics.commits()
+    # file_path = "./json_data/" + project_name
+    # if os.path.isfile(file_path):
+    #     log.debug("Found file for commits data at path at %s. \
+    #                Serving to page...", file_path)
+    #     commits_json = json_util.loads(file_path)
+    #     return jsonify(commits_json)
+    #
+    # log.debug("File not found at path %s. Extracting from db...", file_path)
+    # metrics = MetricsBuilder(mongo.db[project_name])
+    # commits_data = metrics.commits()
+    handler = S3Handler(project_name)
+    commits_data = handler.load_dashboard_data()
     log.info("Extracted %s rows of commits data for project %s",
               len(commits_data), project_name)
-    commits_json = json_util.dumps(commits_data)
-    log.info("Length after dumping to json: %s", len(commits_json))
 
     # log.info("Saving file to path: %s", file_path)
     # with open(file_path, 'w') as outfile:
     #     json.dump(commits_json, url_for('static', outfile))
 
-    return jsonify(commits_json)
+    return jsonify(commits_data)
 
 # Return file tree with scores and complexity for hotspots viz
 @app.route("/api/hotspots")
