@@ -166,7 +166,7 @@ class MetricsBuilder(object):
             { "$sort": {"date": 1} } ], allowDiskUse=True)
 
 
-    def __build_filetree(self, files, attributes=[], component_delim="/"):
+    def __build_filetree(self, files, attributes=None, component_delim="/"):
         """
         Takes a dictionary (files) with keys corresponding to file paths, and builds a
         tree from the file path with the leaves having attributes selected from
@@ -181,7 +181,6 @@ class MetricsBuilder(object):
         keeping a pointer to the current layer, and creating a node for each
         component that does not exist yet. When it gets to the terminal node
         (bottom-most layer) it will add the attributes indicated in the attributes parameter
-        This turned out to be slightly nontrivial lol (but v fun).
 
         TODO -- Add docstring params and returns
         """
@@ -221,39 +220,3 @@ class MetricsBuilder(object):
         was fixed
         """
         return self.regex.match(message) != None
-
-    def fix_fuckups(self, collection_name):
-        # Dirty hack to alter previously created documents and filter things I
-        # should of filtered in the first place, and also index the date
-        paths = repo_analyser.paths[collection_name]
-        include_paths = paths['include']
-        exclude_paths = paths['exclude']
-
-        print "Fixing mistakes."
-        print "Include paths: " + str(include_paths)
-        print "Exclude paths: " + str(exclude_paths)
-
-        def check_file_path(f):
-            include_count = 0
-            for path in exclude_paths:
-                if fnmatch.fnmatch(f, path):
-                    return False
-            for path in include_paths:
-                if fnmatch.fnmatch(f, path):
-                    include_count += 1
-            if include_count == 0:
-                return False
-            return True
-
-        self.collection.create_index([("date", pymongo.ASCENDING)])
-        docs = self.collection.find({'revision_id': { '$exists': True }})
-        for doc in docs:
-            updated_files = []
-            files_mod = doc['files_modified']
-            for f in files_mod:
-                if check_file_path(f['filename']):
-                    updated_files.append(f)
-                else:
-                    print "Removing file: " + f['filename']
-            if len(updated_files) != len(files_mod):
-                self.collection.update_one({'date': doc['date']}, {'$set' : {'files_modified':updated_files}})
