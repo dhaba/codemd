@@ -138,7 +138,7 @@
               <li> <strong> Percent Coupled</strong>: The percent of the file's revisions which also changed it's coupled counterpart (i.e. # of mutual revisions / # of revisions) </li>
             </ul>
             And finally the Temporal Coupling Score, which weights the percent coupled by the logarithm of sum of the number of revisions between the file and its coupled counterpart. This weight helps weed out files that have few too revisions to be of interest. The exact scoring function $f\left(a,b\right)$ for the temporal coupling between files $a$ and $b$ is
-            <span class="large-equation">$$f\left(a,\:b\right)\:=\:\frac{\left|A \cup B\:\right|}{\left(\frac{\left|A\right|+\left|B\right|}{2}\right)}\cdot log\left(\left|A\right|+\left|B\right|\right)$$</span>
+            <span class="large-equation">$$f\left(a,\:b\right)\:=\:\frac{\left|A \cap B\:\right|}{\left(\frac{\left|A\right|+\left|B\right|}{2}\right)}\cdot log\left(\left|A\right|+\left|B\right|\right)$$</span>
             where $A$ and $B$ are the sets of all commits changing files $a$ and $b$ respectively.
           </p>
         </div>
