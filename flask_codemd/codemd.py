@@ -46,8 +46,6 @@ stream_handler.setFormatter(formatter)
 log.addHandler(file_handler)
 log.addHandler(stream_handler)
 
-
-
 def extract_interval_params(request_args):
     """
     Take a url request object and extracts the associated intervals and returns
@@ -138,33 +136,18 @@ def get_commits():
     project_name = request.args.get('project_name')
 
     # Safety check to make sure we have the data in mongo
-    # TODO -- write helper function so i'm not copy pasting this every time
     if project_name not in mongo.db.collection_names():
         log.error("Data for project: %s not found. Go to homepage and \
                   enter git repo", project_name)
         return redirect(url_for('show_home'))
 
-    # Check if we have JSON already
-    # file_path = "./json_data/" + project_name
-    # if os.path.isfile(file_path):
-    #     log.debug("Found file for commits data at path at %s. \
-    #                Serving to page...", file_path)
-    #     commits_json = json_util.loads(file_path)
-    #     return jsonify(commits_json)
-    #
-    # log.debug("File not found at path %s. Extracting from db...", file_path)
-    # metrics = MetricsBuilder(mongo.db[project_name])
-    # commits_data = metrics.commits()
     handler = S3Handler(project_name)
     commits_data = handler.load_dashboard_data()
     log.info("Extracted %s rows of commits data for project %s",
               len(commits_data), project_name)
 
-    # log.info("Saving file to path: %s", file_path)
-    # with open(file_path, 'w') as outfile:
-    #     json.dump(commits_json, url_for('static', outfile))
-
     return jsonify(commits_data)
+
 
 # Return file tree with scores and complexity for hotspots viz
 @app.route("/api/hotspots")
@@ -188,7 +171,6 @@ def get_hotspots():
                                     interval2_end = intervals[1][1]))
 
     # log.info('hotspots data: %s', hotspots_data) # DEBUG LINE
-
     return jsonify(hotspots_data)
 
 
