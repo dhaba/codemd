@@ -6,8 +6,8 @@ from flask_s3 import create_all
 import logging
 from bson import json_util
 
-from codemd.repo_analyser import RepoAnalyser
-from codemd.metrics_builder import MetricsBuilder
+from codemd.mining.repo_analyser import RepoAnalyser
+from codemd.metrics.metrics_builder import MetricsBuilder
 from codemd.data_managers.db_handler import DBHandler
 from codemd.utils import extract_interval_params
 

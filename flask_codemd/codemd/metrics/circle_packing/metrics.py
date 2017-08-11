@@ -1,10 +1,11 @@
 import logging
-from hotspot_modules import FileInfoModule, BugModule, TemporalModule, KnowledgeMapModule
 
-# DEBUG -- remove this!
-# import json
+from codemd.metrics.circle_packing.modules.file_info import FileInfoModule
+from codemd.metrics.circle_packing.modules.bugs import BugModule
+from codemd.metrics.circle_packing.modules.knowledge_map import KnowledgeMapModule
+from codemd.metrics.circle_packing.modules.temporal_coupling import TemporalCouplingModule
 
-class HotspotsUtil(object):
+class CirclePackingMetrics(object):
     """
     Helper class for computing hotspot metrics (temporal coupling, code age,
     knowledge map, bug scores), for use in Circle Packing viz.
@@ -120,5 +121,5 @@ class HotspotsUtil(object):
         self.log.debug("Reseting modules data...")
         self.modules = [FileInfoModule(self.working_data, self.intervals),
                         BugModule(self.working_data, self.intervals),
-                        TemporalModule(self.working_data, self.intervals),
+                        TemporalCouplingModule(self.working_data, self.intervals),
                         KnowledgeMapModule(self.working_data, self.intervals)]

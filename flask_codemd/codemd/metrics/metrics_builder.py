@@ -1,9 +1,14 @@
 import re
 import logging
 from codemd.data_managers.db_handler import DBHandler
-from hotspots_util import HotspotsUtil
-from hotspot_modules import FileInfoModule, BugModule, TemporalModule, KnowledgeMapModule
 from codemd.data_managers.s3_handler import S3Handler
+
+from codemd.metrics.circle_packing.metrics import CirclePackingMetrics
+
+from codemd.metrics.circle_packing.modules.file_info import FileInfoModule
+from codemd.metrics.circle_packing.modules.bugs import BugModule
+from codemd.metrics.circle_packing.modules.knowledge_map import KnowledgeMapModule
+from codemd.metrics.circle_packing.modules.temporal_coupling import TemporalCouplingModule
 
 class MetricsBuilder(object):
     """
@@ -76,14 +81,15 @@ class MetricsBuilder(object):
 
         self.log.debug("Building circle packing metrics with interval: %s", scan_intervals)
 
-        hotspots_util = HotspotsUtil(scan_intervals)
-        file_heirarchy = hotspots_util.execute_with_gen(self.db_handler.file_history(scan_intervals[0][0],
+        packing_metrics = CirclePackingMetrics(scan_intervals)
+        file_heirarchy = packing_metrics.execute_with_gen(self.db_handler.file_history(scan_intervals[0][0],
                                                         scan_intervals[-1][1]))
 
         self.log.debug("Finished circle packing building process...")
 
         # TODO -- handle multiple intervals with build_filetree
-        attrs = [FileInfoModule.MODULE_KEY, BugModule.MODULE_KEY, TemporalModule.MODULE_KEY,
+        attrs = [FileInfoModule.MODULE_KEY, BugModule.MODULE_KEY,
+                TemporalCouplingModule.MODULE_KEY,
                 KnowledgeMapModule.MODULE_KEY]
         return {"name": "root", "children": self.__build_filetree(file_heirarchy[0], attributes=attrs)}
 
