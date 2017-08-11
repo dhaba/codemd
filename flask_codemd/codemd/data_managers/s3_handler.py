@@ -1,4 +1,4 @@
-import keys
+import codemd.keys as keys
 from boto.s3.key import Key
 from boto.s3.connection import S3Connection
 import json

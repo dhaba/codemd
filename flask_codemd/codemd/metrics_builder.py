@@ -3,7 +3,7 @@ import logging
 from codemd.data_managers.db_handler import DBHandler
 from hotspots_util import HotspotsUtil
 from hotspot_modules import FileInfoModule, BugModule, TemporalModule, KnowledgeMapModule
-from s3_handler import S3Handler
+from codemd.data_managers.s3_handler import S3Handler
 
 class MetricsBuilder(object):
     """
