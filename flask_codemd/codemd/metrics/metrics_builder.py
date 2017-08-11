@@ -54,7 +54,7 @@ class MetricsBuilder(object):
         commits_data = handler.load_dashboard_data()
         return commits_data
 
-    def hotspots(self, interval1_start=None, interval1_end=None, interval2_start=None, interval2_end=None):
+    def circle_packing(self, interval1_start=None, interval1_end=None, interval2_start=None, interval2_end=None):
         """
         Calculates temporal frequency, bug score,
         knowledge map, and code age for use in circle packing viz.

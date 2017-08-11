@@ -18,8 +18,8 @@ class CirclePackingMetrics(object):
     """
 
     def __init__(self, intervals):
-        self.log = logging.getLogger('codemd.HotspotsUtil')
-        self.log.info("HotspotsUtil created with interval: %s", intervals)
+        self.log = logging.getLogger('codemd.CirclePackingMetrics')
+        self.log.info("CirclePackingMetrics created with interval: %s", intervals)
 
         # Local Variables to track metrics
         self.intervals = intervals

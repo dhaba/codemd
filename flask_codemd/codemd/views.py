@@ -42,18 +42,18 @@ def show_home():
 # Main page for circle packing visualizations
 @app.route("/dashboards/<project_name>")
 def show_viz(project_name):
-    return render_template("viz.html", project_name=project_name)
+    return render_template("dashboard.html", project_name=project_name)
 
 
 # Routes for circle packing viz
-@app.route("/hotspots/<project_name>")
-def hotspots(project_name):
+@app.route("/circle_packing/<project_name>")
+def circle_packing(project_name):
 
     intervals = extract_interval_params(request.args)
     log.debug("Getting info for project name: %s\nwith intervals: %s",
               project_name, intervals)
 
-    return render_template("hotspots.html", project_name=project_name,
+    return render_template("circle_packing.html", project_name=project_name,
                            intervals=intervals)
 
 
@@ -97,13 +97,13 @@ def get_commits():
     return jsonify(commits_data)
 
 
-# Return file tree with scores and complexity for hotspots viz
-@app.route("/api/hotspots")
-def get_hotspots():
+# Return file tree with scores and complexity for circle_packing viz
+@app.route("/api/circle_packing")
+def get_circle_packing():
     project_name = request.args.get('project_name')
     intervals = extract_interval_params(request.args)
 
-    log.debug("(in api/hotspots/...) intervals = " + str(intervals))
+    log.debug("(in api/circle_packing/...) intervals = " + str(intervals))
 
     # Safety check to make sure we have the data in mongo
     if not DBHandler.project_exists(project_name):
@@ -112,11 +112,11 @@ def get_hotspots():
         return redirect(url_for('show_home'))
 
     metrics = MetricsBuilder(project_name)
-    hotspots_data = json_util.dumps(metrics.hotspots(
+    circle_packing_data = json_util.dumps(metrics.circle_packing(
                                     interval1_start = intervals[0][0],
                                     interval1_end = intervals[0][1],
                                     interval2_start = intervals[1][0],
                                     interval2_end = intervals[1][1]))
 
-    # log.info('hotspots data: %s', hotspots_data) # DEBUG LINE
-    return jsonify(hotspots_data)
+    # log.info('circle_packing data: %s', circle_packing_data) # DEBUG LINE
+    return jsonify(circle_packing_data)

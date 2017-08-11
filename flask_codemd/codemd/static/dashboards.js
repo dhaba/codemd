@@ -385,7 +385,7 @@ function buildDashboards(data, projectName) {
       start1 = dateDim.bottom(1)[0].date.getTime() / 1000;
       end1 = dateDim.top(1)[0].date.getTime() / 1000;
       urlParams = projectName + "?start1=" + start1 + "&end1=" + end1;
-      hotspotsURL = "http://" + window.location.host + "/hotspots/" + urlParams;
+      hotspotsURL = "http://" + window.location.host + "/circle_packing/" + urlParams;
       console.log(hotspotsURL);
       window.location.href = hotspotsURL;
    });
