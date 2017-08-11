@@ -4,10 +4,8 @@ import sys
 import os
 import shutil
 import fnmatch
-import datetime
-import pymongo
-
 from git import Repo
+from codemd.data_managers.db_handler import DBHandler
 
 # Dictionary of hard-coded paths to include/exclude for known projects
 paths = {"scikit-learn": {"include":["sklearn/*"], "exclude":['README', '*.md', '*.txt', '*.yml']},
@@ -53,10 +51,9 @@ class RepoAnalyser(object):
     :return:
     """
 
-    def __init__(self, git_url, mongo_instance, include_paths=[], exclude_paths=[]):
+    def __init__(self, git_url, include_paths=[], exclude_paths=[]):
         self.log = logging.getLogger('codemd.RepoAnalyser')
         self.project_name = self.short_name(git_url)
-        self.mongo = mongo_instance.db
         self.include_paths = include_paths
         self.exclude_paths = exclude_paths
 
@@ -102,11 +99,12 @@ class RepoAnalyser(object):
 
         :return: List of dictionaries (one element for each commit)
         """
-
-        # Define generator so commits do not have to be built in memory.
-        # This is advantageous b/c we can leverage Mongo's insert_many, which should
-        # prevent us from having to open/close a db connection repeatedly
         def gen_commit_docs():
+            """
+            Define generator so commits do not have to be built in memory.
+            This is advantageous b/c we can leverage Mongo's insert_many, which should
+            prevent us from having to open/close a db connection repeatedly
+            """
             INCREMENT = 1024
             count = 0
             self.log.info("Starting iteration over commits...")
@@ -124,9 +122,6 @@ class RepoAnalyser(object):
                 # Filter ignored files. Skip commit if none of the files are relevant
                 files_included = self.__check_file_paths(c.stats.files.keys())
                 if len(files_included) == 0:
-                    # TODO -- remove debug line below
-                    # self.log.debug("# Ignoring commit [%s], no files matched inclusion\n(file names: %s)",
-                    #                 c.name_rev.split()[0], c.stats.files.keys())
                     continue
 
                 files_modified = []
@@ -145,17 +140,8 @@ class RepoAnalyser(object):
 
                 yield commit_data
 
-        self.log.info("Extracting metrics from git repository into db collection: %s", \
-                       self.project_name)
-
-        collection = self.mongo[self.project_name]
-        collection.create_index([("date", pymongo.ASCENDING)])
-        collection.insert_one({'date_updated': datetime.datetime.now(), \
-                               'branch': self.branch})
-
-
-        collection.insert_many(doc for doc in gen_commit_docs())
-        self.log.info("Finished inserting documents into Mongo")
+        db_handler = DBHandler(self.project_name)
+        db_handler.persist_documents_from_gen(gen_commit_docs())
 
 
     @staticmethod
@@ -214,7 +200,5 @@ class RepoAnalyser(object):
                         include_count += 1
             if exclude_count == 0 and include_count >= 1:
                 filtered_files.append(f)
-            # else:
-            #     self.log.debug("Ignoring file: %s", f)
 
         return filtered_files

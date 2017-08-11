@@ -1,6 +1,6 @@
 import re
 import logging
-from db_handler import DBHandler
+from codemd.data_managers.db_handler import DBHandler
 from hotspots_util import HotspotsUtil
 from hotspot_modules import FileInfoModule, BugModule, TemporalModule, KnowledgeMapModule
 from s3_handler import S3Handler
@@ -44,6 +44,10 @@ class MetricsBuilder(object):
         handler = S3Handler(self.project_name)
         handler.save_dashboard_data(docs)
 
+    def load_commits(self):
+        handler = S3Handler(self.project_name)
+        commits_data = handler.load_dashboard_data()
+        return commits_data
 
     def hotspots(self, interval1_start=None, interval1_end=None, interval2_start=None, interval2_end=None):
         """

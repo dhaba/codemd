@@ -1,52 +1,16 @@
-from bson import json_util
+from codemd import app
+
+from flask import request, session, redirect, url_for, \
+     render_template, jsonify
+from flask_s3 import create_all
 import logging
-import time
-import os.path
-import json
+from bson import json_util
 
-from flask_pymongo import PyMongo
-from flask import Flask, request, session, g, redirect, url_for, abort, \
-     render_template, flash, jsonify
-from flask_s3 import FlaskS3, create_all
+from codemd.repo_analyser import RepoAnalyser
+from codemd.metrics_builder import MetricsBuilder
+from codemd.data_managers.db_handler import DBHandler
 
-from repo_analyser import RepoAnalyser
-from metrics_builder import MetricsBuilder
-from s3_handler import S3Handler
-# from db_handler import DBHandler
-
-import keys
-
-# Create app instance
-app = Flask(__name__)
-app.secret_key = keys.SECRET_KEY
-
-# Setup S3
-app.config['AWS_ACCESS_KEY_ID'] = keys.AWS_ACCESS_KEY_ID
-app.config['AWS_SECRET_ACCESS_KEY'] = keys.AWS_SECRET_ACCESS_KEY
-app.config['FLASKS3_BUCKET_NAME'] = keys.STATIC_BUCKET_NAME
-s3 = FlaskS3(app)
-
-# Set db configuration options
-app.config['MONGO_DBNAME'] = 'codemd'
-# app.config['MONGO_URI'] = 'mongodb://default:hireme@ds021434.mlab.com:21434/codemd'
-
-# Create db instance
-mongo = PyMongo(app)
-from db_handler import DBHandler
-
-# Setup logging
-timestr = time.strftime("%Y%m%d-%H%M%S")
-log_name = 'logs/codemd_log_{}.log'.format(timestr)
 log = logging.getLogger('codemd')
-log.setLevel(logging.DEBUG)
-file_handler, stream_handler = logging.FileHandler(log_name), logging.StreamHandler()
-file_handler.setLevel(logging.NOTSET)
-stream_handler.setLevel(logging.DEBUG)
-formatter = logging.Formatter('%(asctime)s %(name)-5s %(levelname)-8s %(message)s')
-file_handler.setFormatter(formatter)
-stream_handler.setFormatter(formatter)
-log.addHandler(file_handler)
-log.addHandler(stream_handler)
 
 def extract_interval_params(request_args):
     """
@@ -67,6 +31,8 @@ def extract_interval_params(request_args):
     return intervals
 
 
+
+
 # Debug
 @app.route("/test")
 def show_test():
@@ -79,13 +45,13 @@ def upload_statics():
     return "Finished uploading statics"
 
 # Debug -- for creating dashboard data
-@app.route("/create_dash_data")
-def create_dash_data():
-    for project_name in mongo.db.collection_names():
-        log.debug("Creating dashboard data for collection: %s", project_name)
-        metrics = MetricsBuilder(project_name)
-        metrics.save_commits()
-    return "Done!"
+# @app.route("/create_dash_data")
+# def create_dash_data():
+#     for project_name in mongo.db.collection_names():
+#         log.debug("Creating dashboard data for collection: %s", project_name)
+#         metrics = MetricsBuilder(project_name)
+#         metrics.save_commits()
+#     return "Done!"
 
 # Home page
 @app.route("/")
@@ -121,7 +87,7 @@ def fetchdata():
     # Check if we have the data on this repo already, if not clone and extract
     if not DBHandler.project_exists(project_name):
         log.info("Data for project " + project_name + " not found. Fetching data...")
-        repo = RepoAnalyser(git_url, mongo)
+        repo = RepoAnalyser(git_url)
         repo.persist_commits_data()
         # Save viz data for fast loading times
         metrics = MetricsBuilder(project_name)
@@ -143,8 +109,8 @@ def get_commits():
                   enter git repo", project_name)
         return redirect(url_for('show_home'))
 
-    handler = S3Handler(project_name)
-    commits_data = handler.load_dashboard_data()
+    metrics = MetricsBuilder(project_name)
+    commits_data = metrics.load_commits()
     log.info("Extracted %s rows of commits data for project %s",
               len(commits_data), project_name)
 
@@ -174,8 +140,3 @@ def get_hotspots():
 
     # log.info('hotspots data: %s', hotspots_data) # DEBUG LINE
     return jsonify(hotspots_data)
-
-
-if __name__ == "__main__":
-    app.debug = True
-    app.run()

@@ -1,5 +1,6 @@
 import logging
 import pymongo
+import datetime
 
 from codemd import mongo
 
@@ -16,8 +17,16 @@ class DBHandler(object):
         :param mongo_collection: A references the the pymongo collection
         :type mongo_collection: pymongo.collection.Collection
         """
-        self.collection = mongo.db[project_name]
         self.log = logging.getLogger('codemd.DBHandler')
+        self.project_name = project_name
+        if DBHandler.project_exists(project_name):
+            self.log.debug("DBHandler found project %s", project_name)
+            self.collection = mongo.db[project_name]
+        else:
+            self.log.info("DBHandler creating new collection for project %s", project_name)
+            self.collection = mongo.db[project_name]
+            self.collection.create_index([("date", pymongo.ASCENDING)])
+            self.collection.insert_one({'date_updated': datetime.datetime.now()})
 
     @classmethod
     def project_exists(cls, project_name):
@@ -31,6 +40,14 @@ class DBHandler(object):
         """
         return project_name in mongo.db.collection_names()
 
+    def persist_documents_from_gen(self, doc_gen):
+        """
+        Inserts the documents yielded by doc_gen into
+        """
+        self.log.info("Starting insertion of documents into db for project %s...", \
+                       self.project_name)
+        self.collection.insert_many(doc for doc in doc_gen)
+        self.log.info("Finished inserting documents into db.")
 
     def fetch_commits(self):
         """
