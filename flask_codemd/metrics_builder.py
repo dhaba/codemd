@@ -10,9 +10,9 @@ class MetricsBuilder(object):
     Docstring
     """
 
-    def __init__(self, mongo_collection):
-        self.project_name = mongo_collection.name
-        self.db_handler = DBHandler(mongo_collection)
+    def __init__(self, project_name):
+        self.project_name = project_name
+        self.db_handler = DBHandler(project_name)
         self.log = logging.getLogger('codemd.MetricsBuilder')
         self.regex = re.compile(r'\b(fix(es|ed)?|close(s|d)?)\b')
 

@@ -12,6 +12,7 @@ from flask_s3 import FlaskS3, create_all
 from repo_analyser import RepoAnalyser
 from metrics_builder import MetricsBuilder
 from s3_handler import S3Handler
+# from db_handler import DBHandler
 
 import keys
 
@@ -31,6 +32,7 @@ app.config['MONGO_DBNAME'] = 'codemd'
 
 # Create db instance
 mongo = PyMongo(app)
+from db_handler import DBHandler
 
 # Setup logging
 timestr = time.strftime("%Y%m%d-%H%M%S")
@@ -79,9 +81,9 @@ def upload_statics():
 # Debug -- for creating dashboard data
 @app.route("/create_dash_data")
 def create_dash_data():
-    for col in mongo.db.collection_names():
-        log.debug("Creating dashboard data for collection: %s", col)
-        metrics = MetricsBuilder(mongo.db[col])
+    for project_name in mongo.db.collection_names():
+        log.debug("Creating dashboard data for collection: %s", project_name)
+        metrics = MetricsBuilder(project_name)
         metrics.save_commits()
     return "Done!"
 
@@ -117,12 +119,12 @@ def fetchdata():
     project_name = RepoAnalyser.short_name(git_url)
 
     # Check if we have the data on this repo already, if not clone and extract
-    if project_name not in mongo.db.collection_names():
+    if not DBHandler.project_exists(project_name):
         log.info("Data for project " + project_name + " not found. Fetching data...")
         repo = RepoAnalyser(git_url, mongo)
         repo.persist_commits_data()
         # Save viz data for fast loading times
-        metrics = MetricsBuilder(mongo.db[project_name])
+        metrics = MetricsBuilder(project_name)
         metrics.save_commits()
     else:
         log.info("Data for git project " + project_name + " found.")
@@ -136,7 +138,7 @@ def get_commits():
     project_name = request.args.get('project_name')
 
     # Safety check to make sure we have the data in mongo
-    if project_name not in mongo.db.collection_names():
+    if not DBHandler.project_exists(project_name):
         log.error("Data for project: %s not found. Go to homepage and \
                   enter git repo", project_name)
         return redirect(url_for('show_home'))
@@ -158,12 +160,12 @@ def get_hotspots():
     log.debug("(in api/hotspots/...) intervals = " + str(intervals))
 
     # Safety check to make sure we have the data in mongo
-    if project_name not in mongo.db.collection_names():
+    if not DBHandler.project_exists(project_name):
         log.error("Data for project: %s not found. Go to homepage and \
                   enter git repo", project_name)
         return redirect(url_for('show_home'))
 
-    metrics = MetricsBuilder(mongo.db[project_name])
+    metrics = MetricsBuilder(project_name)
     hotspots_data = json_util.dumps(metrics.hotspots(
                                     interval1_start = intervals[0][0],
                                     interval1_end = intervals[0][1],

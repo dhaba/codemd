@@ -1,6 +1,7 @@
-import re
-import pymongo
 import logging
+import pymongo
+
+from codemd import mongo
 
 class DBHandler(object):
     """
@@ -10,14 +11,26 @@ class DBHandler(object):
         - fetching data for circle packing metrics
     """
 
-    def __init__(self, mongo_collection):
+    def __init__(self, project_name):
         """
         :param mongo_collection: A references the the pymongo collection
         :type mongo_collection: pymongo.collection.Collection
         """
-        self.collection = mongo_collection
-        self.log = self.log = logging.getLogger('codemd.DBHandler')
-        self.regex = re.compile(r'\b(fix(es|ed)?|close(s|d)?)\b')
+        self.collection = mongo.db[project_name]
+        self.log = logging.getLogger('codemd.DBHandler')
+
+    @classmethod
+    def project_exists(cls, project_name):
+        """
+        Checks if a collection exists for the specified project_name
+
+        :param project_name: The name of the project
+        :type project_name: str
+
+        :returns: True or False
+        """
+        return project_name in mongo.db.collection_names()
+
 
     def fetch_commits(self):
         """
