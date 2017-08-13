@@ -33,6 +33,7 @@ class CirclePackingModule:
                                      self.__class__.__name__)
         self.working_data = working_data
         self.intervals = intervals
+        self.is_scoped = True
 
     @abstractmethod
     def process_file(self, current_file):
@@ -41,6 +42,17 @@ class CirclePackingModule:
     @abstractmethod
     def post_process_data(self):
         pass
+
+    @abstractmethod
+    def persist_mappings(self):
+        pass
+
+    def load_data(self, data):
+        for key in self.persist_mappings():
+            if key not in data: # Sanity check
+                self.log.error("Could not find key %s in checkpoint data!", key)
+                continue
+            setattr(self, key, data[key])
 
     def is_file_in_scope(self, current_file):
         """

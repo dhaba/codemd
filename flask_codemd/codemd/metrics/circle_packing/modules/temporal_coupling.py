@@ -327,3 +327,9 @@ class TemporalCouplingModule(CirclePackingModule):
         f1_ext, f2_ext = file1.split(".")[-1], file2.split(".")[-1]
         return (is_same_module and ((f1_ext == 'h' and f2_ext == 'c')
                or (f1_ext == 'c' and f2_ext == 'h')))
+
+    def persist_mappings(self):
+        return {'working_couples': self.working_couples,
+                'working_rev_counts': self.working_rev_counts,
+                'commits_buffer': self.commits_buffer,
+                'num_ignored_commits': self.num_ignored_commits }

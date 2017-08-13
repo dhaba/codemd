@@ -2,6 +2,9 @@ import logging
 import pymongo
 import datetime
 
+from bson.binary import Binary
+import pickle
+
 from codemd import mongo
 
 class DBHandler(object):
@@ -19,14 +22,35 @@ class DBHandler(object):
         """
         self.log = logging.getLogger('codemd.DBHandler')
         self.project_name = project_name
-        if DBHandler.project_exists(project_name):
-            self.log.debug("DBHandler found project %s", project_name)
-            self.collection = mongo.db[project_name]
+        self.collection = None # Collection /w github repo dump
+        self.cp_collection = None # Collection /w precomputed circle packing data
+        self.__set_collections()
+
+    def __set_collections(self):
+        """
+        Sets internal collection attributes (self.collection and self.cp_collection)
+        to associated mongodb collections
+        """
+        # Set self.collection
+        if DBHandler.project_exists(self.project_name):
+            self.log.debug("Found commits collection %s", self.project_name)
+            self.collection = mongo.db[self.project_name]
         else:
-            self.log.info("DBHandler creating new collection for project %s", project_name)
-            self.collection = mongo.db[project_name]
+            self.log.info("Creating new commits collection for project %s",
+                           self.project_name)
+            self.collection = mongo.db[self.project_name]
             self.collection.create_index([("date", pymongo.ASCENDING)])
             self.collection.insert_one({'date_updated': datetime.datetime.now()})
+
+        # Set self.cp_collection
+        if DBHandler.project_exists(self.cp_collection_name()):
+            self.log.info("Found cp_data collection %s",self.cp_collection_name())
+            self.cp_collection = mongo.db[self.cp_collection_name()]
+        else:
+            self.log.info("DBHandler creating circle packing data collection under "
+                          + "name: %s", self.cp_collection_name())
+            self.cp_collection = mongo.db[self.cp_collection_name()]
+            self.cp_collection.create_index([("date", pymongo.ASCENDING)])
 
     @classmethod
     def project_exists(cls, project_name):
@@ -81,6 +105,11 @@ class DBHandler(object):
         :param start_date: The start date to begin fetching (in unix epoch)
         :param end_date: The end date to begin fetching (in unix epoch)
         """
+        if end_date is None:
+            end_date = self.last_revision_date()
+        if start_date is None:
+            start_date = self.first_revision_date()
+
         return self.collection.aggregate([ \
             { "$match" : {'revision_id': { '$exists': True },
                           'date': { '$lte': end_date, "$gte": start_date }}},
@@ -101,6 +130,36 @@ class DBHandler(object):
         return list(self.collection.find(
             {'revision_id': {'$exists': True}}).sort('date', -1).limit(1))[0]['date']
 
+    def first_revision_date(self):
+        """
+        Returns the date of the first revision in the project
+
+        :returns: Date of first revision, as an int in unix epoch time
+        """
+        return list(self.collection.find(
+            {'revision_id': {'$exists': True}}).sort('date', 1).limit(1))[0]['date']
+
+    def revision_count(self):
+        """
+        Counts total number of entires in the collection
+        """
+        return self.collection.count()
+
+    def file_history_count(self):
+        """
+        Counts the number of file modifications over the entire project history
+        This will be equal to the number of entires in self.file_history
+        If one commit changes 3 files, then this coutns as 3 modifications.
+        """
+        return list(self.collection.aggregate([ \
+            { "$match" : {'revision_id': { '$exists': True }}},
+            {'$unwind':'$files_modified'},
+            {'$group':{'_id':'null', 'count':{'$sum':1}}}
+            ]))[0]['count']
+
+    def cp_collection_name(self):
+        return self.project_name + "_" + "cp_data"
+
     def file_complexity_history(self, filename):
         """
         Fetches all commits for a given file, sorted in ascending order by date
@@ -117,3 +176,37 @@ class DBHandler(object):
                           "deletions": "$files_modified.deletions",
                           "message": 1, "author": 1, "date": 1, "_id": 0 }},
             { "$sort": {"date": 1} } ], allowDiskUse=True)
+
+    def persist_packing_data(self, date, str_type, data):
+        bson_data = Binary(pickle.dumps(data))
+        self.cp_collection.insert_one({'date': date, 'type': str_type, 'data': bson_data})
+
+    def find_closest_checkpoint(self, date, before=True):
+        """
+        Fetches the closest checkpoint date that is before or equal to date
+        if before == True or after date if before == False
+        """
+        if before:
+            sort = -1
+        else:
+            sort = 1
+        checkpoint_date = list(self.cp_collection.find( \
+            {'date': {'$lte': date}}).sort('date', sort).limit(1))[0]['date']
+        return checkpoint_date
+
+    def fetch_checkpoint_data(self, date):
+        """
+        Fetches all checkpoint data at checkpoint <date>, unserializing data as
+        necessary.
+
+        :param date: The date of the checkpoint. Should be in unix epoch time
+        :type date: int
+        :returns: A pymongo cursor the data for the closest checkpoint
+        :rtype: pymongo.cursor
+        """
+        # Fetch all checkpoints at date
+        checkpoints = self.cp_collection.find({'date': date}, {'_id': 0})
+        # Return a generator that unseralizes the data
+        for checkpoint in checkpoints:
+            checkpoint['data'] = pickle.loads(checkpoint['data'])
+            yield checkpoint

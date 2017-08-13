@@ -19,6 +19,7 @@ class FileInfoModule(CirclePackingModule):
 
     def __init__(self, working_data, intervals):
         CirclePackingModule.__init__(self, working_data, intervals)
+        self.is_scoped = False
 
     def process_file(self, current_file):
         default_data = self.DEFAULT_DATA
@@ -44,3 +45,7 @@ class FileInfoModule(CirclePackingModule):
             # self.log.debug("Removing file %s because it only had %s lines", f, self.working_data[f]['loc'])
             self.working_data.pop(f, None)
         self.log.info("Finished post processing for FileInfoModule.")
+
+    def persist_mappings(self):
+        # All this modules data is stored in working_data
+        return  {'working_data': self.working_data}

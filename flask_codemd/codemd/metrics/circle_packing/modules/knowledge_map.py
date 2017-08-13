@@ -62,3 +62,6 @@ class KnowledgeMapModule(CirclePackingModule):
         # self.log.debug("Author key: %s", json.dumps(self.authors_key, indent=2))
         # self.log.debug("Top Authors: %s", json.dumps(self.authors_key, indent=2))
         self.log.info("Finished post processing for KnowledgeMap.")
+
+    def persist_mappings(self):
+        return {'authors_key': self.authors_key, 'top_authors_count': self.top_authors_count}

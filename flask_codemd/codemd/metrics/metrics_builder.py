@@ -1,7 +1,7 @@
 import re
 import logging
-from codemd.data_managers.db_handler import DBHandler
 from codemd.data_managers.s3_handler import S3Handler
+from codemd.data_managers.db_handler import DBHandler
 
 from codemd.metrics.circle_packing.metrics import CirclePackingMetrics
 
@@ -17,9 +17,9 @@ class MetricsBuilder(object):
 
     def __init__(self, project_name):
         self.project_name = project_name
-        self.db_handler = DBHandler(project_name)
         self.log = logging.getLogger('codemd.MetricsBuilder')
         self.regex = re.compile(r'\b(fix(es|ed)?|close(s|d)?)\b')
+        self.db_handler = DBHandler(project_name)
 
     def commits(self):
         """
@@ -54,7 +54,11 @@ class MetricsBuilder(object):
         commits_data = handler.load_dashboard_data()
         return commits_data
 
-    def circle_packing(self, interval1_start=None, interval1_end=None, interval2_start=None, interval2_end=None):
+    def save_circle_packing_data(self):
+        packing_metrics = CirclePackingMetrics(self.project_name)
+        packing_metrics.create_checkpoints()
+
+    def circle_packing(self, intervals):
         """
         Calculates temporal frequency, bug score,
         knowledge map, and code age for use in circle packing viz.
@@ -64,26 +68,10 @@ class MetricsBuilder(object):
 
         TODO -- params, docstring, refactor, ect
         """
-        # Build appropriate interval (and handle edge cases)
-        if interval1_start is None:
-            interval1_start = 0
-            self.log.info("Interval1_start was None. Defaulted to 0")
+        self.log.debug("Building circle packing metrics with interval: %s", intervals)
 
-        if interval1_end is None:
-            interval1_end = self.db_handler.last_revision_date()
-            self.log.info("Interval_end1 was none. Defaulted to last entry: %s", interval1_end)
-
-        scan_intervals = [(interval1_start, interval1_end)]
-
-        if interval2_end is not None:
-            self.log.warning("Interval 2 detected: " + interval2_end + " ..of type: " + type(interval2_end))
-            scan_intervals.append((interval2_start, interval2_end))
-
-        self.log.debug("Building circle packing metrics with interval: %s", scan_intervals)
-
-        packing_metrics = CirclePackingMetrics(scan_intervals)
-        file_heirarchy = packing_metrics.execute_with_gen(self.db_handler.file_history(scan_intervals[0][0],
-                                                        scan_intervals[-1][1]))
+        packing_metrics = CirclePackingMetrics(self.project_name, intervals)
+        file_heirarchy = packing_metrics.compute_file_hierarchy()
 
         self.log.debug("Finished circle packing building process...")
 

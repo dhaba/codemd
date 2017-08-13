@@ -14,9 +14,12 @@ from codemd.utils import extract_interval_params
 log = logging.getLogger('codemd')
 
 # Debug
-@app.route("/test")
-def show_test():
-    return render_template('test_dash.html')
+@app.route("/build_cp_data/<project_name>")
+def build_cp_data(project_name):
+    builder = MetricsBuilder(project_name)
+    builder.save_circle_packing_data()
+    return "Done!"
+
 
 # Debug -- for uploading statics
 @app.route("/upload")
@@ -112,11 +115,7 @@ def get_circle_packing():
         return redirect(url_for('show_home'))
 
     metrics = MetricsBuilder(project_name)
-    circle_packing_data = json_util.dumps(metrics.circle_packing(
-                                    interval1_start = intervals[0][0],
-                                    interval1_end = intervals[0][1],
-                                    interval2_start = intervals[1][0],
-                                    interval2_end = intervals[1][1]))
+    circle_packing_data = json_util.dumps(metrics.circle_packing(intervals))
 
     # log.info('circle_packing data: %s', circle_packing_data) # DEBUG LINE
     return jsonify(circle_packing_data)

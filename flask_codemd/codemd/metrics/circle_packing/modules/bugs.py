@@ -25,10 +25,6 @@ class BugModule(CirclePackingModule):
         if self.__is_bug(current_file['message']):
             bug_info['count'] += 1
 
-            # just for debugging really (note: need to init lists first)
-            # f['bug_messages'].append(mod_file['message'])
-            # f['bug_dates'].append(mod_file['date'])
-
             # Add score to each file. Scoring function based on research from Chris
             # Lewis and Rong Ou at Google
             end_date = self.intervals[0][1]
@@ -58,3 +54,6 @@ class BugModule(CirclePackingModule):
         DOCSTRING
         """
         return self.regex.match(message) != None
+
+    def persist_mappings(self):
+        return {'max_bug_score': self.max_bug_score}

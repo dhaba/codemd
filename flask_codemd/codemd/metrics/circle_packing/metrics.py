@@ -1,5 +1,7 @@
 import logging
 
+from codemd.metrics.circle_packing.metrics_store import CirclePackingMetricsStore
+
 from codemd.metrics.circle_packing.modules.file_info import FileInfoModule
 from codemd.metrics.circle_packing.modules.bugs import BugModule
 from codemd.metrics.circle_packing.modules.knowledge_map import KnowledgeMapModule
@@ -17,23 +19,54 @@ class CirclePackingMetrics(object):
     NOTE : Assumes times are in epoch unix! Blame github lol.
     """
 
-    def __init__(self, intervals):
+    def __init__(self, project_name, intervals=None):
         self.log = logging.getLogger('codemd.CirclePackingMetrics')
         self.log.info("CirclePackingMetrics created with interval: %s", intervals)
 
-        # Local Variables to track metrics
-        self.intervals = intervals
+        # self.__process_intervals(intervals)
+        if intervals is None:
+            self.intervals = [[None, None]]
+        else:
+            self.intervals = intervals
+
+        self.project_name = project_name
         self.working_data = {} # high level file info, dict of dicts. key is filename
         self.modules = []
         self.counter = 0
-
-        # working data will be appended after an interval is popped
-        self.completedData = []
-
+        self.completedData = [] # working data will be appended after an interval is popped
         self.__reset_modules()
+        self.metrics_store = CirclePackingMetricsStore(self)
 
+    def create_checkpoints(self):
+        self.log.info("Creating circle packing checkpoints for project %s", self.project_name)
+        self.metrics_store.persist_checkpoints()
 
-    def execute_with_gen(self, gen):
+    def compute_file_hierarchy(self):
+        self.metrics_store.load_interval()
+        return self.__execute_with_gen(self.metrics_store.gen_remaining_files())
+
+    # def __process_intervals(self, intervals):
+    #     """
+    #     Process possible "None" values in intervals to appropriate start and end dates
+    #     """
+    #     if intervals is None:
+    #         self.intervals
+    #     self.log.debug("Processing interval array %s ...", intervals)
+    #     if len(intervals) == 1:
+    #         if intervals[0] is None:
+    #             interval1_start = 0
+    #             self.log.info("intervals[0] was None. Defaulted to 0")
+    #         if intervals[1] is None:
+    #             interval1_end = float('inf')
+    #             self.log.info("Interval_end1 was none. Defaulted to last entry: %s", interval1_end)
+    #
+    #             self.intervals = [(interval1_start, interval1_end)]
+    #     else:
+    #         self.intervals = intervals
+    #         self.log.warning("Interval of length 2 detected, assuming values"
+    #             + "are all valid: %s", self.intervals)
+
+    def __execute_with_gen(self, gen):
         """
         Starts mining the cursor for hotspot metrics. Return a list
         containing the completed file structures from analysis.
@@ -59,7 +92,7 @@ class CirclePackingMetrics(object):
         # this could all be made a lot quicker
 
         self.counter += 1
-        if self.counter % 2048 == 0:
+        if self.counter % 512 == 0:
             self.log.info("Processing files ... files complete so far: %s", self.counter)
 
         start_scope, end_scope = self.intervals[0][0], self.intervals[0][1]
@@ -100,7 +133,6 @@ class CirclePackingMetrics(object):
         for mod in self.modules:
             mod.process_file(current_file)
 
-
     def __post_process_data(self):
         """
         Invoked when we finish up an interval
@@ -114,7 +146,6 @@ class CirclePackingMetrics(object):
         self.log.debug("Popping off interval: %s", self.intervals[0])
         self.intervals.pop(0)
         self.completedData.append(self.working_data.copy())
-
 
     def __reset_modules(self):
         # Reset modules data so they are fresh to recompute the next interval
