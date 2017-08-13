@@ -1,6 +1,8 @@
 from codemd.metrics.circle_packing.modules.base import CirclePackingModule
 from collections import defaultdict
 
+import pdb
+
 class KnowledgeMapModule(CirclePackingModule):
     """
     Extracts top contributors for each module
@@ -36,6 +38,7 @@ class KnowledgeMapModule(CirclePackingModule):
             knowledge_info = self.get_or_create_key(module)
             sorted_authors = sorted(knowledge_info['top_authors'].iteritems(),
                                     key = lambda (k, v): v, reverse=True)
+
             top_authors_count[sorted_authors[0][0]] += 1
             knowledge_info['top_authors'] = sorted_authors[0:3]
             knowledge_info['author'] = sorted_authors[0][0]
@@ -63,10 +66,6 @@ class KnowledgeMapModule(CirclePackingModule):
         # self.log.debug("Top Authors: %s", json.dumps(author_keys, indent=2))
         self.log.info("Finished post processing for KnowledgeMap.")
 
-    def persist_mappings(self):
-        # All this modules data is in working_data
-        return
-
     def subtract_module(self, other):
         self.log.debug("Subtracting knowledge map module data...")
         for file_name in self.working_data:
@@ -74,5 +73,5 @@ class KnowledgeMapModule(CirclePackingModule):
             other_data = other.get_or_create_key(file_name)
             for author in other_data['top_authors']:
                 data['top_authors'][author] -= other_data['top_authors'][author]
-
         self.log.debug("Finished subtracting knowledge map module data")
+        return self

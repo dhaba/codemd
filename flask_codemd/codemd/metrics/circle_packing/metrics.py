@@ -2,10 +2,9 @@ import logging
 
 from codemd.metrics.circle_packing.metrics_store import CirclePackingMetricsStore
 
-from codemd.metrics.circle_packing.modules.file_info import FileInfoModule
-from codemd.metrics.circle_packing.modules.bugs import BugModule
-from codemd.metrics.circle_packing.modules.knowledge_map import KnowledgeMapModule
-from codemd.metrics.circle_packing.modules.temporal_coupling import TemporalCouplingModule
+from codemd.data_managers.db_handler import DBHandler
+
+import pdb
 
 class CirclePackingMetrics(object):
     """
@@ -21,29 +20,64 @@ class CirclePackingMetrics(object):
 
     def __init__(self, project_name, intervals=None):
         self.log = logging.getLogger('codemd.CirclePackingMetrics')
-        self.log.info("CirclePackingMetrics created with interval: %s", intervals)
-
-        # self.__process_intervals(intervals)
-        if intervals is None:
-            self.intervals = [[None, None]]
-        else:
-            self.intervals = intervals
-
         self.project_name = project_name
+        self.intervals = intervals
+        self.__process_intervals()
         self.working_data = {} # high level file info, dict of dicts. key is filename
         self.modules = []
         self.counter = 0
         self.completedData = [] # working data will be appended after an interval is popped
-        self.__reset_modules()
         self.metrics_store = CirclePackingMetricsStore(self)
+        self.log.info("CirclePackingMetrics created with interval: %s", intervals)
+
+    def __process_intervals(self):
+        """
+        Helper method to deal with None values and edge cases in self.intervals
+        """
+        # TODO -- move this behavior to CirclePackingMetrics
+        if self.intervals is None:
+            start = DBHandler.first_revision_date(self.project_name)
+            end = DBHandler.last_revision_date(self.project_name)
+            self.intervals = [[start, end]]
+            return
+        if ((len(self.intervals) > 1) and (self.intervals[1] == [None, None])):
+            self.intervals.pop()
+        if self.intervals[0][0] is None:
+            self.intervals[0][0] = DBHandler.first_revision_date(self.project_name)
+        if self.intervals[-1][1] is None:
+            self.intervals[-1][1] = DBHandler.last_revision_date(self.project_name)
 
     def create_checkpoints(self):
         self.log.info("Creating circle packing checkpoints for project %s", self.project_name)
         self.metrics_store.persist_checkpoints()
 
     def compute_file_hierarchy(self):
+        # NOTE -- this logic won't fly with multiple intervals. Implement that if necessary.
+        self.log.info("Loading checkpoint module data differentials for interval: %s...",
+                       self.intervals)
         self.metrics_store.load_interval()
-        return self.__execute_with_gen(self.metrics_store.gen_remaining_files())
+
+        self.log.info("Processing remaining files not caught in checkpoint differntial interval...")
+        self.log.debug("Processing first chunk...")
+        for f in self.metrics_store.gen_first_missing_files():
+            for mod in self.modules:
+                if mod.is_scoped:
+                    self.__feed_file(f)
+        self.log.debug("Processing last chunk...")
+        for f in self.metrics_store.gen_second_missing_files():
+            for mod in self.modules:
+                self.__feed_file(f)
+
+        self.log.info("Done processing remaining files. Starting post proessing...")
+
+        pdb.set_trace()
+
+        self.__post_process_data()
+        self.log.info("Done with post processing.")
+        return self.completedData
+
+
+
 
     # def __process_intervals(self, intervals):
     #     """
@@ -66,22 +100,22 @@ class CirclePackingMetrics(object):
     #         self.log.warning("Interval of length 2 detected, assuming values"
     #             + "are all valid: %s", self.intervals)
 
-    def __execute_with_gen(self, gen):
-        """
-        Starts mining the cursor for hotspot metrics. Return a list
-        containing the completed file structures from analysis.
-
-        Returns a generator for optimal performance
-        """
-        for f in gen:
-            if len(self.intervals) > 0:
-                self.__feed_file(f)
-
-        if len(self.intervals) > 0:
-            self.log.debug("Calling __post_process_data from execute_with_gen")
-            self.__post_process_data()
-
-        return self.completedData
+    # def __execute_with_gen(self, gen):
+    #     """
+    #     Starts mining the cursor for hotspot metrics. Return a list
+    #     containing the completed file structures from analysis.
+    #
+    #     Returns a generator for optimal performance
+    #     """
+    #     for f in gen:
+    #         if len(self.intervals) > 0:
+    #             self.__feed_file(f)
+    #
+    #     if len(self.intervals) > 0:
+    #         self.log.debug("Calling __post_process_data from execute_with_gen")
+    #         self.__post_process_data()
+    #
+    #     return self.completedData
 
     def __feed_file(self, current_file):
         """
@@ -109,7 +143,7 @@ class CirclePackingMetrics(object):
             self.__post_process_data()
             # Recall this method if we still have work to do
             if (len(self.intervals) > 0):
-                self.__reset_modules()
+                self.metrics_store.reset_modules()
                 self.__feed_file(current_file)
             else:
                 return
@@ -146,11 +180,3 @@ class CirclePackingMetrics(object):
         self.log.debug("Popping off interval: %s", self.intervals[0])
         self.intervals.pop(0)
         self.completedData.append(self.working_data.copy())
-
-    def __reset_modules(self):
-        # Reset modules data so they are fresh to recompute the next interval
-        self.log.debug("Reseting modules data...")
-        self.modules = [FileInfoModule(self.working_data, self.intervals),
-                        BugModule(self.working_data, self.intervals),
-                        TemporalCouplingModule(self.working_data, self.intervals),
-                        KnowledgeMapModule(self.working_data, self.intervals)]

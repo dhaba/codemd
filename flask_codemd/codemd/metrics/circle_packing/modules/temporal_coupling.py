@@ -3,6 +3,8 @@ from collections import defaultdict
 from itertools import combinations
 import math
 
+import pdb
+
 class TemporalCouplingModule(CirclePackingModule):
     """
     Responsible for handling temporal coupling metrics.
@@ -161,7 +163,8 @@ class TemporalCouplingModule(CirclePackingModule):
             data = couple[1]
             for mod in couple[0]:
                 # Only update data if score is higher than current value
-                tc_info = self.working_data[mod][self.MODULE_KEY]
+                # pdb.set_trace()
+                tc_info = self.get_or_create_key(mod)
                 if tc_info['score'] < data['score']:
                     coupled_module = filter(lambda x: x is not mod, couple[0])[0]
                     tc_info['score'] = data['score']
@@ -331,7 +334,7 @@ class TemporalCouplingModule(CirclePackingModule):
     def persist_mappings(self):
         return {'working_couples': self.working_couples,
                 'working_rev_counts': self.working_rev_counts,
-                # 'commits_buffer': self.commits_buffer, TODO remove this
+                'commits_buffer': self.commits_buffer,
                 'num_ignored_commits': self.num_ignored_commits }
 
     def subtract_module(self, other):
@@ -342,3 +345,4 @@ class TemporalCouplingModule(CirclePackingModule):
         for file_name in other.working_rev_counts:
             self.working_rev_counts[file_name] -= other.working_rev_counts[file_name]
         self.log.debug("Finished subtracting temporal coupling module data")
+        return self

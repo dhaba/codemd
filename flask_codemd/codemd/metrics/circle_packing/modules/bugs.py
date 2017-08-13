@@ -2,6 +2,8 @@ from codemd.metrics.circle_packing.modules.base import CirclePackingModule
 import re
 import math
 
+import pdb
+
 class BugModule(CirclePackingModule):
 
     MODULE_KEY = 'bug_info'
@@ -63,16 +65,15 @@ class BugModule(CirclePackingModule):
         """
         return self.regex.match(message) != None
 
-    def persist_mappings(self):
-        # All this modules data is in working_data
-        return
-
     def subtract_module(self, other):
         self.log.debug("Subtracting bugs module data...")
-        for file_name in self.working_data:
+
+        # pdb.set_trace()
+
+        for file_name in other.working_data:
             # Sanity check TODO -- delete
-            if file_name not in other.working_data:
-                self.log.error("!!! file %s was not in other modules working data!",
+            if file_name not in self.working_data:
+                self.log.error("!!! file %s from other module was not in this modules working data!",
                                 file_name)
                 continue
             data = self.get_or_create_key(file_name)
@@ -88,3 +89,4 @@ class BugModule(CirclePackingModule):
                     continue
                 data['bugs'].remove(other_bug)
         self.log.debug("Finished subtracting bugs module data")
+        return self

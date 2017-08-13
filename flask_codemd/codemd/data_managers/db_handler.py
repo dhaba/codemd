@@ -7,6 +7,8 @@ import pickle
 
 from codemd import mongo
 
+import pdb
+
 class DBHandler(object):
     """
     This class is responsible for all interactions with mongodb.
@@ -64,6 +66,26 @@ class DBHandler(object):
         """
         return project_name in mongo.db.collection_names()
 
+    @classmethod
+    def last_revision_date(cls, project_name):
+        """
+        Returns the date of the last revision in the project
+
+        :returns: Date of last revision, as an int in unix epoch time
+        """
+        return list(mongo.db[project_name].find(
+            {'revision_id': {'$exists': True}}).sort('date', -1).limit(1))[0]['date']
+
+    @classmethod
+    def first_revision_date(cls, project_name):
+        """
+        Returns the date of the first revision in the project
+
+        :returns: Date of first revision, as an int in unix epoch time
+        """
+        return list(mongo.db[project_name].find(
+            {'revision_id': {'$exists': True}}).sort('date', 1).limit(1))[0]['date']
+
     def persist_documents_from_gen(self, doc_gen):
         """
         Inserts the documents yielded by doc_gen into
@@ -106,10 +128,10 @@ class DBHandler(object):
         :param end_date: The end date to begin fetching (in unix epoch)
         """
         if end_date is None:
-            end_date = self.last_revision_date()
+            end_date = DBHandler.last_revision_date(self.project_name)
         if start_date is None:
-            start_date = self.first_revision_date()
-
+            start_date = DBHandler.first_revision_date(self.project_name)
+        self.log.debug("Fetching file history from %s to %s", start_date, end_date)
         return self.collection.aggregate([ \
             { "$match" : {'revision_id': { '$exists': True },
                           'date': { '$lte': end_date, "$gte": start_date }}},
@@ -120,24 +142,6 @@ class DBHandler(object):
                           "message": 1, "author": 1, "date": 1, "revision_id":1,
                           "_id": 0 }},
             { "$sort": {"date": 1} } ], allowDiskUse=True)
-
-    def last_revision_date(self):
-        """
-        Returns the date of the last revision in the project
-
-        :returns: Date of last revision, as an int in unix epoch time
-        """
-        return list(self.collection.find(
-            {'revision_id': {'$exists': True}}).sort('date', -1).limit(1))[0]['date']
-
-    def first_revision_date(self):
-        """
-        Returns the date of the first revision in the project
-
-        :returns: Date of first revision, as an int in unix epoch time
-        """
-        return list(self.collection.find(
-            {'revision_id': {'$exists': True}}).sort('date', 1).limit(1))[0]['date']
 
     def revision_count(self):
         """
@@ -177,9 +181,10 @@ class DBHandler(object):
                           "message": 1, "author": 1, "date": 1, "_id": 0 }},
             { "$sort": {"date": 1} } ], allowDiskUse=True)
 
-    def persist_packing_data(self, date, str_type, data):
+    def persist_packing_data(self, date, module_key, data):
         bson_data = Binary(pickle.dumps(data))
-        self.cp_collection.insert_one({'date': date, 'type': str_type, 'data': bson_data})
+        self.cp_collection.insert_one({'date': date, 'module_key': module_key,
+                                       'data': bson_data})
 
     def find_closest_checkpoint(self, date, before=True):
         """
@@ -187,12 +192,11 @@ class DBHandler(object):
         if before == True or after date if before == False
         """
         if before:
-            sort = -1
+            sort, comparison = pymongo.DESCENDING, "$lte"
         else:
-            sort = 1
-        checkpoint_date = list(self.cp_collection.find( \
-            {'date': {'$lte': date}}).sort('date', sort).limit(1))[0]['date']
-        return checkpoint_date
+            sort, comparison = pymongo.ASCENDING, "$gte"
+        return list(self.cp_collection.find( \
+            {'date': {comparison: date}}).sort('date', sort).limit(1))[0]['date']
 
     def fetch_checkpoint_data(self, date):
         """

@@ -1,39 +1,47 @@
 import logging
+import itertools
 from codemd.data_managers.db_handler import DBHandler
+
+from codemd.metrics.circle_packing.modules.file_info import FileInfoModule
+from codemd.metrics.circle_packing.modules.bugs import BugModule
+from codemd.metrics.circle_packing.modules.knowledge_map import KnowledgeMapModule
+from codemd.metrics.circle_packing.modules.temporal_coupling import TemporalCouplingModule
+
+import pdb
 
 class CirclePackingMetricsStore(object):
 
-    MAX_CHECKPOINTS = 4
+    MAX_CHECKPOINTS = 128
 
     def __init__(self, metrics):
         self.log = logging.getLogger('codemd.CirclePackingMetricsStore')
-        self.interval = metrics.intervals
         self.modules = metrics.modules
-        self.working_data = metrics.working_data
+        self.metrics = metrics
         self.db_handler = DBHandler(metrics.project_name)
-
-        # Used to calculate remaining files that need to be processed outside of
-        # data loaded from checkpoint interval
+        self.intervals = metrics.intervals
         self.first_checkpoint = None
         self.last_checkpoint = None
+        self.reset_modules()
 
     def persist_checkpoints(self):
         total_mods = self.db_handler.file_history_count()
         chunk_size = total_mods/self.MAX_CHECKPOINTS
         finished_day = None
-        count, chunks_processed = 0, 0
+        total_count, count, chunks_processed = 0, 0, 0
 
         self.log.info("Starting persisting cricle packing data with\n"
                         + "MAX_CHECKPOINTS: %s\nchunk_size: %s\ntotal_mods: %s",
                         self.MAX_CHECKPOINTS, chunk_size, total_mods)
 
         for f in self.db_handler.file_history():
+            if total_count == 0:
+                self.log.debug("Storing first blank checkpoint at date %s", f['date'])
+                self.__save_checkpoint(f['date'])
             if count >= chunk_size:
                 if finished_day is None:
                     finished_day = f['date']
                     self.log.debug("Reached maximum chunk size at date: %s", finished_day)
                 elif finished_day != f['date']:
-                    # then we are done with this chunk
                     self.log.debug("ENCOUNTERED NEW DATE: %s", f['date'])
                     count = count - chunk_size
                     chunks_processed += 1
@@ -42,25 +50,20 @@ class CirclePackingMetricsStore(object):
                                     chunks_processed, count - 1)
                     self.__save_checkpoint(finished_day)
                     finished_day = None
-                else: # DEBUG
+                else: # DEBUG TODO remove this
                     self.log.debug("Overflowing revision: %s ... at date: %s",
                                     f['revision_id'], f['date'])
-            count += 1
             for mod in self.modules:
                 mod.process_file(f)
+            count += 1
+            total_count += 1
+            if total_count % 512 == 0:
+                self.log.debug("Total files processed so far: %s", total_count)
 
-        # Store last checkpoint
-        self.log.debug("Storing last checkpoint...")
+        self.log.debug("Storing last checkpoint at date: %s", f['date'])
         self.__save_checkpoint(f['date'])
 
         self.log.info("Finished persisting circle packing data.")
-
-    def __save_checkpoint(self, checkpoint_date):
-        self.log.debug("Saving circle packing checkpoint at date %s", checkpoint_date)
-        for mod in self.modules:
-            self.db_handler.persist_packing_data(checkpoint_date, mod.MODULE_KEY,
-                                                mod.persist_mappings())
-
 
     def load_interval(self):
         """
@@ -70,32 +73,104 @@ class CirclePackingMetricsStore(object):
         And then instructs the circle packing modules to load the diffrence.
 
         """
-        start, end = self.interval[0][0], self.interval[0][1]
-        if start is None:
-            start = self.db_handler.first_revision_date()
-        if end is None:
-            end = self.db_handler.last_revision_date()
+        start, end = self.intervals[0][0], self.intervals[0][1]
 
-        self.first_checkpoint = self.db_handler.find_closest_checkpoint(start, before=True)
-        self.last_checkpoint = self.db_handler.find_closest_checkpoint(end, before=False)
+        self.first_checkpoint = self.db_handler.find_closest_checkpoint(start, before=False)
+        self.last_checkpoint = self.db_handler.find_closest_checkpoint(end, before=True)
+        self.log.debug("Found first checkpoint %s and second checkpoint %s for interval: %s",
+                        self.first_checkpoint, self.last_checkpoint, self.intervals)
 
-        self.log.debug("Found start date %s and end date %s for interval: %s",
-                        self.first_checkpoint, self.last_checkpoint, self.interval)
+        self.log.debug("Creating modules from first checkpoint data...")
+        first_modules = self.__create_modules(self.db_handler.fetch_checkpoint_data(self.first_checkpoint))
+        self.log.debug("Creating modules from second checkpoint data...")
+        last_modules = self.__create_modules(self.db_handler.fetch_checkpoint_data(self.last_checkpoint))
 
-        # how the fuck to tell modules to load from the difference of 2 generators? fuckz
+        self.log.debug("Setting self.modules to difference of last and second checkpoint data...")
+        self.modules = []
+        # for last_mod in last_modules:
+        #     first_mod = [m for m in first_modules if m.MODULE_KEY == last_mod.MODULE_KEY][0]
+        #     self.modules.append(last_mod.subtract_module(first_mod))
+        for last_mod, first_mod in itertools.izip(last_modules, first_modules):
+            # Sanity check TODO -- remove this
+            if last_mod.MODULE_KEY != first_mod.MODULE_KEY:
+                self.log.error("you fucked up somewhere! module keys dont match")
+                pdb.set_trace()
+            self.modules.append(last_mod.subtract_module(first_mod))
 
+        # Hack to set working data after loading - TODO find a clean solution
+        self.metrics.working_data = self.modules[0].working_data
+        self.metrics.modules = self.modules
 
-        # self.log.info("Loading first checkpoint closest to date: %s", closest_date)
-        # checkpoint_date = self.db_handler.find_closest_checkpoint(closest_date)
-        # self.log.info("Found closest checkpoint at date: %s", checkpoint_date)
+        self.log.debug("Done setting self.modules")
+        pdb.set_trace()
 
-        # DEBUG
-        # for checkpoint_data in self.db_handler.fetch_checkpoint_data(checkpoint_date):
-        #     self.log.debug("checkpoint data: %s", checkpoint_data)
+    def gen_first_missing_files(self):
+        """
+        Returns a generator to the first chunk of file not caught between the
+        checkpoint interval (ie all files from interval start to first checkpoint)
+        """
+        # Subtract one from first_checkpoint date because all the data on the
+        # specific date was loaded during the load_interval process
+        return self.db_handler.file_history(start_date = self.intervals[0][0],
+                                            end_date = self.first_checkpoint - 1)
 
-        # set self.last_checkpoint once we figure out what it is from db_manager
+    def gen_second_missing_files(self):
+        """
+        Returns a generator to the second chunk of file not caught between the
+        checkpoint interval (ie all files from second checkpoint to interval end)
+        """
+        # Add one to last_checkpoint date because all the data on the
+        # specific date was loaded during the load_interval process
+        return self.db_handler.file_history(start_date = self.last_checkpoint + 1,
+                                            end_date = self.intervals[0][1])
 
-    def gen_remaining_files(self):
-        if self.last_checkpoint is None:
-            self.log.error("Get remaining file called without self.last_checkpoint set!!!")
-            return
+    def reset_modules(self):
+        # Reset modules data so they are fresh to recompute the next interval
+        self.log.debug("Resetting modules...")
+        self.modules = self.__blank_modules()
+
+    def __blank_modules(self):
+        working_data = {}
+        return [FileInfoModule(working_data, self.intervals),
+                        BugModule(working_data, self.intervals),
+                        TemporalCouplingModule(working_data, self.intervals),
+                        KnowledgeMapModule(working_data, self.intervals)]
+
+    def __create_modules(self, checkpoint_data_gen):
+        """
+        Instantiates a new instance of each module in self.modules and populates
+        each one with the data from the checkpoint_data
+
+        :param checkpoint_data_gen: A generator to a list of checkpoint data caches
+        :type checkpoint_data_gen: pymongo.cursor.Cursor
+        :return: A new module for each in self.modules loaded with the checkpoint data
+        :rtype: list
+        """
+        new_modules = self.__blank_modules()
+
+        for data in checkpoint_data_gen:
+            self.log.debug("Creating module <%s> from checkpoint data",
+                            data['module_key'])
+
+            # Hack to set working data for all modules
+            if data['module_key'] == FileInfoModule.MODULE_KEY:
+                working_data = data['data']['working_data']
+                for mod in new_modules:
+                    mod.working_data = working_data
+                # pdb.set_trace()
+
+            mod = [m for m in new_modules if m.MODULE_KEY == data['module_key']]
+            # mod = filter(lambda x: x.MODULE_KEY == data['module_key'], new_modules)
+            if len(mod) == 0:   # Sanity check TODO -- delete this
+                self.log.error("Could not find corresponding module for key %s!", data['module_key'])
+                continue
+            mod = mod[0]
+
+            mod.load_data(data['data'])
+        return new_modules
+
+    def __save_checkpoint(self, checkpoint_date):
+        self.log.debug("Saving circle packing checkpoint at date %s", checkpoint_date)
+        for mod in self.modules:
+            self.db_handler.persist_packing_data(checkpoint_date, mod.MODULE_KEY,
+                                                mod.persist_mappings())

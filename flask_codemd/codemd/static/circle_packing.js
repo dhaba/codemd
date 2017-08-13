@@ -303,7 +303,7 @@ function buildViz(requestUrl) {
       nodes = pack.nodes(root);
 
     // DEBUG
-    // console.log(root);
+    console.log(root);
 
     svg.append("g").selectAll("circle")
       .data(nodes)

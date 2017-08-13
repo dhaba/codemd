@@ -10,6 +10,8 @@ from codemd.metrics.circle_packing.modules.bugs import BugModule
 from codemd.metrics.circle_packing.modules.knowledge_map import KnowledgeMapModule
 from codemd.metrics.circle_packing.modules.temporal_coupling import TemporalCouplingModule
 
+import pdb
+
 class MetricsBuilder(object):
     """
     Docstring
@@ -72,6 +74,8 @@ class MetricsBuilder(object):
 
         packing_metrics = CirclePackingMetrics(self.project_name, intervals)
         file_heirarchy = packing_metrics.compute_file_hierarchy()
+
+        pdb.set_trace()
 
         self.log.debug("Finished circle packing building process...")
 

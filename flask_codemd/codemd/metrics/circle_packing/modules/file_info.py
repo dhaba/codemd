@@ -54,4 +54,4 @@ class FileInfoModule(CirclePackingModule):
     def subtract_module(self, other):
         # This module is not scoped to the temporal interval, thus there is no
         # need to subtract the prior checkpoint
-        return
+        return self
