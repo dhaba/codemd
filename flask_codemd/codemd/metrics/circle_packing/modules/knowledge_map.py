@@ -66,3 +66,13 @@ class KnowledgeMapModule(CirclePackingModule):
     def persist_mappings(self):
         # All this modules data is in working_data
         return
+
+    def subtract_module(self, other):
+        self.log.debug("Subtracting knowledge map module data...")
+        for file_name in self.working_data:
+            data = self.get_or_create_key(file_name)
+            other_data = other.get_or_create_key(file_name)
+            for author in other_data['top_authors']:
+                data['top_authors'][author] -= other_data['top_authors'][author]
+
+        self.log.debug("Finished subtracting knowledge map module data")

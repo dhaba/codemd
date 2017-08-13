@@ -331,5 +331,14 @@ class TemporalCouplingModule(CirclePackingModule):
     def persist_mappings(self):
         return {'working_couples': self.working_couples,
                 'working_rev_counts': self.working_rev_counts,
-                'commits_buffer': self.commits_buffer,
+                # 'commits_buffer': self.commits_buffer, TODO remove this
                 'num_ignored_commits': self.num_ignored_commits }
+
+    def subtract_module(self, other):
+        self.log.debug("Subtracting temporal coupling module data...")
+        self.num_ignored_commits -= other.num_ignored_commits
+        for couple in other.working_couples:
+            self.working_couples[couple] -= other.working_couples[couple]
+        for file_name in other.working_rev_counts:
+            self.working_rev_counts[file_name] -= other.working_rev_counts[file_name]
+        self.log.debug("Finished subtracting temporal coupling module data")

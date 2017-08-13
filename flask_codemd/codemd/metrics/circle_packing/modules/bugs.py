@@ -54,7 +54,7 @@ class BugModule(CirclePackingModule):
             for file_name in self.working_data:
                 bug_info = self.get_or_create_key(file_name)
                 bug_info['opacity'] = bug_info['score']/max_score
-                
+
         self.log.info("Finished post processing for BugInfoModule")
 
     def __is_bug(self, message):
@@ -66,3 +66,25 @@ class BugModule(CirclePackingModule):
     def persist_mappings(self):
         # All this modules data is in working_data
         return
+
+    def subtract_module(self, other):
+        self.log.debug("Subtracting bugs module data...")
+        for file_name in self.working_data:
+            # Sanity check TODO -- delete
+            if file_name not in other.working_data:
+                self.log.error("!!! file %s was not in other modules working data!",
+                                file_name)
+                continue
+            data = self.get_or_create_key(file_name)
+            other_data = other.get_or_create_key(file_name)
+            # Subtract bug counts
+            data['count'] -= other_data['count']
+            # Subtract all the bug dates
+            for other_bug in other_data['bugs']:
+                # Sanity check TODO -- delete
+                if other_bug not in data['bugs']:
+                    self.log.error("!!! other bug date %s was not in module's own bugs!",
+                                    other_bug)
+                    continue
+                data['bugs'].remove(other_bug)
+        self.log.debug("Finished subtracting bugs module data")

@@ -54,6 +54,10 @@ class CirclePackingModule:
                 continue
             setattr(self, key, data[key])
 
+    @abstractmethod
+    def subtract_module(self, other):
+        pass
+
     def is_file_in_scope(self, current_file):
         """
         Utility method to check if the current file edit is within our interval

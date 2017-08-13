@@ -48,4 +48,10 @@ class FileInfoModule(CirclePackingModule):
 
     def persist_mappings(self):
         # All this modules data is stored in working_data
+        # Also note this module will act as the storer for working_data
         return  {'working_data': self.working_data}
+
+    def subtract_module(self, other):
+        # This module is not scoped to the temporal interval, thus there is no
+        # need to subtract the prior checkpoint
+        return
