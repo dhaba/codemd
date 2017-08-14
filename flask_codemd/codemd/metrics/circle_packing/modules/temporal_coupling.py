@@ -4,6 +4,9 @@ from itertools import combinations
 import math
 
 import pdb
+import sys
+
+import copy
 
 class TemporalCouplingModule(CirclePackingModule):
     """
@@ -50,6 +53,38 @@ class TemporalCouplingModule(CirclePackingModule):
         self.working_rev_counts = defaultdict(int) # (file) : # of revisions
         self.commits_buffer = {'commits': [], 'revision_id':None}
         self.num_ignored_commits = 0
+
+    @property
+    def shrunk_working_couples(self):
+        MAX_SIZE = 750000
+        self.log.debug("Building space optimized working_couples with "
+                        + "max size: %s...", MAX_SIZE)
+
+        threshold = 1
+        original_size = len(self.working_couples.keys())
+        shrunk_data = copy.deepcopy(self.working_couples)
+
+        while len(shrunk_data.keys()) >= MAX_SIZE:
+            self.log.debug("data with number of keys <%s> too big, trimming down "
+                            + "with threshold: %s", len(shrunk_data.keys()), threshold)
+            drop_count = 0
+            for couple in shrunk_data.keys():
+                value = shrunk_data[couple]
+                if value <= threshold:
+                    del shrunk_data[couple]
+                    drop_count += 1
+            self.log.debug("Removed %s couples", drop_count)
+            threshold += 1
+
+        self.log.debug("Finished building space optimzed storage with %s keys (%s dropped)",
+                        len(shrunk_data.keys()), original_size - len(shrunk_data.keys()))
+        return shrunk_data
+
+    @shrunk_working_couples.setter
+    def shrunk_working_couples(self, value):
+        self.log.debug("Setting working_couples")
+        self.working_couples = value
+
 
     def process_file(self, current_file):
         # Set default temporal coupling data
@@ -332,7 +367,11 @@ class TemporalCouplingModule(CirclePackingModule):
                or (f1_ext == 'c' and f2_ext == 'h')))
 
     def persist_mappings(self):
-        return {'working_couples': self.working_couples,
+        # return {'working_couples': self.working_couples,
+        #         'working_rev_counts': self.working_rev_counts,
+        #         'commits_buffer': self.commits_buffer,
+        #         'num_ignored_commits': self.num_ignored_commits }
+        return {'working_couples': self.shrunk_working_couples,
                 'working_rev_counts': self.working_rev_counts,
                 'commits_buffer': self.commits_buffer,
                 'num_ignored_commits': self.num_ignored_commits }
@@ -341,7 +380,12 @@ class TemporalCouplingModule(CirclePackingModule):
         self.log.debug("Subtracting temporal coupling module data...")
         self.num_ignored_commits -= other.num_ignored_commits
         for couple in other.working_couples:
-            self.working_couples[couple] -= other.working_couples[couple]
+            if couple not in self.working_couples:
+                self.log.debug("Readding dropped key: %s with value: %s",
+                                couple, other.working_couples[couple])
+                self.working_couples[couple] = other.working_couple[couple]
+            else:
+                self.working_couples[couple] -= other.working_couples[couple]
         for file_name in other.working_rev_counts:
             self.working_rev_counts[file_name] -= other.working_rev_counts[file_name]
         self.log.debug("Finished subtracting temporal coupling module data")

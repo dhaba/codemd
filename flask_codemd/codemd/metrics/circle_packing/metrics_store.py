@@ -82,9 +82,6 @@ class CirclePackingMetricsStore(object):
 
         self.log.debug("Setting self.modules to difference of last and second checkpoint data...")
         self.modules = []
-        # for last_mod in last_modules:
-        #     first_mod = [m for m in first_modules if m.MODULE_KEY == last_mod.MODULE_KEY][0]
-        #     self.modules.append(last_mod.subtract_module(first_mod))
         for last_mod, first_mod in itertools.izip(last_modules, first_modules):
             # Sanity check TODO -- remove this
             if last_mod.MODULE_KEY != first_mod.MODULE_KEY:
@@ -96,8 +93,7 @@ class CirclePackingMetricsStore(object):
         self.metrics.working_data = self.modules[0].working_data
         self.metrics.modules = self.modules
 
-        self.log.debug("Done setting self.modules")
-        pdb.set_trace()
+        self.log.debug("Finished loading interval")
 
     def gen_first_missing_files(self):
         """
@@ -152,10 +148,8 @@ class CirclePackingMetricsStore(object):
                 working_data = data['data']['working_data']
                 for mod in new_modules:
                     mod.working_data = working_data
-                # pdb.set_trace()
 
             mod = [m for m in new_modules if m.MODULE_KEY == data['module_key']]
-            # mod = filter(lambda x: x.MODULE_KEY == data['module_key'], new_modules)
             if len(mod) == 0:   # Sanity check TODO -- delete this
                 self.log.error("Could not find corresponding module for key %s!", data['module_key'])
                 continue

@@ -37,7 +37,7 @@ class KnowledgeMapModule(CirclePackingModule):
         for module in self.working_data:
             knowledge_info = self.get_or_create_key(module)
             sorted_authors = sorted(knowledge_info['top_authors'].iteritems(),
-                                    key = lambda (k, v): v, reverse=True)
+                                        key = lambda (k, v): v, reverse=True)
 
             top_authors_count[sorted_authors[0][0]] += 1
             knowledge_info['top_authors'] = sorted_authors[0:3]

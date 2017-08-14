@@ -23,6 +23,5 @@
   },
   "_source": "https://github.com/mathjax/MathJax.git",
   "_target": "^2.7.1",
-  "_originalSource": "MathJax",
-  "_direct": true
+  "_originalSource": "MathJax"
 }

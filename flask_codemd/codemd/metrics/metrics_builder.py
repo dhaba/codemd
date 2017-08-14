@@ -75,8 +75,6 @@ class MetricsBuilder(object):
         packing_metrics = CirclePackingMetrics(self.project_name, intervals)
         file_heirarchy = packing_metrics.compute_file_hierarchy()
 
-        pdb.set_trace()
-
         self.log.debug("Finished circle packing building process...")
 
         # TODO -- handle multiple intervals with build_filetree

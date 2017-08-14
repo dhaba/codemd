@@ -68,54 +68,11 @@ class CirclePackingMetrics(object):
             for mod in self.modules:
                 self.__feed_file(f)
 
-        self.log.info("Done processing remaining files. Starting post proessing...")
-
-        pdb.set_trace()
+        self.log.info("Done processing remaining files. Starting post processing...")
 
         self.__post_process_data()
         self.log.info("Done with post processing.")
         return self.completedData
-
-
-
-
-    # def __process_intervals(self, intervals):
-    #     """
-    #     Process possible "None" values in intervals to appropriate start and end dates
-    #     """
-    #     if intervals is None:
-    #         self.intervals
-    #     self.log.debug("Processing interval array %s ...", intervals)
-    #     if len(intervals) == 1:
-    #         if intervals[0] is None:
-    #             interval1_start = 0
-    #             self.log.info("intervals[0] was None. Defaulted to 0")
-    #         if intervals[1] is None:
-    #             interval1_end = float('inf')
-    #             self.log.info("Interval_end1 was none. Defaulted to last entry: %s", interval1_end)
-    #
-    #             self.intervals = [(interval1_start, interval1_end)]
-    #     else:
-    #         self.intervals = intervals
-    #         self.log.warning("Interval of length 2 detected, assuming values"
-    #             + "are all valid: %s", self.intervals)
-
-    # def __execute_with_gen(self, gen):
-    #     """
-    #     Starts mining the cursor for hotspot metrics. Return a list
-    #     containing the completed file structures from analysis.
-    #
-    #     Returns a generator for optimal performance
-    #     """
-    #     for f in gen:
-    #         if len(self.intervals) > 0:
-    #             self.__feed_file(f)
-    #
-    #     if len(self.intervals) > 0:
-    #         self.log.debug("Calling __post_process_data from execute_with_gen")
-    #         self.__post_process_data()
-    #
-    #     return self.completedData
 
     def __feed_file(self, current_file):
         """

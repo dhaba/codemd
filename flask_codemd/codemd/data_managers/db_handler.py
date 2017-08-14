@@ -188,8 +188,8 @@ class DBHandler(object):
             self.cp_collection.insert_one({'date': date, 'module_key': module_key,
                                            'data': bson_data})
         except pymongo.errors.DocumentTooLarge as error:
-            self.log.error("Error persisting module_key <%s> at date %s!"
-                            + "Document was too large :(",
+            self.log.error("!!!\n\nError persisting module_key <%s> at date %s!"
+                            + "Document was too large :(\n\n!!!",
                             module_key, date)
             self.log.error("Error message: %s", error.message)
 
