@@ -11,7 +11,7 @@ import pdb
 
 class CirclePackingMetricsStore(object):
 
-    MAX_CHECKPOINTS = 128
+    MAX_CHECKPOINTS = 16
 
     def __init__(self, metrics):
         self.log = logging.getLogger('codemd.CirclePackingMetricsStore')
@@ -40,19 +40,14 @@ class CirclePackingMetricsStore(object):
             if count >= chunk_size:
                 if finished_day is None:
                     finished_day = f['date']
-                    self.log.debug("Reached maximum chunk size at date: %s", finished_day)
                 elif finished_day != f['date']:
-                    self.log.debug("ENCOUNTERED NEW DATE: %s", f['date'])
                     count = count - chunk_size
                     chunks_processed += 1
-                    self.log.debug("Finished rest of commits for date in chunk"
-                                    + "\nchunks_processed = %s\noverflow = %s",
+                    self.log.debug("Complete chunk,"
+                                    + "\n\tchunks_processed = %s\n\toverflow = %s",
                                     chunks_processed, count - 1)
                     self.__save_checkpoint(finished_day)
                     finished_day = None
-                else: # DEBUG TODO remove this
-                    self.log.debug("Overflowing revision: %s ... at date: %s",
-                                    f['revision_id'], f['date'])
             for mod in self.modules:
                 mod.process_file(f)
             count += 1

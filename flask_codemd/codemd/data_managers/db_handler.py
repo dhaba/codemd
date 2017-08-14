@@ -182,9 +182,16 @@ class DBHandler(object):
             { "$sort": {"date": 1} } ], allowDiskUse=True)
 
     def persist_packing_data(self, date, module_key, data):
-        bson_data = Binary(pickle.dumps(data))
-        self.cp_collection.insert_one({'date': date, 'module_key': module_key,
-                                       'data': bson_data})
+        bson_data = Binary(pickle.dumps(data, protocol=2))
+
+        try:
+            self.cp_collection.insert_one({'date': date, 'module_key': module_key,
+                                           'data': bson_data})
+        except pymongo.errors.DocumentTooLarge as error:
+            self.log.error("Error persisting module_key <%s> at date %s!"
+                            + "Document was too large :(",
+                            module_key, date)
+            self.log.error("Error message: %s", error.message)
 
     def find_closest_checkpoint(self, date, before=True):
         """
