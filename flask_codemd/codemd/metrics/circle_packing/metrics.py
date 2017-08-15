@@ -55,85 +55,43 @@ class CirclePackingMetrics(object):
         # NOTE -- this logic won't fly with multiple intervals. Implement that if necessary.
         self.log.info("Loading checkpoint module data differentials for interval: %s...",
                        self.intervals)
-        self.metrics_store.load_interval()
-
-        self.log.info("Processing remaining files not caught in checkpoint differntial interval...")
-        self.log.debug("Processing first chunk...")
-        for f in self.metrics_store.gen_first_missing_files():
-            for mod in self.modules:
-                if mod.is_scoped:
-                    self.__feed_file(f)
-        self.log.debug("Processing last chunk...")
-        for f in self.metrics_store.gen_second_missing_files():
-            for mod in self.modules:
-                self.__feed_file(f)
+        if self.metrics_store.load_interval():
+            self.log.info("Processing remaining files not caught in checkpoint differntial interval...")
+            self.log.debug("Processing first chunk...")
+            # TODO -- make these two loops below DRYer
+            for f in self.metrics_store.gen_first_missing_files():
+                for mod in self.modules:
+                    if mod.is_scoped:
+                        mod.process_file(f)
+            self.log.debug("Processing last chunk...")
+            for f in self.metrics_store.gen_second_missing_files():
+                for mod in self.modules:
+                    mod.process_file(f)
+        else:
+            self.log.info("No checkpoints found in intervals, processing data " +
+                          "from first available checkpoint to interval start...")
+            # TODO -- make these two loops below DRYer
+            for f in self.metrics_store.gen_first_missing_files():
+                for mod in self.modules:
+                    mod.process_file(f)
+            self.log.debug("Done processing from checkpoint to interval start")
+            self.log.debug("Processing entire interval: %s", self.intervals[0])
+            for f in self.metrics_store.gen_second_missing_files():
+                for mod in self.modules:
+                    mod.process_file(f)
 
         self.log.info("Done processing remaining files. Starting post processing...")
-
         self.__post_process_data()
-        self.log.info("Done with post processing.")
+        self.log.info("Done with post processing")
         return self.completedData
-
-    def __feed_file(self, current_file):
-        """
-        Accepts a file from MetricsBuilder and extracts it into various metrics
-        as needed
-        """
-        # TODO -- parralelize processing... add input queue to this feed_file
-        # this could all be made a lot quicker
-
-        self.counter += 1
-        if self.counter % 512 == 0:
-            self.log.info("Processing files ... files complete so far: %s", self.counter)
-
-        start_scope, end_scope = self.intervals[0][0], self.intervals[0][1]
-        current_scope = current_file['date']
-
-        # TODO -- current logic just keeps going in between intervals
-        # (so the case where start1 != end2 will fail miserably)
-        # relying on input checking before it propagates to this point ATM
-
-        # Check if file passed out of range
-        if current_scope > end_scope:
-            self.log.info("Interval %s out of range for file date %s\n\nCopying data and \
-                           starting next interval (if any).", self.intervals[0], current_file)
-            self.__post_process_data()
-            # Recall this method if we still have work to do
-            if (len(self.intervals) > 0):
-                self.metrics_store.reset_modules()
-                self.__feed_file(current_file)
-            else:
-                return
-
-        # Sanity check 1
-        if (self.intervals[0][1] < current_file['date']):
-            self.log.error("!!!!!\nCurrent file date is passed our end interval! \
-                            Something has gone terribly wrong! \
-                            Current interval: %s\nCurrent date: %s\nCurrent file: %s \
-                            \n!!!!!!!",
-                            self.intervals[0], current_file['date'], current_file)
-
-        # Sanity check 2
-        if len(self.intervals) == 0:
-            self.log.error("!!!!!\nError -- passed file_info even though object has \
-                            no more intervals left to parse! File info: %s\n!!!!",
-                            current_file)
-            return
-
-        # Now actually deal with parsing these metrics...
-        for mod in self.modules:
-            mod.process_file(current_file)
 
     def __post_process_data(self):
         """
         Invoked when we finish up an interval
         """
-        # DEBUG - print cached_data
-        # print json.dumps(self.working_data, indent=1)
         for mod in self.modules:
             mod.post_process_data()
 
-        # Add data to self.completedData, pop an interval off
         self.log.debug("Popping off interval: %s", self.intervals[0])
         self.intervals.pop(0)
         self.completedData.append(self.working_data.copy())

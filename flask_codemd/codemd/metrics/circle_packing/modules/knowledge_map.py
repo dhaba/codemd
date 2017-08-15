@@ -22,6 +22,7 @@ class KnowledgeMapModule(CirclePackingModule):
 
     def __init__(self, working_data, intervals):
         CirclePackingModule.__init__(self, working_data, intervals)
+        self.is_scoped = False
 
     def process_file(self, current_file):
         knowledge_info = self.get_or_create_key(current_file['filename'])

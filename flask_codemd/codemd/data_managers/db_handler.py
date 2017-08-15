@@ -219,5 +219,7 @@ class DBHandler(object):
         checkpoints = self.cp_collection.find({'date': date}, {'_id': 0})
         # Return a generator that unseralizes the data
         for checkpoint in checkpoints:
+            self.log.debug("Unserializing data for module %s", checkpoint['module_key'])
             checkpoint['data'] = pickle.loads(checkpoint['data'])
+            self.log.debug("Finished unserializing data for module %s", checkpoint['module_key'])
             yield checkpoint

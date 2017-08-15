@@ -67,9 +67,6 @@ class BugModule(CirclePackingModule):
 
     def subtract_module(self, other):
         self.log.debug("Subtracting bugs module data...")
-
-        # pdb.set_trace()
-
         for file_name in other.working_data:
             # Sanity check TODO -- delete
             if file_name not in self.working_data:

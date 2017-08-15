@@ -47,11 +47,13 @@ class CirclePackingModule:
         return {}
 
     def load_data(self, data):
+        self.log.debug("Loading data for module <%s>", self.MODULE_KEY)
         for key in self.persist_mappings():
             if key not in data: # Sanity check TODO delete this
                 self.log.error("Could not find key %s in checkpoint data!", key)
                 continue
             setattr(self, key, data[key])
+        self.log.debug("Finished loading data for module <%s>", self.MODULE_KEY)
 
     @abstractmethod
     def subtract_module(self, other):

@@ -56,7 +56,7 @@ class TemporalCouplingModule(CirclePackingModule):
 
     @property
     def shrunk_working_couples(self):
-        MAX_SIZE = 750000
+        MAX_SIZE = 300000
         self.log.debug("Building space optimized working_couples with "
                         + "max size: %s...", MAX_SIZE)
 
@@ -82,7 +82,7 @@ class TemporalCouplingModule(CirclePackingModule):
 
     @shrunk_working_couples.setter
     def shrunk_working_couples(self, value):
-        self.log.debug("Setting working_couples")
+        self.log.debug("Setting shrunk_working_couples")
         self.working_couples = value
 
 
@@ -122,12 +122,17 @@ class TemporalCouplingModule(CirclePackingModule):
             mod1, mod2 = pair[0], pair[1]
             # Ignore files if necessary
             if self.__should_filter_files(mod1, mod2):
-                # self.log.debug("Filtering files %s and %s", mod1, mod2)
                 continue
 
             module_distance = self.__module_distance(mod1, mod2) + 1
             avg_pair_revs = (self.working_rev_counts[mod1] + self.working_rev_counts[mod2]) / 2.0
-            score = count/avg_pair_revs * math.log((self.working_rev_counts[mod1] + self.working_rev_counts[mod2]))
+
+            if avg_pair_revs == 0:
+                self.log.debug("uh oh")
+                pdb.set_trace()
+
+            score = count/avg_pair_revs * math.log((self.working_rev_counts[mod1]
+                    + self.working_rev_counts[mod2]))
             if (self.USE_MODULE_DISTANCE):
                 score *= (module_distance/12.0)
 
@@ -198,10 +203,9 @@ class TemporalCouplingModule(CirclePackingModule):
             data = couple[1]
             for mod in couple[0]:
                 # Only update data if score is higher than current value
-                # pdb.set_trace()
                 tc_info = self.get_or_create_key(mod)
                 if tc_info['score'] < data['score']:
-                    coupled_module = filter(lambda x: x is not mod, couple[0])[0]
+                    coupled_module = [x for x in couple[0] if x is not mod][0]
                     tc_info['score'] = data['score']
                     tc_info['opacity'] = data['score']/max_score
                     tc_info['coupled_module'] = coupled_module
@@ -367,26 +371,21 @@ class TemporalCouplingModule(CirclePackingModule):
                or (f1_ext == 'c' and f2_ext == 'h')))
 
     def persist_mappings(self):
-        # return {'working_couples': self.working_couples,
-        #         'working_rev_counts': self.working_rev_counts,
-        #         'commits_buffer': self.commits_buffer,
-        #         'num_ignored_commits': self.num_ignored_commits }
         return {'working_couples': self.shrunk_working_couples,
                 'working_rev_counts': self.working_rev_counts,
-                'commits_buffer': self.commits_buffer,
                 'num_ignored_commits': self.num_ignored_commits }
 
     def subtract_module(self, other):
         self.log.debug("Subtracting temporal coupling module data...")
         self.num_ignored_commits -= other.num_ignored_commits
         for couple in other.working_couples:
-            if couple not in self.working_couples:
-                self.log.debug("Readding dropped key: %s with value: %s",
-                                couple, other.working_couples[couple])
-                self.working_couples[couple] = other.working_couple[couple]
-            else:
+            if couple in self.working_couples:
                 self.working_couples[couple] -= other.working_couples[couple]
+                if self.working_couples[couple] == 0:
+                    del self.working_couples[couple]
         for file_name in other.working_rev_counts:
             self.working_rev_counts[file_name] -= other.working_rev_counts[file_name]
+            if self.working_rev_counts[file_name] == 0:
+                del self.working_rev_counts[file_name]
         self.log.debug("Finished subtracting temporal coupling module data")
         return self
