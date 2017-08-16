@@ -92,7 +92,6 @@ class CirclePackingMetrics(object):
         """
         for mod in self.modules:
             mod.post_process_data()
-
         self.log.debug("Popping off interval: %s", self.intervals[0])
         self.intervals.pop(0)
         self.completedData.append(self.working_data.copy())
