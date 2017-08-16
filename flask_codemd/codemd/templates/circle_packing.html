@@ -60,7 +60,7 @@
     <div class="loader"></div>
 </div>
 
-<div class="container-fluid">
+<div class="container-fluid" style="overflow:hidden">
   <!-- TOP ROW -->
   <div class="row project-info">
     <div class="col-xs-6 text-left">
@@ -70,81 +70,87 @@
       <h5 id="project-dates"></h5>
     </div>
   </div>
-  <!-- AUTHOR LEGEND -->
-  <div class="row author-legend">
-    <div class="col-xs-12" id="legend" ></div>
-  </div>
   <!-- CIRCLE PACKING -->
   <div class="row circle-packing">
-    <div class="col-xs-12" id="packing-container"></div>
-  </div>
-  <!-- MODE PILLS -->
-  <div class="row">
-    <div class="col-xs-12 text-center">
-      <ul class="nav nav-pills center-pills">
-        <li class=""><a id="file-info-btn" href="#file-info" data-toggle="tab" aria-expanded="false">File Info</a></li>
-        <li class=""><a id="bugs-btn" href="#bugs" data-toggle="tab" aria-expanded="false">Bugs</a></li>
-        <li class="active"><a id="knowledge-map-btn" href="#knowledge-map" data-toggle="tab" aria-expanded="true">Knowledge Map</a></li>
-        <li class=""><a id="temp-coup-btn" href="#temp-coup" data-toggle="tab" aria-expanded="false">Temporal Coupling</a></li>
-      </ul>
-    </div>
-  </div>
-  <div class="row">
-    <div class="col-xs-12">
-      <div id="infoContent" class="tab-content">
-        <div class="tab-pane fade" id="file-info">
-          <p>
-            File information mode displays general information about the individual files in your system, including:
-            <ul>
-              <li> <strong> Lines of Code</strong>: the total lines of code </li>
-              <li> <strong> Total Revisions</strong>: the total number of revisions (a.k.a. commits) which modified the file </li>
-              <li> <strong> Creation Date</strong>: the date when the file was first checked in to the repository </li>
-              <li> <strong> Last Modified</strong>:  the date of the latest revision that modified the file </li>
-            </ul>
-          </p>
+    <div class="col-xs-7" id="packing-container"></div>
+    <div class="col-xs-5 description-col">
+      <!-- MODE PILLS -->
+      <div class="row">
+        <div class="col-xs-12 text-center">
+          <ul class="nav nav-pills center-pills">
+            <li class=""><a id="file-info-btn" href="#file-info" data-toggle="tab" aria-expanded="false">File Info</a></li>
+            <li class=""><a id="bugs-btn" href="#bugs" data-toggle="tab" aria-expanded="false">Bugs</a></li>
+            <li class="active"><a id="knowledge-map-btn" href="#knowledge-map" data-toggle="tab" aria-expanded="true">Knowledge Map</a></li>
+            <li class=""><a id="temp-coup-btn" href="#temp-coup" data-toggle="tab" aria-expanded="false">Temporal Coupling</a></li>
+          </ul>
         </div>
-        <div class="tab-pane fade" id="bugs">
-          <p>Bug mode helps developers understand which files are causing the most bugs and are deserving of particular care. It works by counts the number of bugs associated with each file, and then using a sigmoid function that weighs recent bugs higher than older bugs to highlight the most problematic areas. These "hotspots" are colored in red, where darker shades indicate more severity.
-            <br/><br/>
-            The intuition that drives this algorithm is simple: if a file keeps requiring bug fixes, it is likely a problematic area worthy of special attention because developers are clearly struggling with it. The intention here is not to provide some kind of objective function for bug prediction, but rather to provide developers with data driven insights that can compliment their own intuitions. To facilitate exploration of different trends specific to different periods in a project's lifecycle, the computation of this algorithm is scoped to the selected temporal interval (which can be seen in the top right of the page).
-            <br/><br/>
-            The algorithm uses the scoring function
-            <span class="large-equation">$$\sum _{i=1}^n\:\frac{1}{1+e^{-12t_i+12}}\:$$</span>
-            where $n$ is the number of bug-fixing revisions, and $t_i$ is the timestamp of the $i$-th fix. The timestamps are normalized such that $t_i\in \left[0,1\right]$, where $0$ represents the start of the selected interval, and $1$ represents the end.
-          </p>
+      </div>
+      <!-- MODE DESCRIPTION -->
+      <div class="row">
+        <div class="col-xs-12 mode-description">
+          <div id="infoContent" class="tab-content">
+            <div class="tab-pane fade" id="file-info">
+              <p>
+                File information mode displays general information about the individual files in your system, including:
+                <ul>
+                  <li> <strong> Lines of Code</strong>: the total lines of code </li>
+                  <li> <strong> Total Revisions</strong>: the total number of revisions (a.k.a. commits) which modified the file </li>
+                  <li> <strong> Creation Date</strong>: the date when the file was first checked in to the repository </li>
+                  <li> <strong> Last Modified</strong>:  the date of the latest revision that modified the file </li>
+                </ul>
+              </p>
+            </div>
+            <div class="tab-pane fade" id="bugs">
+              <p>Bug mode helps developers understand which files are causing the most bugs and are deserving of particular care. It works by counts the number of bugs associated with each file, and then using a sigmoid function that weighs recent bugs higher than older bugs to highlight the most problematic areas. These "hotspots" are colored in red, where darker shades indicate more severity.
+                <br/><br/>
+                The intuition that drives this algorithm is simple: if a file keeps requiring bug fixes, it is likely a problematic area worthy of special attention because developers are clearly struggling with it. The intention here is not to provide some kind of objective function for bug prediction, but rather to provide developers with data driven insights that can compliment their own intuitions. To facilitate exploration of different trends specific to different periods in a project's lifecycle, the computation of this algorithm is scoped to the selected temporal interval (which can be seen in the top right of the page).
+                <br/><br/>
+                The algorithm uses the scoring function
+                <span class="large-equation">$$\sum _{i=1}^n\:\frac{1}{1+e^{-12t_i+12}}\:$$</span>
+                where $n$ is the number of bug-fixing revisions, and $t_i$ is the timestamp of the $i$-th fix. The timestamps are normalized such that $t_i\in \left[0,1\right]$, where $0$ represents the start of the selected interval, and $1$ represents the end.
+              </p>
+            </div>
+            <div class="tab-pane fade active in" id="knowledge-map">
+              <p>
+                Coordination is vital to the success of a large-scale software project. Knowledge map sheds light onto the distribution of knowledge throughout the system by identifying which developers wrote the most code for each file. Read more about knowledge map on this project's <a href="https://github.com/dhaba/codemd"> GitHub page</a>.
+                <br/><br/>
+                Each color represents a unique developer, except for white which is used to represent all other developers when there are more developers than distinct colors.
+                <br/><br/>
+                The metrics are scoped to the selected temporal interval (which can be seen in the top right of the page). A "change" is defined as a single insertion or deletion to the file.
+              </p>
+            </div>
+            <div class="tab-pane fade" id="temp-coup">
+              <p>
+                Temporal coupling helps developers spot bad architecture by measuring the tendency of files to change together. This can greatly assist in spotting unintentional dependencies between files, helping developers to diagnose problems early before they become too unwieldy and too expensive to fix. Read more about temporal coupling on this project's <a href="https://github.com/dhaba/codemd"> GitHub page</a>.
+                <br/><br/>
+                Under the reasonable assumption that one particular revision implements a single feature or functionality, it should be relatively innocuous for files belonging to the same module to change together. This is because files belonging to the same module should implement complementary functionalities. However, files which belong to separate modules should seldom change together because they likely implement very different functionalities.
+                <br/><br/>
+                If files belonging to separate modules frequently change together, this can be indicative of deteriorating architecture because those files are possibly being required to take on new responsibilities that they were not originally intended to support.
+                <br/><br/>
+                Temporal coupling quantifies these potentially bad architectural patterns, by computing information including:
+                <ul>
+                  <li> <strong> Number of Revisions</strong>: the number of revisions (a.k.a. commits) that modified the file in the temporal interval </li>
+                  <li> <strong> Coupled File</strong>: The other file which most frequently appears in the same revision </li>
+                  <li> <strong> Number of Mutual Revisions</strong>: The number of revisions that modified both the file and coupled file in the temporal interval </li>
+                  <li> <strong> Percent Coupled</strong>: The percent of the file's revisions which also changed it's coupled counterpart (i.e. # of mutual revisions / # of revisions) </li>
+                </ul>
+                And finally the Temporal Coupling Score, which weights the percent coupled by the logarithm of sum of the number of revisions between the file and its coupled counterpart. This weight helps weed out files that have few too revisions to be of interest. The exact scoring function $f\left(a,b\right)$ for the temporal coupling between files $a$ and $b$ is
+                <span class="large-equation">$$f\left(a,\:b\right)\:=\:\frac{\left|A \cap B\:\right|}{\left(\frac{\left|A\right|+\left|B\right|}{2}\right)}\cdot log\left(\left|A\right|+\left|B\right|\right)$$</span>
+                where $A$ and $B$ are the sets of all commits changing files $a$ and $b$ respectively.
+              </p>
+            </div>
+          </div>
         </div>
-        <div class="tab-pane fade active in" id="knowledge-map">
-          <p>
-            Coordination is vital to the success of a large-scale software project. Knowledge map sheds light onto the distribution of knowledge throughout the system by identifying which developers wrote the most code for each file. Read more about knowledge map on this project's <a href="https://github.com/dhaba/codemd"> GitHub page</a>.
-            <br/><br/>
-            Each color represents a unique developer, except for white which is used to represent all other developers when there are more developers than distinct colors.
-            <br/><br/>
-            The metrics are scoped to the selected temporal interval (which can be seen in the top right of the page). A "change" is defined as a single insertion or deletion to the file.
-          </p>
-        </div>
-        <div class="tab-pane fade" id="temp-coup">
-          <p>
-            Temporal coupling helps developers spot bad architecture by measuring the tendency of files to change together. This can greatly assist in spotting unintentional dependencies between files, helping developers to diagnose problems early before they become too unwieldy and too expensive to fix. Read more about temporal coupling on this project's <a href="https://github.com/dhaba/codemd"> GitHub page</a>.
-            <br/><br/>
-            Under the reasonable assumption that one particular revision implements a single feature or functionality, it should be relatively innocuous for files belonging to the same module to change together. This is because files belonging to the same module should implement complementary functionalities. However, files which belong to separate modules should seldom change together because they likely implement very different functionalities.
-            <br/><br/>
-            If files belonging to separate modules frequently change together, this can be indicative of deteriorating architecture because those files are possibly being required to take on new responsibilities that they were not originally intended to support.
-            <br/><br/>
-            Temporal coupling quantifies these potentially bad architectural patterns, by computing information including:
-            <ul>
-              <li> <strong> Number of Revisions</strong>: the number of revisions (a.k.a. commits) that modified the file in the temporal interval </li>
-              <li> <strong> Coupled File</strong>: The other file which most frequently appears in the same revision </li>
-              <li> <strong> Number of Mutual Revisions</strong>: The number of revisions that modified both the file and coupled file in the temporal interval </li>
-              <li> <strong> Percent Coupled</strong>: The percent of the file's revisions which also changed it's coupled counterpart (i.e. # of mutual revisions / # of revisions) </li>
-            </ul>
-            And finally the Temporal Coupling Score, which weights the percent coupled by the logarithm of sum of the number of revisions between the file and its coupled counterpart. This weight helps weed out files that have few too revisions to be of interest. The exact scoring function $f\left(a,b\right)$ for the temporal coupling between files $a$ and $b$ is
-            <span class="large-equation">$$f\left(a,\:b\right)\:=\:\frac{\left|A \cap B\:\right|}{\left(\frac{\left|A\right|+\left|B\right|}{2}\right)}\cdot log\left(\left|A\right|+\left|B\right|\right)$$</span>
-            where $A$ and $B$ are the sets of all commits changing files $a$ and $b$ respectively.
-          </p>
+      </div>
+      <!-- AUTHOR LEGEND -->
+      <div class="row">
+        <div class="col-xs-12 packing-legend">
+          <div id="legend"></div>
         </div>
       </div>
     </div>
   </div>
+
 </div>
 
 {% endblock %}

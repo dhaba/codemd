@@ -12,12 +12,15 @@ var PACKING_MODULES = {
 var mode = PACKING_MODULES.KNOWLEDGE_MAP;
 
 var containerWidth = $("#packing-container").width();
-var containerHeight = Math.floor($(window).height() * 0.6);//$("#packing-container").height();
+var containerHeight = Math.floor($(window).height() * 0.90);//$("#packing-container").height();
 
-console.log("container height: " + containerHeight);
+
+
+console.log("packing container height: " + containerHeight);
+console.log("packing container width: " + containerWidth);
 
 var margin = 5,
-  outerDiameter = containerHeight,
+  outerDiameter = Math.min(containerHeight, containerWidth),
   innerDiameter = outerDiameter - margin - margin;
 
 var x = d3.scale.linear()
@@ -41,6 +44,8 @@ var pack = d3.layout.pack()
 var svg = d3.select("#packing-container").append("svg")
   .attr("width", outerDiameter)
   .attr("height", outerDiameter)
+  .style("display", "block")
+  .style("margin", "auto")
   .append("g")
   .attr("transform", "translate(" + margin + "," + margin + ")");
 
@@ -100,15 +105,17 @@ function drawLegend() {
   if (legendDrawn) {
     return;
   }
+
+  var legendContainerWidth = $("#legend").width();
   var offsetX = 5;
   var offsetY = 5;
   var legendRectSize = 18;
   var legendSpacing = 4;
   var keyHeight = legendRectSize + legendSpacing;
-  var colTextWidth = 150;
+  var colTextWidth = 180;
   var numKeys = Object.keys(authorKey).length;
   var keyWidth = colTextWidth + legendRectSize;
-  var numCols = Math.floor(containerWidth/keyWidth);
+  var numCols = Math.floor(legendContainerWidth/keyWidth);
   var keysPerCol = Math.ceil(numKeys/numCols);
 
   var legendWidth = Math.ceil(numKeys/keysPerCol) * keyWidth + offsetX;

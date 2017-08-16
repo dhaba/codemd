@@ -3,28 +3,46 @@ html,body {
    width: 100%;
 }
 
-.project-info {
-  height: 6vh;
-  /* DEBUG */
-  border-color: red;
-  border-width: 1px;
-  border-style: solid;
+.scrollable-content::-webkit-scrollbar * {
+  background:transparent; // manage scrollbar background color here
 }
 
-.author-legend {
-  height: 0vh;
-  /* DEBUG */
-  border-color: blue;
-  border-width: 1px;
-  border-style: solid;
+.project-info {
+  height: 7vh;
+  padding-left: 5%;
+  padding-right: 5%;
+}
+
+.description-col {
+  height: 100%;
+}
+
+.mode-description {
+  width:100%;
+  height:60%;
+  position: absolute;
+  overflow-y:scroll;
+}
+
+.packing-legend {
+  width 100%;
+  height: 35%;
+  position: absolute;
+  bottom: 5px;
+
+}
+
+#legend {
+  height: 100%;
+  width: 100%;
 }
 
 .circle-packing {
-  height: 60vh;
+  height: 90vh;
   /* DEBUG */
-  border-color: green;
+  /*border-color: green;
   border-width: 1px;
-  border-style: solid;
+  border-style: solid;*/
 }
 
 .center-pills {
@@ -51,9 +69,6 @@ html,body {
 }
 
 #packing-container {
-  margin-top: 10px;
-  padding-left: 0;
-  padding-right: 0;
 }
 
 .node {
