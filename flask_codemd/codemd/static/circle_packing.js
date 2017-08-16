@@ -12,9 +12,12 @@ var PACKING_MODULES = {
 var mode = PACKING_MODULES.KNOWLEDGE_MAP;
 
 var containerWidth = $("#packing-container").width();
+var containerHeight = Math.floor($(window).height() * 0.6);//$("#packing-container").height();
+
+console.log("container height: " + containerHeight);
 
 var margin = 5,
-  outerDiameter = containerWidth,
+  outerDiameter = containerHeight,
   innerDiameter = outerDiameter - margin - margin;
 
 var x = d3.scale.linear()

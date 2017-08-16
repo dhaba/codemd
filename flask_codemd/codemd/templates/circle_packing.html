@@ -23,7 +23,7 @@
   <script type="text/javascript" src="{{ url_for('static', filename='./bower_components/MathJax/MathJax.js') }}"></script>
 
   <script type="text/javascript">
-  $(document).ready(function() {
+  $(window).load(function() {
     $.getScript("{{ url_for('static', filename='./circle_packing.js') }}", function(){
       var projectName = '{{ project_name }}';
       var intervals = {{ intervals | tojson }};
@@ -62,7 +62,7 @@
 
 <div class="container-fluid">
   <!-- TOP ROW -->
-  <div class="row project-info-row">
+  <div class="row project-info">
     <div class="col-xs-6 text-left">
       <h2 id="project-name">Project Name</h2>
     </div>
@@ -71,11 +71,11 @@
     </div>
   </div>
   <!-- AUTHOR LEGEND -->
-  <div class="row">
+  <div class="row author-legend">
     <div class="col-xs-12" id="legend" ></div>
   </div>
   <!-- CIRCLE PACKING -->
-  <div class="row">
+  <div class="row circle-packing">
     <div class="col-xs-12" id="packing-container"></div>
   </div>
   <!-- MODE PILLS -->

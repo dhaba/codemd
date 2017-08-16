@@ -1,3 +1,32 @@
+html,body {
+   height: 100%;
+   width: 100%;
+}
+
+.project-info {
+  height: 6vh;
+  /* DEBUG */
+  border-color: red;
+  border-width: 1px;
+  border-style: solid;
+}
+
+.author-legend {
+  height: 0vh;
+  /* DEBUG */
+  border-color: blue;
+  border-width: 1px;
+  border-style: solid;
+}
+
+.circle-packing {
+  height: 60vh;
+  /* DEBUG */
+  border-color: green;
+  border-width: 1px;
+  border-style: solid;
+}
+
 .center-pills {
   display: inline-block;
 }
@@ -8,7 +37,7 @@
 }
 
 .dates-div {
-  position: absolute;
+  /*position: absolute;*/
   bottom: 0;
   right: 0;
 }
