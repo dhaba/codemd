@@ -213,8 +213,6 @@ class TemporalCouplingModule(CirclePackingModule):
                     tc_info['num_mutual_revisions'] = data['total_mutual_revs']
                     tc_info['color'] = color
                     tc_info['percent'] = data['percent_coupled']
-                    # self.log.debug("Appended temp coupling data to working data " +
-                    #                "module: %s, with data: %s", mod, self.working_data[mod])
 
         def adj_list_from_couples(couples):
             """
@@ -363,7 +361,6 @@ class TemporalCouplingModule(CirclePackingModule):
         Does simple string matching to determine if file1 and file2 are header
         and implementation files (ie 'moduleA.h' and 'moduleA.c')
         """
-        # self.log.debug("calling is_header_file on %s and %s", file1, file2)
         file1, file2 = file1.split('/')[-1], file2.split('/')[-1]
         is_same_module = (file1.split(".")[0] == file2.split(".")[0])
         f1_ext, f2_ext = file1.split(".")[-1], file2.split(".")[-1]

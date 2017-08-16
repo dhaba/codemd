@@ -52,38 +52,39 @@ class CirclePackingMetrics(object):
         self.metrics_store.persist_checkpoints()
 
     def compute_file_hierarchy(self):
-        # NOTE -- this logic won't fly with multiple intervals. Implement that if necessary.
+        # NOTE -- this logic won't fly with multiple intervals.
         self.log.info("Loading checkpoint module data differentials for interval: %s...",
                        self.intervals)
         if self.metrics_store.load_interval():
             self.log.info("Processing remaining files not caught in checkpoint differntial interval...")
             self.log.debug("Processing first chunk...")
-            # TODO -- make these two loops below DRYer
             for f in self.metrics_store.gen_first_missing_files():
-                for mod in self.modules:
-                    if mod.is_scoped:
-                        mod.process_file(f)
+                self.__feed_file(f, only_scoped=True)
             self.log.debug("Processing last chunk...")
             for f in self.metrics_store.gen_second_missing_files():
-                for mod in self.modules:
-                    mod.process_file(f)
+                self.__feed_file(f)
         else:
             self.log.info("No checkpoints found in intervals, processing data " +
                           "from first available checkpoint to interval start...")
-            # TODO -- make these two loops below DRYer
             for f in self.metrics_store.gen_first_missing_files():
-                for mod in self.modules:
-                    mod.process_file(f)
+                self.__feed_file(f)
             self.log.debug("Done processing from checkpoint to interval start")
             self.log.debug("Processing entire interval: %s", self.intervals[0])
             for f in self.metrics_store.gen_second_missing_files():
-                for mod in self.modules:
-                    mod.process_file(f)
+                self.__feed_file(f)
 
         self.log.info("Done processing remaining files. Starting post processing...")
         self.__post_process_data()
         self.log.info("Done with post processing")
         return self.completedData
+
+    def __feed_file(self, f, only_scoped=False):
+        for mod in self.modules:
+            if only_scoped:
+                if mod.is_scoped:
+                    mod.process_file(f)
+            else:
+                mod.process_file(f)
 
     def __post_process_data(self):
         """
