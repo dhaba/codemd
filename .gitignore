@@ -2,3 +2,4 @@
 *.pyc
 flask_codemd/*.pyc
 *.log
+/flask_codemd/codemd/keys.py

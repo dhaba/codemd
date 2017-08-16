@@ -72,9 +72,14 @@ def fetchdata():
         log.info("Data for project " + project_name + " not found. Fetching data...")
         repo = RepoAnalyser(git_url)
         repo.persist_commits_data()
-        # Save viz data for fast loading times
+
+        # Save viz/circle packing data for fast loading times
         metrics = MetricsBuilder(project_name)
+        log.debug("Saving dashboard data...")
         metrics.save_commits()
+        log.debug("Saving checkpoint data...")
+        metrics.save_circle_packing_data()
+        log.debug("Done saving project data.")
     else:
         log.info("Data for git project " + project_name + " found.")
 
@@ -115,7 +120,8 @@ def get_circle_packing():
         return redirect(url_for('show_home'))
 
     metrics = MetricsBuilder(project_name)
-    circle_packing_data = json_util.dumps(metrics.circle_packing(intervals))
+    #circle_packing_data = json_util.dumps(metrics.circle_packing(intervals))
+    circle_packing_data = metrics.circle_packing(intervals)
 
     # log.info('circle_packing data: %s', circle_packing_data) # DEBUG LINE
     return jsonify(circle_packing_data)

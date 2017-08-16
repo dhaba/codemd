@@ -163,8 +163,7 @@ class TemporalCouplingModule(CirclePackingModule):
         """
         Process current files batch in commits buffer
         """
-        if len(self.commits_buffer['revision_id']) < self.MAX_COMMIT_SIZE:
-            self.log.debug("Ignoring commit that exceeded max size: %s", self.commits_buffer['commits'])
+        if len(self.commits_buffer['commits']) >= self.MAX_COMMIT_SIZE:
             self.num_ignored_commits += 1
             self.commits_buffer = {'commits': [], 'revision_id':None}
             return

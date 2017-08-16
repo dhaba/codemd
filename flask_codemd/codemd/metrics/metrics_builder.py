@@ -1,5 +1,6 @@
 import re
 import logging
+import json
 from codemd.data_managers.s3_handler import S3Handler
 from codemd.data_managers.db_handler import DBHandler
 
@@ -59,6 +60,10 @@ class MetricsBuilder(object):
     def save_circle_packing_data(self):
         packing_metrics = CirclePackingMetrics(self.project_name)
         packing_metrics.create_checkpoints()
+        full_metrics = packing_metrics.compute_file_hierarchy()[0]
+        file_tree = self.__build_filetree(full_metrics)
+        handler = S3Handler(self.project_name)
+        handler.save_cp_data(file_tree)
 
     def circle_packing(self, intervals):
         """
@@ -70,6 +75,12 @@ class MetricsBuilder(object):
 
         TODO -- params, docstring, refactor, ect
         """
+        if ((intervals is None) or (intervals == [[None, None],[None, None]])):
+            self.log.debug("Full project history requested, loading data from json...")
+            handler = S3Handler(self.project_name)
+            data = handler.load_cp_data()
+            return data
+
         self.log.debug("Building circle packing metrics with interval: %s", intervals)
 
         packing_metrics = CirclePackingMetrics(self.project_name, intervals)
@@ -78,12 +89,9 @@ class MetricsBuilder(object):
         self.log.debug("Finished circle packing building process...")
 
         # TODO -- handle multiple intervals with build_filetree
-        attrs = [FileInfoModule.MODULE_KEY, BugModule.MODULE_KEY,
-                TemporalCouplingModule.MODULE_KEY,
-                KnowledgeMapModule.MODULE_KEY]
-        return {"name": "root", "children": self.__build_filetree(file_heirarchy[0], attributes=attrs)}
+        return json.dumps(self.__build_filetree(file_heirarchy[0]))
 
-    def __build_filetree(self, files, attributes=None, component_delim="/"):
+    def __build_filetree(self, files, component_delim="/"):
         """
         Takes a dictionary (files) with keys corresponding to file paths, and builds a
         tree from the file path with the leaves having attributes selected from
@@ -101,8 +109,13 @@ class MetricsBuilder(object):
 
         TODO -- Add docstring params and returns
         """
-        self.log.debug("Starting object tree algorithm...")
         tree = []
+        file_tree = {"name": "root", "children":tree}
+        attributes = [FileInfoModule.MODULE_KEY, BugModule.MODULE_KEY,
+                      TemporalCouplingModule.MODULE_KEY,
+                      KnowledgeMapModule.MODULE_KEY]
+
+        self.log.debug("Starting object tree algorithm...")
         for filename, file_info in files.iteritems():
             components = filename.split(component_delim)
             current_node = tree
@@ -129,7 +142,7 @@ class MetricsBuilder(object):
         self.log.debug("Finished building object tree")
         # FOR DEBUGING (verbose af)
         # self.log.debug("Object tree: \n%s ... ", json.dumps(tree[0:2], indent=2))
-        return tree
+        return file_tree
 
     def is_bug(self, message):
         """

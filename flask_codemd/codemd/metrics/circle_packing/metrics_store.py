@@ -11,7 +11,7 @@ import pdb
 
 class CirclePackingMetricsStore(object):
 
-    MAX_CHECKPOINTS = 16
+    MAX_CHECKPOINTS = 24
 
     def __init__(self, metrics):
         self.log = logging.getLogger('codemd.CirclePackingMetricsStore')
@@ -170,7 +170,7 @@ class CirclePackingMetricsStore(object):
 
             mod = [m for m in new_modules if m.MODULE_KEY == data['module_key']][0]
             mod.load_data(data['data'])
-            
+
         return new_modules
 
     def __save_checkpoint(self, checkpoint_date):
