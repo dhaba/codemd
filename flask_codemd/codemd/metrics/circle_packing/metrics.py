@@ -25,7 +25,6 @@ class CirclePackingMetrics(object):
         self.__process_intervals()
         self.working_data = {} # high level file info, dict of dicts. key is filename
         self.modules = []
-        self.counter = 0
         self.completedData = [] # working data will be appended after an interval is popped
         self.metrics_store = CirclePackingMetricsStore(self)
         self.log.info("CirclePackingMetrics created with interval: %s", intervals)
