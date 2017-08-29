@@ -123,6 +123,8 @@
               <p>
                 Temporal coupling helps developers spot bad architecture by measuring the tendency of files to change together. This can greatly assist in spotting unintentional dependencies between files, helping developers to diagnose problems early before they become too unwieldy and too expensive to fix. Read more about temporal coupling on this project's <a href="https://github.com/dhaba/codemd"> GitHub page</a>.
                 <br/><br/>
+                The different colors here represent different cliques of coupled files, where a graph is drawn using the files as verteces and mutual changes as edges. The intensity of the color is proporitonal to the temporal coupling score.
+                <br/><br/>
                 Under the reasonable assumption that one particular revision implements a single feature or functionality, it should be relatively innocuous for files belonging to the same module to change together. This is because files belonging to the same module should implement complementary functionalities. However, files which belong to separate modules should seldom change together because they likely implement very different functionalities.
                 <br/><br/>
                 If files belonging to separate modules frequently change together, this can be indicative of deteriorating architecture because those files are possibly being required to take on new responsibilities that they were not originally intended to support.
