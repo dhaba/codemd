@@ -112,7 +112,7 @@ function drawLegend() {
   var legendRectSize = 18;
   var legendSpacing = 4;
   var keyHeight = legendRectSize + legendSpacing;
-  var colTextWidth = 180;
+  var colTextWidth = 160;
   var numKeys = Object.keys(authorKey).length;
   var keyWidth = colTextWidth + legendRectSize;
   var numCols = Math.floor(legendContainerWidth/keyWidth);
