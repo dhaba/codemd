@@ -23,15 +23,19 @@ html, body {
   float: right;
 }
 
+.title-metric {
+  float: right;
+}
+
 .main-viz-row {
   height: calc(100% - 40px - 16px);
 }
 
 .dash-holder {
   height: 100%;
-  border-color: green;
+  /*border-color: green;
   border-width: 2px;
-  border-style: solid;
+  border-style: solid;*/
 }
 
 .chart-wrapper {

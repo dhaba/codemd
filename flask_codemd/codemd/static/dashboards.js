@@ -114,7 +114,7 @@ function buildDashboards(data, projectName) {
             top: 4,
             right: 0,
             bottom: 16,
-            left: 24
+            left: 28
         })
         .dimension(dateDim)
         .group(dateGroup)
@@ -166,7 +166,7 @@ function buildDashboards(data, projectName) {
           top: 4,
           right: 0,
           bottom: 16,
-          left: 24
+          left: 28
         })
         .colors(d3.scale.quantile().domain([bugsDomain.min, bugsDomain.max])
             .range(["#fb6a4a", "#ef3b2c", "#cb181d", "#a50f15", "#67000d"]))
@@ -302,7 +302,7 @@ function buildDashboards(data, projectName) {
         .dimension(dateDim)
         .renderHorizontalGridLines(true)
         .elasticY(true)
-        .compose([insertionsFreq, deletionsFreq])//.compose([insertionsFreq, deletionsFreq, netFreq])
+        .compose([insertionsFreq, deletionsFreq])
         .brushOn(false)
         .mouseZoomable(false)
         .yAxisPadding(0.0)
@@ -361,7 +361,6 @@ function buildDashboards(data, projectName) {
 
     // Bind bind buttons
     $('#cp-btn').on('click', function (e) {
-      // alert("temp coup pressed...min date: " + dateDim.bottom(1)[0].date + "max date: " + dateDim.top(1)[0].date);
       start1 = dateDim.bottom(1)[0].date.getTime() / 1000;
       end1 = dateDim.top(1)[0].date.getTime() / 1000;
       urlParams = projectName + "?start1=" + start1 + "&end1=" + end1;

@@ -76,7 +76,7 @@
   <div class="row">
     <div class="col-md-9 col-md-offset-3">
       <div class="row buttons-row">
-        <div class="col-md-10  red-border">
+        <div class="col-md-12">
           <button id="cp-btn" type="button" class="btn btn-primary btn-sm ui-button">
             Build Circle Packing
           </button>
@@ -97,7 +97,7 @@
           <div class="chart-wrapper">
             <div class="chart-title">
               Top Contributors
-              <span class="tooltip-icon glyphicon glyphicon-info-sign" data-placement="bottom" data-toggle="tooltip" title="This counts the total number of code modifications by each author."></span>
+              <span class="tooltip-icon glyphicon glyphicon-info-sign" data-placement="bottom" data-toggle="tooltip" title="This counts the total number of lines of code contributed by each author."></span>
             </div>
             <div class="chart-stage top-authors-stage">
               <div id="top-authors"></div>
@@ -111,7 +111,7 @@
           <div class="chart-wrapper">
             <div class="chart-title">
               Feature Development Velocity
-              <span class="tooltip-icon glyphicon glyphicon-info-sign" data-placement="top" data-toggle="tooltip" title="This plots the relative number of churned lines over deleted. If this ratio is high, that can indicate a lot of new code has been added."></span>
+              <span class="tooltip-icon glyphicon glyphicon-info-sign" data-placement="top" data-toggle="tooltip" title="This plots the relative number of churned lines over deleted. A high ratio can be an indication that a lot of new code has been added."></span>
             </div>
             <div class="chart-stage">
               <div id="churn-over-del"></div>
@@ -126,26 +126,17 @@
       <!-- ROW 1 (commits, buttons) -->
       <div class="row" style="height:20%">
         <!-- Commits -->
-        <div class="col-md-10">
+        <div class="col-md-12">
           <div class="chart-wrapper">
             <div class="chart-title">
               Commit History
-              <div id="total-commits" style="float:right;"></div>
+              <div class="title-metric">
+                <div id="total-commits"></div>&nbsp;commits selected&nbsp;&nbsp;&nbsp;
+                <span class="tooltip-icon glyphicon glyphicon-info-sign" data-placement="left" data-toggle="tooltip" title="This is a timeline of all commits over the entire history of the project. Use your mouse to drag and select an interval to get a closer look! All other charts will update to only consider the commits you select in this chart."></span>
+              </div>
             </div>
             <div class="chart-stage">
               <div id="commits-timeline"></div>
-            </div>
-          </div>
-        </div>
-        <!-- Total Commits Metrics -->
-        <div class="col-md-2">
-          <!-- Total Commits -->
-          <div class="chart-wrapper">
-            <div class="chart-title">
-              Total Commits
-            </div>
-            <div class="chart-stage metric">
-              <div id="total-commits"></div>
             </div>
           </div>
         </div>
@@ -153,25 +144,17 @@
       <!-- ROW 2 (bugs, focus details) -->
       <div class="row" style="height:20%">
         <!-- Bugs -->
-        <div class="col-md-10">
+        <div class="col-md-12">
           <div class="chart-wrapper">
             <div class="chart-title">
               Distribution of Defects
+              <div class="title-metric">
+                <div id="total-bugs"></div>&nbsp;defects selected&nbsp;&nbsp;&nbsp;
+                <span class="tooltip-icon glyphicon glyphicon-info-sign" data-placement="left" data-toggle="tooltip" title="This is a timeline of all defects (bugs) over the entire history of the project."></span>
+              </div>
             </div>
             <div class="chart-stage">
               <div id="defects-distribution"></div>
-            </div>
-          </div>
-        </div>
-        <!-- Total Bugs Metrics -->
-        <div class="col-md-2">
-          <!-- Total Bugs -->
-          <div class="chart-wrapper">
-            <div class="chart-title">
-              Total Defects
-            </div>
-            <div class="chart-stage metric">
-              <div id="total-bugs"></div>
             </div>
           </div>
         </div>
@@ -183,12 +166,10 @@
           <div class="chart-wrapper">
             <div class="chart-title">
               Code Frequency
+              <span class="tooltip-icon glyphicon glyphicon-info-sign" data-placement="left" data-toggle="tooltip" title="Code frequency measures the numbers of additions (green) and deletions (red) to the code base"></span>
             </div>
             <div class="chart-stage">
               <div id="code-frequency"></div>
-            </div>
-            <div class="chart-notes">
-              Code frequency measures the numbers of additions (green) and deletions (red) to the code base
             </div>
           </div>
         </div>
@@ -197,12 +178,10 @@
           <div class="chart-wrapper">
             <div class="chart-title">
               Total Lines of Code
+              <span class="tooltip-icon glyphicon glyphicon-info-sign" data-placement="left" data-toggle="tooltip" title="This counts the total number of lines of code, which can be a rough measure of overall complexity in the code base."></span>
             </div>
             <div class="chart-stage">
               <div id="total-loc"></div>
-            </div>
-            <div class="chart-notes">
-              This can be a rough measure of overall complexity in the code base.
             </div>
           </div>
         </div>
