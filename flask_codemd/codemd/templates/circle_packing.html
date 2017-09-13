@@ -26,6 +26,9 @@
   $(window).load(function() {
     $.getScript("{{ url_for('static', filename='./circle_packing.js') }}", function(){
       var projectName = '{{ project_name }}';
+
+      console.log("SHOULD SHOW TUTORIAL: " + '{{ show_tutorial }}')
+
       var intervals = {{ intervals | tojson }};
       if (projectName === null) {
         projectName = this.pathname.split('/').pop();

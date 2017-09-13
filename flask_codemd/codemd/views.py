@@ -1,7 +1,7 @@
 from codemd import app
 
 from flask import request, session, redirect, url_for, \
-     render_template, jsonify
+     render_template, jsonify, make_response
 from flask_s3 import create_all
 import logging
 from bson import json_util
@@ -12,6 +12,9 @@ from codemd.data_managers.db_handler import DBHandler
 from codemd.utils import extract_interval_params
 
 log = logging.getLogger('codemd')
+
+DASHBOARD_VISTED_COOKIE = "has_visted_dash"
+CP_VISTED_COOKIE = "has_visted_cp"
 
 # Debug
 @app.route("/build_cp_data/<project_name>")
@@ -45,19 +48,39 @@ def show_home():
 # Main page for circle packing visualizations
 @app.route("/dashboards/<project_name>")
 def show_viz(project_name):
-    return render_template("dashboard.html", project_name=project_name)
+    # TODO -- make below "first visit" checking code DRYer
+    has_visited = request.cookies.get(DASHBOARD_VISTED_COOKIE)
+    should_show = False
+    if has_visited is None:
+        log.info("First visit on dashboard detected, setting show_tutorial to True.")
+        should_show = True
+    else:
+        log.info("Dashboard visited before, setting show_tutorial to False.")
+
+    resp = make_response(render_template("dashboard.html", project_name=project_name, show_tutorial=should_show))
+    resp.set_cookie(DASHBOARD_VISTED_COOKIE, '1')
+    return resp
 
 
 # Routes for circle packing viz
 @app.route("/circle_packing/<project_name>")
 def circle_packing(project_name):
-
     intervals = extract_interval_params(request.args)
     log.debug("Getting info for project name: %s\nwith intervals: %s",
               project_name, intervals)
 
-    return render_template("circle_packing.html", project_name=project_name,
-                           intervals=intervals)
+    has_visited = request.cookies.get(CP_VISTED_COOKIE)
+    should_show = False
+    if has_visited is None:
+        log.info("First visit on CirclePacking detected, setting show_tutorial to True.")
+        should_show = True
+    else:
+        log.info("CirclePacking visited before, setting show_tutorial to False.")
+
+    resp = make_response(render_template("circle_packing.html", project_name=project_name,
+                           intervals=intervals, show_tutorial=should_show))
+    resp.set_cookie(CP_VISTED_COOKIE, '1')
+    return resp
 
 
 # Route to fetch necessary data from github
