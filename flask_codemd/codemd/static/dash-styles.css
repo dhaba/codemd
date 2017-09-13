@@ -1,6 +1,70 @@
+body {
+  padding: 54px 0 0;
+}
+
+html, body {
+  height: 100%;
+  width: 100%;
+}
+
+.col-md-1, .col-md-2, .col-md-3, .col-md-4, .col-md-5, .col-md-6, .col-md-7, .col-md-8, .col-md-9, .col-md-10, .col-md-11, .col-md-12 {
+  height: 100%;
+  padding-left: 0px;
+  padding-right: 6px;
+}
+
+.row {
+  padding-bottom: 8px;
+  padding-left: 15px;
+  padding-right: 15px;
+}
+
+.tooltip-icon {
+  float: right;
+}
+
+.main-viz-row {
+  height: calc(100% - 40px - 16px);
+}
+
 .dash-holder {
-  min-width: 1366px;
-  min-height: 768px;
+  height: 100%;
+  border-color: green;
+  border-width: 2px;
+  border-style: solid;
+}
+
+.chart-wrapper {
+  height: 100%;
+  display: -webkit-flex;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0px;
+}
+
+.chart-stage {
+  flex: 1;
+}
+
+.buttons-row {
+  padding-bottom: 0px;
+}
+
+.ui-button {
+  float: right;
+  margin-left: 16px;
+}
+
+#cp-btn {
+  background: green;
+}
+
+#reset-btn {
+  background: red;
+}
+
+.top-authors-stage {
+  pointer-events: none;
 }
 
 .metric {
@@ -8,40 +72,10 @@
   min-height: 31px;
 }
 
-.btn {
-  margin-left: 5px;
-  margin-right: 5px;
-  margin-top: 5px;
-  margin-bottom: 5px;
-}
-
-.row>div {
-  border-color: blue;
-  border-width: 1px;
-  border-style: solid;
-  padding-left: 8px;
-  padding-right: 8px;
-}
-
-body {
-  padding: 100px 0 0;
-}
-
-
-/*.chart-wrapper {
-    display: inline-block
-}*/
-
 .dc-chart g.row text {
   font-family: "Lato", "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-size 24;
 }
-
-
-/*div.dc-chart {
-    text-align: center;
-    float: none;
-}*/
 
 .dc-chart path.line {
   stroke-width: 0.45px;

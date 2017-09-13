@@ -1,17 +1,9 @@
-//
-// Scripts to build live dashboards on /viz page
-//
-
 var ROW_LIM = 7000; // any more than this and we will have to bin by weeks
 //var ROW_LIM = 40231; // rails will run in full glory (but lags on shitty computers)
-
-
 var LEFT_COL_WIDTH = 290;
 
 function buildDashboards(data, projectName) {
-    console.log('Building dashboards for project ' + projectName);
     var commits_json = JSON.parse(data);
-
     if (Object.keys(commits_json).length < ROW_LIM) {
       console.log("Binning by days...");
       var useWeeks = false;
@@ -40,10 +32,8 @@ function buildDashboards(data, projectName) {
     }
 
     // Churn metric dimensions
-    // var deletionsDim = commits.dimension(function(d) { return d.deletions; });
     var totalDeletionsDim = commits.dimension(function(d) { return d.total_deletions; });
     var totalInsertionsDim = commits.dimension(function(d) { return d.total_insertions; });
-    // var totalLocDim = commits.dimension(function(d) { return d.total_insertions - d.total_deletions});
 
     var authorsDim = commits.dimension(function(d) { return d.author;});
 
@@ -56,6 +46,7 @@ function buildDashboards(data, projectName) {
     var bugsByDateGroup = dateDim.group().reduceSum(function(d) {
         return d.bug ? 1 : 0;
     });
+
     // Plot bugs by day regardless of size, as its static
     bugsDayDim = commits.dimension(function(d) { return d3.time.day(d.date); })
     var bugsByDayGroup = bugsDayDim.group().reduceSum(function(d) {
@@ -103,29 +94,27 @@ function buildDashboards(data, projectName) {
 
     var aggReducer = reductio();
     aggReducer.value("insertions")
-      // .count(true)
-      // .max(function(d) { return d.insertions; })
       .sum(function(d) { return d.insertions; });
     aggReducer.value("deletions")
-      // .count(true)
-      // .max(function(d) { return d.deletions; })
       .sum(function(d) { return d.deletions; });
     aggReducer(churnByDateGroup);
 
-
     // console.log('min date: ' + dateRange.minDate);
     // console.log('max date ' + dateRange.maxDate);
+
     commitsFocusScale = d3.time.scale().domain([dateRange.minDate, dateRange.maxDate]);
+
     // Commits timeline
     var commitsTimeline = dc.lineChart("#commits-timeline");
+    var commitsTimelineSize = getParentSize('#commits-timeline');
     commitsTimeline
-        .width(700)
-        .height(70)
+        .width(commitsTimelineSize.width)
+        .height(commitsTimelineSize.height)
         .margins({
-            top: 10,
+            top: 4,
             right: 0,
-            bottom: 20,
-            left: 25
+            bottom: 16,
+            left: 24
         })
         .dimension(dateDim)
         .group(dateGroup)
@@ -135,7 +124,6 @@ function buildDashboards(data, projectName) {
         .renderArea(true)
         .interpolate("basis")
         .renderlet(function(chart) {
-            console.log('render let called inside of commitsTimesLine')
             bottom = dateDim.bottom(1)[0];
             if (typeof bottom !== "undefined") {
               startInsertions = bottom.total_insertions;
@@ -144,14 +132,10 @@ function buildDashboards(data, projectName) {
               startInsertions = 0;
               startDeletions = 0;
             }
-
-            churnOverDeletions.redraw()
-            //
-            //  console.log("(inside adjustVals) min total inserts: " + startInsertions);
-            //  console.log("(inside adjustVals) min total deletes: " + startDeletions);
+            churnOverDeletions.redraw();
         });
 
-    commitsTimeline.yAxis().ticks(4);
+    commitsTimeline.yAxis().ticks(2);
 
     var all = commits.groupAll();
     var allBugs = commits.groupAll().reduceSum(function(d) {
@@ -172,31 +156,17 @@ function buildDashboards(data, projectName) {
     })
     .group(allBugs);
 
-    // var totalCommits = dc.numberDisplay("commits-selected")
-    // totalCommits
-    //   .formatNumber(d3.format("d"))
-    //   .valueAccessor(function(d){return d;})
-    //   .group(totalCommits)
-
-    // commitsTimeline.on('filtered', function(chart) {
-    //     console.log('commits timeline filtered!!!')
-    //     // churnOverDeletions.focus(chart.filters())
-    //         // churnOverDeletions.redraw()
-    //         // startInsertions = dateDim.bottom(1)[0].total_insertions;
-    //         // startDeletions = dateDim.bottom(1)[0].total_deletions;
-    //         // churnOverDeletions.focus(chart.filters());
-    // })
-
     // Distribution of defects
     var defectsDistribution = dc.lineChart("#defects-distribution");
+    var defectsDistributionSize = getParentSize("#defects-distribution");
     defectsDistribution
-        .width(700)
-        .height(70)
+        .width(defectsDistributionSize.width)
+        .height(defectsDistributionSize.height)
         .margins({
-            top: 10,
-            right: 0,
-            bottom: 20,
-            left: 25
+          top: 4,
+          right: 0,
+          bottom: 16,
+          left: 24
         })
         .colors(d3.scale.quantile().domain([bugsDomain.min, bugsDomain.max])
             .range(["#fb6a4a", "#ef3b2c", "#cb181d", "#a50f15", "#67000d"]))
@@ -212,7 +182,7 @@ function buildDashboards(data, projectName) {
         .rangeChart(commitsTimeline);
         // TODO -- add date string to the title above
 
-    defectsDistribution.yAxis().ticks(3);
+    defectsDistribution.yAxis().ticks(2);
 
     // Calculate churn metrics as a function of time interval
     // Churned LOC / Deleted LOC
@@ -238,16 +208,17 @@ function buildDashboards(data, projectName) {
 
     // M7 - Churned/Deleted (Dev Velocity)
     var churnOverDeletions = dc.lineChart("#churn-over-del");
+    var churnOverDeletionsSize = getParentSize("#churn-over-del");
     churnOverDeletions
-        .width(341)
-        .height(200)
+        .width(churnOverDeletionsSize.width)
+        .height(churnOverDeletionsSize.height)
         .margins({
-            top: 10,
-            right: 20,
-            bottom: 16,
-            left: 20
+            top: 4,
+            right: 8,
+            bottom: 20,
+            left: 16
         })
-        .x(d3.time.scale().domain([dateRange.minDate, dateRange.maxDate]))
+        .x(commitsFocusScale)
         .xUnits(units)
         .round(rounder)
         .dimension(dateDim)
@@ -265,34 +236,36 @@ function buildDashboards(data, projectName) {
     });
 
     var totalLoc = dc.lineChart("#total-loc");
+    var totalLocSize = getParentSize("#total-loc");
     totalLoc
-      .width(500)
-      .height(394)
+      .width(totalLocSize.width)
+      .height(totalLocSize.height)
       .margins({
           top: 10,
-          right: 20,
-          bottom: 25,
+          right: 5,
+          bottom: 20,
           left: 50
       })
-        .x(commitsFocusScale)
-        .xUnits(units)
-        .round(rounder)
-        .dimension(dateDim)
-        .group(totalChurnByDateGroup)
-        .valueAccessor(function(p) {
-          return p.value.insertions.max - p.value.deletions.max;
-        })
-        .elasticY(true)
-        .renderHorizontalGridLines(true)
-        .brushOn(false)
-        .interpolate("basis")
-        .renderArea(true)
-        .colors(['#900C3F'])
-        .yAxis().ticks(5);
+      .x(commitsFocusScale)
+      .xUnits(units)
+      .round(rounder)
+      .dimension(dateDim)
+      .group(totalChurnByDateGroup)
+      .valueAccessor(function(p) {
+        return p.value.insertions.max - p.value.deletions.max;
+      })
+      .elasticY(true)
+      .renderHorizontalGridLines(true)
+      .brushOn(false)
+      .interpolate("basis")
+      .renderArea(true)
+      .colors(['#900C3F'])
+      .yAxis().ticks(5);
 
     totalLoc.xAxis().ticks(4);
 
     var codeFreq = dc.compositeChart("#code-frequency");
+    var codeFreqSize = getParentSize("#code-frequency");
     var insertionsFreq = dc.lineChart(codeFreq);
     var deletionsFreq = dc.lineChart(codeFreq);
 
@@ -315,15 +288,15 @@ function buildDashboards(data, projectName) {
         .brushOn(false);
 
     codeFreq
-        .width(500)
-        .height(394)
+        .width(codeFreqSize.width)
+        .height(codeFreqSize.height)
         .margins({
             top: 10,
-            right: 20,
-            bottom: 25,
+            right: 5,
+            bottom: 20,
             left: 50
         })
-        .x(d3.time.scale().domain([dateRange.minDate, dateRange.maxDate]))
+        .x(commitsFocusScale)
         .xUnits(d3.time.weeks)
         .round(d3.time.week.round)
         .dimension(dateDim)
@@ -338,32 +311,39 @@ function buildDashboards(data, projectName) {
       codeFreq.xAxis().ticks(5);
 
     commitsTimeline.focusCharts = function(chartlist) {
-        if (!arguments.length) {
-            return this._focusCharts;
-        }
-        this._focusCharts = chartlist; // only needed to support the getter above
-        this.on('filtered', function(range_chart) {
-            if (!range_chart.filter()) {
-                dc.events.trigger(function() {
-                    chartlist.forEach(function(focus_chart) {
-                        focus_chart.x().domain(focus_chart.xOriginalDomain());
-                    });
-                });
-            } else chartlist.forEach(function(focus_chart) {
-                if (!rangesEqual(range_chart.filter(), focus_chart.filter())) {
-                    dc.events.trigger(function() {
-                        focus_chart.focus(range_chart.filter());
-                    });
-                }
-            });
-        });
-        return this;
+        // if (!arguments.length) {
+        //     return this._focusCharts;
+        // }
+        // this._focusCharts = chartlist; // only needed to support the getter above
+        // this.on('filtered', function(range_chart) {
+        //     if (!range_chart.filter()) {
+        //         dc.events.trigger(function() {
+        //             chartlist.forEach(function(focus_chart) {
+        //                 focus_chart.x().domain(focus_chart.xOriginalDomain());
+        //             });
+        //         });
+        //     } else chartlist.forEach(function(focus_chart) {
+        //         if (!rangesEqual(range_chart.filter(), focus_chart.filter())) {
+        //             dc.events.trigger(function() {
+        //                 focus_chart.focus(range_chart.filter());
+        //             });
+        //         }
+        //     });
+        // });
+        // return this;
     };
 
     var topAuthors = dc.rowChart('#top-authors');
+    var topAuthorsSize = getParentSize('#top-authors');
     topAuthors
-      .width(320)
-      .height(380)
+      .width(topAuthorsSize.width)
+      .height(topAuthorsSize.height)
+      .margins({
+          top: 0,
+          right: 10,
+          bottom: 20,
+          left: 10
+      })
       .dimension(authorsGroup)
       .group(authorCommitsGroup, "commits")
       .ordering(function(t){return t.commits;})
@@ -379,8 +359,8 @@ function buildDashboards(data, projectName) {
                                 topAuthors, defectsDistribution]);
     dc.renderAll();
 
-    // BIND BUTTONS
-    $('#temp-coup-btn').on('click', function (e) {
+    // Bind bind buttons
+    $('#cp-btn').on('click', function (e) {
       // alert("temp coup pressed...min date: " + dateDim.bottom(1)[0].date + "max date: " + dateDim.top(1)[0].date);
       start1 = dateDim.bottom(1)[0].date.getTime() / 1000;
       end1 = dateDim.top(1)[0].date.getTime() / 1000;
@@ -389,6 +369,38 @@ function buildDashboards(data, projectName) {
       console.log(hotspotsURL);
       window.location.href = hotspotsURL;
    });
+   $('#reset-btn').on('click', function (e) {
+     dc.filterAll();
+     dc.redrawAll();
+   });
+}
+
+function setAutoResize(callback) {
+  var rtime;
+  var timeout = false;
+  var delta = 200;
+  $(window).resize(function() {
+    rtime = new Date();
+    if (timeout === false) {
+      timeout = true;
+      setTimeout(resizeend, delta);
+    }
+  });
+
+  function resizeend() {
+    if (new Date() - rtime < delta) {
+      setTimeout(resizeend, delta);
+    } else {
+      timeout = false;
+      callback();
+    }
+  }
+}
+
+function getParentSize(elementId) {
+  var width = $(elementId).parent().width();
+  var height = $(elementId).parent().height();
+  return {'width': width, 'height': height};
 }
 
 // To overwrite chart and add multiple filters
@@ -405,46 +417,3 @@ function rangesEqual(range1, range2) {
     }
     return false;
   }
-
-
-
-  // churnOverDeletions.on('preRedraw', function(chart) {
-  //     // console.log('preRedraw called');
-  //     // startInsertions = dateDim.bottom(1)[0].total_insertions;
-  //     // startDeletions = dateDim.bottom(1)[0].total_deletions;
-  //     //  console.log("(inside adjustVals) min total inserts: " + startInsertions);
-  //     //  console.log("(inside adjustVals) min total deletes: " + startDeletions);
-  // });
-
-  // churnOverDeletions.on('preRender', function(chart) {
-  //     console.log('preRender called');
-  // });
-  // churnOverDeletions.on('renderlet', function(chart) {
-  //     console.log('renderlet called');
-  // });
-  // churnOverDeletions.on('postRedraw', function(chart) {
-  //     console.log('postRedraw called');
-  // });
-  // churnOverDeletions.on('filtered', function(chart, zoom) {
-  //     console.log('(CHURN OVER DEL) filtered called');
-  // });
-  // churnOverDeletions.on('zoomed', function(chart, filter) {
-  //     console.log('zoomed called');
-  // });
-  // churnOverDeletions.on('zoomed', function(chart, filter) {
-  //     console.log('zoomed called');
-  // });
-
-  // $('#top-authors').on('click', function(){
-  //     // var minDate = tripsByDateDimension.top(5)[4].startDate;
-  //     // var maxDate = tripsByDateDimension.top(5)[0].startDate;
-  //     // console.log(tripVolume.filters());
-  //     //
-  //     //
-  //     // tripVolume.filter([minDate, maxDate]);
-  //     // tripVolume.x(d3.time.scale().domain([minDate,maxDate]));
-  //     //
-  //     // console.log(tripVolume.filters());
-  //
-  //     dc.redrawAll()
-  // });

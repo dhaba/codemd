@@ -1,195 +1,215 @@
 <!DOCTYPE html>
 <html>
 
-{% extends "layout.html" %}
+{% extends "layout.html" %} {% block head %} {{ super() }}
+<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no' />
 
-{% block head %}
-  {{ super() }}
-  <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no' />
+<link href="{{ url_for('static', filename='./bower_components/keen-dashboards/dist/keen-dashboards.css') }}" rel="stylesheet">
+<link href="{{ url_for('static', filename='./bower_components/colorbrewer/colorbrewer.css') }}" rel="stylesheet">
+<link href="{{ url_for('static', filename='./bower_components/dcjs/dc.css') }}" rel="stylesheet">
 
-  <link href="{{ url_for('static', filename='./bower_components/keen-dashboards/dist/keen-dashboards.css') }}" rel="stylesheet">
-  <link href="{{ url_for('static', filename='./bower_components/colorbrewer/colorbrewer.css') }}" rel="stylesheet">
-  <link href="{{ url_for('static', filename='./bower_components/dcjs/dc.css') }}" rel="stylesheet">
+<script src="{{ url_for('static', filename='./bower_components/crossfilter/crossfilter.js') }}"></script>
+<script src="{{ url_for('static', filename='./bower_components/d3/d3.js') }}"></script>
+<script src="{{ url_for('static', filename='./bower_components/dcjs/dc.js') }}"></script>
+<script src="{{ url_for('static', filename='./bower_components/reductio/reductio.js') }}"></script>
+<script src="{{ url_for('static', filename='./bower_components/colorbrewer/colorbrewer.js') }}"></script>
+<script src="{{ url_for('static', filename='./dashboards.js') }}"></script>
 
-  <script src="{{ url_for('static', filename='./bower_components/crossfilter/crossfilter.js') }}"></script>
-  <script src="{{ url_for('static', filename='./bower_components/d3/d3.js') }}"></script>
-  <script src="{{ url_for('static', filename='./bower_components/dcjs/dc.js') }}"></script>
-  <script src="{{ url_for('static', filename='./bower_components/reductio/reductio.js') }}"></script>
-  <script src="{{ url_for('static', filename='./bower_components/colorbrewer/colorbrewer.js') }}"></script>
-  <script src="{{ url_for('static', filename='./dashboards.js') }}"></script>
-
-  <link href="{{ url_for('static', filename='./dash-styles.css') }}" rel="stylesheet">
+<link href="{{ url_for('static', filename='./dash-styles.css') }}" rel="stylesheet">
 
 
-  <script>
-      $(function() {
-          var projectName = '{{ project_name }}';
-          if (projectName === null) {
-              projectName = this.pathname.split('/').pop();
-              alert("project name was null. Setting it to " + projectName); // TODO -- remove this debug line
-          }
+<script>
+  $(function() {
+    $('[data-toggle="tooltip"]').tooltip();
+    var projectName = '{{ project_name }}';
+    if (projectName === null) {
+      projectName = this.pathname.split('/').pop();
+      alert("project name was null. Setting it to " + projectName); // TODO -- remove this debug line
+    }
 
-          var requestUrl = "/api/commits?project_name=" + projectName;
-          $('#project-name').text(projectName);
+    var requestUrl = "/api/commits?project_name=" + projectName;
+    $('#project-name').text(projectName);
 
-          $.getJSON(requestUrl, function(data) {
-              console.log("finished fetching json data, building graphs...");
-              $(".loader-mask").fadeOut(500);
-              $(".loader").fadeOut(1000);
-              buildDashboards(data, projectName);
-          });
+    $.getJSON(requestUrl, function(data) {
+      console.log("finished fetching json data, building graphs...");
+      $(".loader-mask").fadeOut(500);
+      $(".loader").fadeOut(1000);
+      buildDashboards(data, projectName);
+      setAutoResize(function (){
+        buildDashboards(data, projectName);
       });
-  </script>
-{% endblock %}
-
-{% block body %}
+    });
+  });
+</script>
+{% endblock %} {% block body %}
 
 <div class="navbar navbar-inverse navbar-fixed-top" role="navigation" style="z-index:9999;">
-    <div class="container-fluid">
-        <div class="navbar-header">
-            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+  <div class="container-fluid">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
         <span class="sr-only">Toggle navigation</span>
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-            <a class="navbar-brand" href="../">
+      <a class="navbar-brand" href="../">
                 <span class="glyphicon glyphicon-chevron-left"></span>
             </a>
-            <a class="navbar-brand" id="project-name" href="./">Service Monitoring UI</a>
-        </div>
-        <div class="navbar-collapse collapse">
-            <ul class="nav navbar-nav navbar-left">
-                <li><a href="https://keen.io">About</a></li>
-                <li><a href="https://keen.io/team">Source</a></li>
-                <li><a href="https://github.com/keenlabs/dashboard">Contact</a></li>
-            </ul>
-        </div>
+      <a class="navbar-brand" id="project-name" href="./">Service Monitoring UI</a>
     </div>
+    <div class="navbar-collapse collapse">
+      <ul class="nav navbar-nav navbar-left">
+        <li><a href="https://keen.io">About</a></li>
+        <li><a href="https://keen.io/team">Source</a></li>
+        <li><a href="https://github.com/keenlabs/dashboard">Contact</a></li>
+      </ul>
+    </div>
+  </div>
 </div>
 
 <div class="loader-mask">
-    <div class="loader"></div>
+  <div class="loader"></div>
 </div>
 
-<div class="container dash-holder">
-    <div class="row">
-        <!-- Left col (authors, dev velocity) -->
-        <div class="col-md-3">
-            <!-- Author Contributions -->
-            <div class="chart-wrapper">
-                <div class="chart-title">
-                    Top Contributors
-                </div>
-                <div class="chart-stage">
-                    <div id="top-authors"></div>
-                </div>
-            </div>
-            <!-- Dev Velocity -->
-            <div class="chart-wrapper">
-                <div class="chart-title">
-                    Feature Development Velocity
-                </div>
-                <div class="chart-stage">
-                    <div id="churn-over-del"></div>
-                </div>
-                <div class="chart-notes">
-                    This plots the relative number of churned lines over deleted.
-                </div>
-            </div>
+<div class="container-fluid dash-holder">
+  <!-- Top UI Buttons -->
+  <div class="row">
+    <div class="col-md-9 col-md-offset-3">
+      <div class="row buttons-row">
+        <div class="col-md-10  red-border">
+          <button id="cp-btn" type="button" class="btn btn-primary btn-sm ui-button">
+            Build Circle Packing
+          </button>
+          <button id="reset-btn" type="button" class="btn btn-primary btn-sm ui-button">
+            Reset
+          </button>
         </div>
-
-        <!-- Right col (everything else) -->
-        <div class="col-md-9">
-            <!-- ROW 1 (commits, buttons) -->
-            <div class="row">
-                <!-- Commits -->
-                <div class="col-md-9">
-                    <div class="chart-wrapper">
-                        <div class="chart-title">
-                            Commit History
-                        </div>
-                        <div class="chart-stage">
-                            <div id="commits-timeline"></div>
-                        </div>
-                    </div>
-                </div>
-                <!-- UI Buttons -->
-                <div class="col-md-3">
-                    <div class="chart-wrapper">
-                      <button id="temp-coup-btn" type="button" class="btn btn-primary btn-sm">Build Circle Packing Visualizations</button>
-                    </div>
-                </div>
-            </div>
-            <!-- ROW 2 (bugs, focus details) -->
-            <div class="row">
-                <!-- Bugs -->
-                <div class="col-md-9">
-                    <div class="chart-wrapper">
-                        <div class="chart-title">
-                            Distribution of Defects
-                        </div>
-                        <div class="chart-stage">
-                            <div id="defects-distribution"></div>
-                        </div>
-                    </div>
-                </div>
-                <!-- Metrics -->
-                <div class="col-md-3">
-                    <!-- Total Commits -->
-                    <div class="chart-wrapper">
-                        <div class="chart-title">
-                            Total Commits Selected
-                        </div>
-                        <div class="chart-stage metric">
-                            <div id="total-commits"></div>
-                        </div>
-                    </div>
-                    <!-- Total Bugs -->
-                    <div class="chart-wrapper">
-                        <div class="chart-title">
-                            Total Defects Selected
-                        </div>
-                        <div class="chart-stage metric">
-                            <div id="total-bugs"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- ROW 3 (code freq, total loc) -->
-            <div class="row">
-                <!-- Code Freq -->
-                <div class="col-md-6">
-                    <div class="chart-wrapper">
-                        <div class="chart-title">
-                            Code Frequency
-                        </div>
-                        <div class="chart-stage">
-                            <div id="code-frequency"></div>
-                        </div>
-                        <div class="chart-notes">
-                            Code frequency measures the numbers of additions (green) and deletions (red) to the code base
-                        </div>
-                    </div>
-                </div>
-                <!-- Total LOC -->
-                <div class="col-md-6">
-                    <div class="chart-wrapper">
-                        <div class="chart-title">
-                            Total Lines of Code
-                        </div>
-                        <div class="chart-stage">
-                            <div id="total-loc"></div>
-                        </div>
-                        <div class="chart-notes">
-                            This can be a rough measure of overall complexity in the code base.
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+      </div>
     </div>
-    <p class="small text-muted offset-left" style="text-align:center">Built by Davis Haba, as a part of a 2 week capstone project for the Galvanize Data Science Immersive program.</p>
+  </div>
+
+  <div class="row main-viz-row">
+    <!-- Left col (authors, dev velocity) -->
+    <div class="col-md-3">
+      <!-- Author Contributions -->
+      <div class="row" style="height:60%">
+        <div class="col-md-12">
+          <div class="chart-wrapper">
+            <div class="chart-title">
+              Top Contributors
+              <span class="tooltip-icon glyphicon glyphicon-info-sign" data-placement="bottom" data-toggle="tooltip" title="This counts the total number of code modifications by each author."></span>
+            </div>
+            <div class="chart-stage top-authors-stage">
+              <div id="top-authors"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Dev Velocity -->
+      <div class="row" style="height:40%">
+        <div class="col-md-12">
+          <div class="chart-wrapper">
+            <div class="chart-title">
+              Feature Development Velocity
+              <span class="tooltip-icon glyphicon glyphicon-info-sign" data-placement="top" data-toggle="tooltip" title="This plots the relative number of churned lines over deleted. If this ratio is high, that can indicate a lot of new code has been added."></span>
+            </div>
+            <div class="chart-stage">
+              <div id="churn-over-del"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right col (everything else) -->
+    <div class="col-md-9">
+      <!-- ROW 1 (commits, buttons) -->
+      <div class="row" style="height:20%">
+        <!-- Commits -->
+        <div class="col-md-10">
+          <div class="chart-wrapper">
+            <div class="chart-title">
+              Commit History
+              <div id="total-commits" style="float:right;"></div>
+            </div>
+            <div class="chart-stage">
+              <div id="commits-timeline"></div>
+            </div>
+          </div>
+        </div>
+        <!-- Total Commits Metrics -->
+        <div class="col-md-2">
+          <!-- Total Commits -->
+          <div class="chart-wrapper">
+            <div class="chart-title">
+              Total Commits
+            </div>
+            <div class="chart-stage metric">
+              <div id="total-commits"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- ROW 2 (bugs, focus details) -->
+      <div class="row" style="height:20%">
+        <!-- Bugs -->
+        <div class="col-md-10">
+          <div class="chart-wrapper">
+            <div class="chart-title">
+              Distribution of Defects
+            </div>
+            <div class="chart-stage">
+              <div id="defects-distribution"></div>
+            </div>
+          </div>
+        </div>
+        <!-- Total Bugs Metrics -->
+        <div class="col-md-2">
+          <!-- Total Bugs -->
+          <div class="chart-wrapper">
+            <div class="chart-title">
+              Total Defects
+            </div>
+            <div class="chart-stage metric">
+              <div id="total-bugs"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- ROW 3 (code freq, total loc) -->
+      <div class="row" style="height:60%">
+        <!-- Code Freq -->
+        <div class="col-md-6">
+          <div class="chart-wrapper">
+            <div class="chart-title">
+              Code Frequency
+            </div>
+            <div class="chart-stage">
+              <div id="code-frequency"></div>
+            </div>
+            <div class="chart-notes">
+              Code frequency measures the numbers of additions (green) and deletions (red) to the code base
+            </div>
+          </div>
+        </div>
+        <!-- Total LOC -->
+        <div class="col-md-6">
+          <div class="chart-wrapper">
+            <div class="chart-title">
+              Total Lines of Code
+            </div>
+            <div class="chart-stage">
+              <div id="total-loc"></div>
+            </div>
+            <div class="chart-notes">
+              This can be a rough measure of overall complexity in the code base.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+      <p class="small text-muted offset-left" style="text-align:center; margin-bottom:0;">Built by Davis Haba, as a part of a 2 week capstone project for the Galvanize Data Science Immersive program.</p>
 </div>
 
 {% endblock %}
