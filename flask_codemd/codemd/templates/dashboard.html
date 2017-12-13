@@ -21,7 +21,6 @@
 <script>
   $(function() {
     $('[data-toggle="tooltip"]').tooltip();
-
     console.log("SHOULD SHOW TUTORIAL: " + '{{ show_tutorial }}')
 
     var projectName = '{{ project_name }}';
@@ -38,10 +37,15 @@
       $(".loader-mask").fadeOut(500);
       $(".loader").fadeOut(1000);
       buildDashboards(data, projectName);
+
+      introJs().start();
+      console.log("Starting intro.js..")
+
       setAutoResize(function (){
         buildDashboards(data, projectName);
       });
     });
+
   });
 </script>
 {% endblock %} {% block body %}
@@ -91,12 +95,12 @@
     </div>
   </div>
 
-  <div class="row main-viz-row">
+  <div class="row main-viz-row" data-intro="This dashboard shows blahblah.. (1)" data-step=1>
     <!-- Left col (authors, dev velocity) -->
     <div class="col-md-3">
       <!-- Author Contributions -->
       <div class="row" style="height:60%">
-        <div class="col-md-12">
+        <div class="col-md-12" data-intro="Top contributors shows ... (6)" data-step=6>
           <div class="chart-wrapper">
             <div class="chart-title">
               Top Contributors
@@ -110,7 +114,7 @@
       </div>
       <!-- Dev Velocity -->
       <div class="row" style="height:40%">
-        <div class="col-md-12">
+        <div class="col-md-12" data-intro="Development velocity shows ... (7)" data-step=7>
           <div class="chart-wrapper">
             <div class="chart-title">
               Feature Development Velocity
@@ -129,7 +133,7 @@
       <!-- ROW 1 (commits, buttons) -->
       <div class="row" style="height:20%">
         <!-- Commits -->
-        <div class="col-md-12">
+        <div class="col-md-12" data-intro="Commit history shows ... (2)" data-step=2">
           <div class="chart-wrapper">
             <div class="chart-title">
               Commit History
@@ -147,7 +151,7 @@
       <!-- ROW 2 (bugs, focus details) -->
       <div class="row" style="height:20%">
         <!-- Bugs -->
-        <div class="col-md-12">
+        <div class="col-md-12" data-intro="This shows ... (3)" data-step=3>
           <div class="chart-wrapper">
             <div class="chart-title">
               Distribution of Defects
@@ -165,7 +169,7 @@
       <!-- ROW 3 (code freq, total loc) -->
       <div class="row" style="height:60%">
         <!-- Code Freq -->
-        <div class="col-md-6">
+        <div class="col-md-6" data-intro="Code frequency shows ... (4)" data-step=4>
           <div class="chart-wrapper">
             <div class="chart-title">
               Code Frequency
@@ -177,7 +181,7 @@
           </div>
         </div>
         <!-- Total LOC -->
-        <div class="col-md-6">
+        <div class="col-md-6" data-intro="Total lines of code shows ... (5)" data-step=5>
           <div class="chart-wrapper">
             <div class="chart-title">
               Total Lines of Code
