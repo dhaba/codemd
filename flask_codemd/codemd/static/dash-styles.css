@@ -95,10 +95,17 @@ html, body {
   fill-opacity: 0.68;
 }
 
+
+/* IntroJS */
+
 .modal-overlay {
   background-color: black;
   z-index: 9999999;
   opacity: 0.75;
+}
+
+.introjs-tooltip {
+  color: black;
 }
 
 

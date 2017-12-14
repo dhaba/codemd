@@ -94,7 +94,7 @@
     <div class="col-md-9">
       <div class="row buttons-row">
         <div class="col-md-12">
-          <button id="cp-btn" type="button" class="btn btn-primary btn-sm ui-button" data-intro="Circle packing blahblah..." data-step=8>
+          <button id="cp-btn" type="button" class="btn btn-primary btn-sm ui-button" data-intro="Once you have selected an interesting interval, click this button to generate a circle packing visualization to look at file specific data. " data-step=8>
             Build Circle Packing
           </button>
           <button id="reset-btn" type="button" class="btn btn-primary btn-sm ui-button">
@@ -105,12 +105,12 @@
     </div>
   </div>
 
-  <div class="row main-viz-row" data-intro="Weclome! This dashboard shows blahblah.. (1)" data-step=1 data-highlightClass="modal-overlay">
+  <div class="row main-viz-row" data-intro="This interactive dashboard visualizes the evolutionary history of the project, using data from its version control system. Follow this short tutorial to get an overview of each plot." data-step=1 data-highlightClass="modal-overlay">
     <!-- Left col (authors, dev velocity) -->
     <div class="col-md-3">
       <!-- Author Contributions -->
       <div class="row" style="height:60%">
-        <div class="col-md-12" data-intro="Top contributors shows ... (6)" data-step=6>
+        <div class="col-md-12" data-intro="This bar graph shows the developers who contributed the most changes to the code base in the selected interval. Both insertions and deletions count as a contribution." data-step=6>
           <div class="chart-wrapper">
             <div class="chart-title">
               Top Contributors
@@ -124,7 +124,7 @@
       </div>
       <!-- Dev Velocity -->
       <div class="row" style="height:40%">
-        <div class="col-md-12" data-intro="Development velocity shows ... (7)" data-step=7>
+        <div class="col-md-12" data-intro="Feature development velocity plots the number of changed lines divided by the number of deleted lines across the entire code base in the selected interval. If this ratio is high then there were more additions than deletions, and thus one could infer new functionality is being implemented." data-step=7>
           <div class="chart-wrapper">
             <div class="chart-title">
               Feature Development Velocity
@@ -143,7 +143,7 @@
       <!-- ROW 1 (commits, buttons) -->
       <div class="row" style="height:20%">
         <!-- Commits -->
-        <div class="col-md-12" data-intro="Commit history shows ... (2)" data-step=2">
+        <div class="col-md-12" data-intro="The commit history shows the frequency of commits over time. Try clicking and dragging your mouse over two dates to select an interval. All the other charts will update to only consider commits in the selected interval." data-step=2">
           <div class="chart-wrapper">
             <div class="chart-title">
               Commit History
@@ -161,13 +161,13 @@
       <!-- ROW 2 (bugs, focus details) -->
       <div class="row" style="height:20%">
         <!-- Bugs -->
-        <div class="col-md-12" data-intro="This shows ... (3)" data-step=3>
+        <div class="col-md-12" data-intro="Here you can see the frequency of defects (bugs) over the selected interval. The defects data is inferred from the commit messages, or taken from an external bug tracking source if available." data-step=3>
           <div class="chart-wrapper">
             <div class="chart-title">
               Distribution of Defects
               <div class="title-metric">
                 <div id="total-bugs"></div>&nbsp;defects selected&nbsp;&nbsp;&nbsp;
-                <span class="tooltip-icon glyphicon glyphicon-info-sign" data-placement="left" data-toggle="tooltip" title="This is a timeline of all defects (bugs) over the entire history of the project."></span>
+                <span class="tooltip-icon glyphicon glyphicon-info-sign" data-placement="left" data-toggle="tooltip" title="Here you can see the frequency of defects (bugs) over the selected interval. The defects data is inferred from the commit messages, or taken from an external bug tracking source if available."></span>
               </div>
             </div>
             <div class="chart-stage">
@@ -179,7 +179,7 @@
       <!-- ROW 3 (code freq, total loc) -->
       <div class="row" style="height:60%">
         <!-- Code Freq -->
-        <div class="col-md-6" data-intro="Code frequency shows ... (4)" data-step=4>
+        <div class="col-md-6" data-intro="Code Frequency shows the number of insertions (green) and deletions (red)." data-step=4>
           <div class="chart-wrapper">
             <div class="chart-title">
               Code Frequency
@@ -191,7 +191,7 @@
           </div>
         </div>
         <!-- Total LOC -->
-        <div class="col-md-6" data-intro="Total lines of code shows ... (5)" data-step=5>
+        <div class="col-md-6" data-intro="Lines of code simply plots the total lines of code across all files." data-step=5>
           <div class="chart-wrapper">
             <div class="chart-title">
               Total Lines of Code
