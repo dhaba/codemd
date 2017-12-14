@@ -41,6 +41,7 @@
       introJs().start();
       console.log("Starting intro.js..")
 
+
       setAutoResize(function (){
         buildDashboards(data, projectName);
       });
@@ -81,10 +82,19 @@
 <div class="container-fluid dash-holder">
   <!-- Top UI Buttons -->
   <div class="row">
-    <div class="col-md-9 col-md-offset-3">
+    <div class="col-md-3">
       <div class="row buttons-row">
         <div class="col-md-12">
-          <button id="cp-btn" type="button" class="btn btn-primary btn-sm ui-button">
+          <button id="tutorial-btn" type="button" class="btn btn-primary btn-sm ui-button">
+            Show Tutorial
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-9">
+      <div class="row buttons-row">
+        <div class="col-md-12">
+          <button id="cp-btn" type="button" class="btn btn-primary btn-sm ui-button" data-intro="Circle packing blahblah..." data-step=8>
             Build Circle Packing
           </button>
           <button id="reset-btn" type="button" class="btn btn-primary btn-sm ui-button">
@@ -95,7 +105,7 @@
     </div>
   </div>
 
-  <div class="row main-viz-row" data-intro="This dashboard shows blahblah.. (1)" data-step=1>
+  <div class="row main-viz-row" data-intro="Weclome! This dashboard shows blahblah.. (1)" data-step=1 data-highlightClass="modal-overlay">
     <!-- Left col (authors, dev velocity) -->
     <div class="col-md-3">
       <!-- Author Contributions -->

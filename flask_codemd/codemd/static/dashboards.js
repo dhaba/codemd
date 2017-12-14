@@ -372,6 +372,9 @@ function buildDashboards(data, projectName) {
      dc.filterAll();
      dc.redrawAll();
    });
+   $('#tutorial-btn').on('click', function (e) {
+     introJs().start();
+   });
 }
 
 function setAutoResize(callback) {
