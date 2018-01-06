@@ -4,7 +4,6 @@
   {{ super() }}
   <link href="{{ url_for('static', filename='./home.css') }}" rel="stylesheet">
   <script type="text/javascript" src="{{ url_for('static', filename='./home.js') }}"></script>
-  <script type="text/javascript" src="https://player.vimeo.com/api/player.js"></script>
   <script type="text/javascript" src="https://www.youtube.com/iframe_api"></script>
 
   <script type="text/javascript">
@@ -12,36 +11,6 @@
       console.log('jq loaded.');
       config_slideshow();
     });
-
-    // var tag = document.createElement('script');
-    // tag.src = "https://www.youtube.com/iframe_api";
-    // var firstScriptTag = document.getElementsByTagName('script')[0];
-    // firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-    //
-    // var player;
-    // function onYouTubeIframeAPIReady() {
-      // player = new YT.Player('vid1', {
-      //   events: {
-      //     'onReady': onPlayerReady,
-      //     'onStateChange': onPlayerStateChange
-      //   }
-    //   });
-    // }
-    //
-    // function onPlayerReady(data) {
-    //   console.log("hey Im ready");
-    //   player.playVideo();
-    //   //do whatever you want here. Like, player.playVideo();
-    //
-    // }
-    //
-    // function onPlayerStateChange(data) {
-    //   console.log("my state changed to: " + data.data);
-    //   if (data.data == 0) {
-    //     alert('vid over bro');
-    //   }
-    // }
-
   </script>
 {% endblock %}
 
