@@ -1,119 +1,130 @@
-{% extends "layout.html" %}
+<!DOCTYPE html> {% extends "layout.html" %} {% block head %} {{ super() }}
+<link href="{{ url_for('static', filename='./home.css') }}" rel="stylesheet">
+<script type="text/javascript" src="{{ url_for('static', filename='./home.js') }}"></script>
+<script type="text/javascript" src="https://www.youtube.com/iframe_api"></script>
 
-{% block head %}
-  {{ super() }}
-  <link href="{{ url_for('static', filename='./home.css') }}" rel="stylesheet">
-  <script type="text/javascript" src="{{ url_for('static', filename='./home.js') }}"></script>
-  <script type="text/javascript" src="https://www.youtube.com/iframe_api"></script>
-
-  <script type="text/javascript">
-    $(window).load(function() {
-      console.log('jq loaded.');
-      config_slideshow();
-    });
-  </script>
-{% endblock %}
-
-{% block body %}
+<script type="text/javascript">
+  $(window).load(function() {
+    console.log('jq loaded.');
+    config_slideshow();
+  });
+</script>
+{% endblock %} {% block body %}
 
 <body>
   <!-- Page Content -->
   <div class="container">
 
-    <h1>Code, M.D.</h1>
-    <h4>Visualize the evolution of your code like never before</h4>
-
-    <!-- Jumbotron Header -->
-    <header class="jumbotron hero-spacer">
-      <div id="videoCarousel" class="carousel slide">
-        <!-- Wrapper for slides -->
-        <div class="carousel-inner">
-
-          <div class="item active">
-            <div class='embed-container'>
-              <iframe id="vid1" class="demo-vid" src="https://www.youtube.com/embed/EHwu-H_KtfU?rel=0&amp;controls=0&amp;showinfo=0&amp;enablejsapi=1" enablejsapi="1" frameborder="0" gesture="media" allow="encrypted-media"></iframe>
-            </div>
-          </div>
-
-          <div class="item">
-            <div class='embed-container'>
-              <iframe id="vid2" class="demo-vid" src="https://www.youtube.com/embed/q74xdkDDsLo?rel=0&amp;controls=0&amp;showinfo=0&amp;enablejsapi=1" enablejsapi="1" frameborder="0" gesture="media" allow="encrypted-media"></iframe>
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </header>
+    <!-- Title -->
+    <h1 class="text-center page-title">Code, M.D.</h1>
+    <h4 class="text-center page-subtext">Visualize the evolution of your code like never before</h4>
 
     <hr>
 
-<!-- Title -->
-<div class="row">
-  <div class="col-lg-12">
-    <h3>Browse Repositories</h3>
-  </div>
-</div>
-<!-- /.row -->
+    <!-- Video Carousel -->
+    <div id="videoCarousel" class="carousel slide">
+      <!-- Wrapper for slides -->
+      <div class="carousel-inner">
 
-<!-- Page Features -->
-<div class="row text-center">
+        <div class="item active">
+          <div class='embed-container'>
+            <iframe id="vid1" class="demo-vid" src="https://www.youtube.com/embed/EHwu-H_KtfU?rel=0&amp;controls=0&amp;showinfo=0&amp;enablejsapi=1" enablejsapi="1" frameborder="0" gesture="media" allow="encrypted-media"></iframe>
+          </div>
+        </div>
 
-  <div class="col-md-3 col-sm-3 hero-feature">
-    <div class="thumbnail">
-      <div class="caption">
-        <h5>Ruby on Rails</h5>
-        <p>Explore tends in blahblahblah...</p>
-        <p>
-          <a href="#" class="btn btn-success">Explore</a>
-        </p>
+        <div class="item">
+          <div class='embed-container'>
+            <iframe id="vid2" class="demo-vid" src="https://www.youtube.com/embed/q74xdkDDsLo?rel=0&amp;controls=0&amp;showinfo=0&amp;enablejsapi=1" enablejsapi="1" frameborder="0" gesture="media" allow="encrypted-media"></iframe>
+          </div>
+        </div>
+
+        <div class="item">
+          <div class='embed-container'>
+            <iframe id="vid3" class="demo-vid" src="https://www.youtube.com/embed/5oWzZPMYdOk?rel=0&amp;controls=0&amp;showinfo=0&amp;enablejsapi=1" enablejsapi="1" frameborder="0" gesture="media" allow="encrypted-media"></iframe>
+          </div>
+        </div>
+
       </div>
     </div>
-  </div>
 
-  <div class="col-md-3 col-sm-6 hero-feature">
-    <div class="thumbnail">
-      <div class="caption">
-        <h3>Feature Label</h3>
-        <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit.</p>
-        <p>
-          <a href="#" class="btn btn-primary">Buy Now!</a> <a href="#" class="btn btn-default">More Info</a>
-        </p>
+    <hr>
+
+    <!-- Jumbotron -->
+    <div class="jumbotron">
+      <h1>Featured: Tensorflow</h1>
+      <p>Demo the tools with the Tensorflow project, or choose a different project below.</p>
+      <p><a class="btn btn-primary btn-lg">Try It</a></p>
+    </div>
+
+    <hr>
+
+    <!-- Brower Repos -->
+    <div class="row">
+      <div class="col-lg-12">
+        <h3>Browse Repositories</h3>
       </div>
     </div>
-  </div>
+    <!-- /.row -->
 
-  <div class="col-md-3 col-sm-6 hero-feature">
-    <div class="thumbnail">
-      <div class="caption">
-        <h3>Feature Label</h3>
-        <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit.</p>
-        <p>
-          <a href="#" class="btn btn-primary">Buy Now!</a> <a href="#" class="btn btn-default">More Info</a>
-        </p>
+    <!-- Page Features -->
+    <div class="row text-center">
+
+      <div class="col-md-3 col-sm-3 hero-feature">
+        <div class="thumbnail">
+          <div class="caption">
+            <h5>Ruby on Rails</h5>
+            <p>Explore tends in blahblahblah...</p>
+            <p>
+              <a href="#" class="btn btn-success">Explore</a>
+            </p>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
 
-  <div class="col-md-3 col-sm-6 hero-feature">
-    <div class="thumbnail">
-      <div class="caption">
-        Link 1
+      <div class="col-md-3 col-sm-6 hero-feature">
+        <div class="thumbnail">
+          <div class="caption">
+            <h3>Feature Label</h3>
+            <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit.</p>
+            <p>
+              <a href="#" class="btn btn-primary">Buy Now!</a> <a href="#" class="btn btn-default">More Info</a>
+            </p>
+          </div>
+        </div>
       </div>
+
+      <div class="col-md-3 col-sm-6 hero-feature">
+        <div class="thumbnail">
+          <div class="caption">
+            <h3>Feature Label</h3>
+            <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit.</p>
+            <p>
+              <a href="#" class="btn btn-primary">Buy Now!</a> <a href="#" class="btn btn-default">More Info</a>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-3 col-sm-6 hero-feature">
+        <div class="thumbnail">
+          <div class="caption">
+            Link 1
+          </div>
+        </div>
+      </div>
+
     </div>
+    <!-- /.row -->
+
+    <hr>
   </div>
+  <!-- /.container -->
 
-</div>
-<!-- /.row -->
-
-<hr>
-</div>
-<!-- /.container -->
-
-<form action="{{ url_for('fetchdata') }}" method=post style="padding-bottom:50px;">
-  Enter a git repository (.git URL not github URL)<br>
-  <input type="text" name="git_url" value="git://github.com/dhaba/git-pandas.git" style="width:700px;">
-  <input type="submit" value="Submit form">
-</form>
+  <form action="{{ url_for('fetchdata') }}" method=post style="padding-bottom:50px;">
+    Enter a git repository (.git URL not github URL)<br>
+    <input type="text" name="git_url" value="git://github.com/dhaba/git-pandas.git" style="width:700px;">
+    <input type="submit" value="Submit form">
+  </form>
 
 </body>
 
