@@ -51,11 +51,15 @@ class RepoAnalyser(object):
     :return:
     """
 
-    def __init__(self, git_url, include_paths=[], exclude_paths=[]):
+    def __init__(self, git_url, full_name=None, description="", include_paths=[], exclude_paths=[]):
         self.log = logging.getLogger('codemd.RepoAnalyser')
         self.project_name = self.short_name(git_url)
         self.include_paths = include_paths
         self.exclude_paths = exclude_paths
+        if full_name is None:
+            full_name = self.project_name
+        self.full_name = full_name
+        self.description = description
 
         # Check for hard-coded paths if none specified
         if (len(include_paths) == 0) and (len(exclude_paths) == 0) and (self.project_name in paths.keys()):
@@ -91,6 +95,15 @@ class RepoAnalyser(object):
         if os.path.exists(self.repo_path):
             shutil.rmtree(self.repo_path)
 
+    def persist_meta_data(self):
+        """
+        Persists the meta data for this repo, including the project name, description,
+        and icon image url
+        :return:
+        """
+        self.log.info("Persisting meta data for project %s", self.full_name)
+        db_handler = DBHandler(self.project_name)
+        db_handler.persist_meta_data(self.full_name, self.description)
 
     def persist_commits_data(self):
         """

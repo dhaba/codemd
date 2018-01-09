@@ -86,6 +86,15 @@ class DBHandler(object):
         return list(mongo.db[project_name].find(
             {'revision_id': {'$exists': True}}).sort('date', 1).limit(1))[0]['date']
 
+    def persist_meta_data(self, full_name, description, image_url=""):
+        """
+        TODO -- docstring
+        """
+        mongo.db['meta-data'].insert_one({'short_name': self.project_name,
+                                          'full_name': full_name,
+                                          'description': description,
+                                          'image_url': image_url})
+
     def persist_documents_from_gen(self, doc_gen):
         """
         Inserts the documents yielded by doc_gen into

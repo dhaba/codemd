@@ -87,13 +87,19 @@ def circle_packing(project_name):
 @app.route("/fetchdata", methods = ['POST'])
 def fetchdata():
     # POST from homepage form, extract data if necessary and redirect to viz
-    git_url = request.form['git_url'] # TODO -- validate git url
+    git_url = request.form['inputUrl'] # TODO -- validate git url
     project_name = RepoAnalyser.short_name(git_url)
+    full_name = request.form['inputProjectName']
+    project_desc = request.form['inputDescription']
+
+    log.debug("url: %s\ninternal name: %s\nfull name: %s\ndesc: %s",
+                    git_url, project_name, full_name, project_desc)
 
     # Check if we have the data on this repo already, if not clone and extract
     if not DBHandler.project_exists(project_name):
         log.info("Data for project " + project_name + " not found. Fetching data...")
-        repo = RepoAnalyser(git_url)
+        repo = RepoAnalyser(git_url, full_name=full_name, description=project_desc)
+        repo.persist_meta_data()
         repo.persist_commits_data()
 
         # Save viz/circle packing data for fast loading times
