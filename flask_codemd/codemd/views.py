@@ -42,7 +42,9 @@ def upload_statics():
 # Home page
 @app.route("/")
 def show_home():
-    return render_template('show_home.html')
+    projects_data = DBHandler.projects_data()
+    log.debug("projects data: %s", projects_data)
+    return render_template('show_home.html', projects_data=projects_data)
 
 
 # Main page for circle packing visualizations

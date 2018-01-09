@@ -30,21 +30,40 @@
       <!-- Wrapper for slides -->
       <div class="carousel-inner">
 
+        <!-- Dashboard General -->
         <div class="item active">
           <div class='embed-container'>
-            <iframe id="vid1" class="demo-vid" src="https://www.youtube.com/embed/EHwu-H_KtfU?rel=0&amp;controls=0&amp;showinfo=0&amp;enablejsapi=1" enablejsapi="1" frameborder="0" gesture="media" allow="encrypted-media"></iframe>
+            <iframe id="vid1" class="demo-vid" src="https://www.youtube.com/embed/oVAtiZzeMo4?rel=0&amp;controls=0&amp;showinfo=0&amp;enablejsapi=1" enablejsapi="1" frameborder="0" gesture="media" allow="encrypted-media"></iframe>
           </div>
         </div>
-
+        <!-- Knowledge Map -->
         <div class="item">
           <div class='embed-container'>
-            <iframe id="vid2" class="demo-vid" src="https://www.youtube.com/embed/q74xdkDDsLo?rel=0&amp;controls=0&amp;showinfo=0&amp;enablejsapi=1" enablejsapi="1" frameborder="0" gesture="media" allow="encrypted-media"></iframe>
+            <iframe id="vid2" class="demo-vid" src="https://www.youtube.com/embed/yM-rzkDHHFY?rel=0&amp;controls=0&amp;showinfo=0&amp;enablejsapi=1" enablejsapi="1" frameborder="0" gesture="media" allow="encrypted-media"></iframe>
           </div>
         </div>
-
+        <!-- Code Churn -->
         <div class="item">
           <div class='embed-container'>
-            <iframe id="vid3" class="demo-vid" src="https://www.youtube.com/embed/5oWzZPMYdOk?rel=0&amp;controls=0&amp;showinfo=0&amp;enablejsapi=1" enablejsapi="1" frameborder="0" gesture="media" allow="encrypted-media"></iframe>
+            <iframe id="vid3" class="demo-vid" src="https://www.youtube.com/embed/_MWYrwxpGLc?rel=0&amp;controls=0&amp;showinfo=0&amp;enablejsapi=1" enablejsapi="1" frameborder="0" gesture="media" allow="encrypted-media"></iframe>
+          </div>
+        </div>
+        <!-- Bug Score -->
+        <div class="item">
+          <div class='embed-container'>
+            <iframe id="vid4" class="demo-vid" src="https://www.youtube.com/embed/F_9r3Ylyapo?rel=0&amp;controls=0&amp;showinfo=0&amp;enablejsapi=1" enablejsapi="1" frameborder="0" gesture="media" allow="encrypted-media"></iframe>
+          </div>
+        </div>
+        <!-- Author Contributions -->
+        <div class="item">
+          <div class='embed-container'>
+            <iframe id="vid5" class="demo-vid" src="https://www.youtube.com/embed/OJ0czxnvvAQ?rel=0&amp;controls=0&amp;showinfo=0&amp;enablejsapi=1" enablejsapi="1" frameborder="0" gesture="media" allow="encrypted-media"></iframe>
+          </div>
+        </div>
+        <!-- Defects -->
+        <div class="item">
+          <div class='embed-container'>
+            <iframe id="vid6" class="demo-vid" src="https://www.youtube.com/embed/LOMac9hMVRQ?rel=0&amp;controls=0&amp;showinfo=0&amp;enablejsapi=1" enablejsapi="1" frameborder="0" gesture="media" allow="encrypted-media"></iframe>
           </div>
         </div>
 
@@ -68,55 +87,22 @@
         <h3>Browse Repositories</h3>
       </div>
     </div>
-    <!-- /.row -->
 
-    <!-- Page Features -->
+    <!-- Repos List -->
     <div class="row text-center">
-
-      <div class="col-md-3 col-sm-3 hero-feature">
-        <div class="thumbnail">
-          <div class="caption">
-            <h5>Ruby on Rails</h5>
-            <p>Explore tends in blahblahblah...</p>
-            <p>
-              <a href="#" class="btn btn-success">Explore</a>
-            </p>
+      {% for project in projects_data %}
+        <div class="col-md-3 col-sm-3 hero-feature">
+          <div class="thumbnail">
+            <div class="caption">
+              <h4>{{project['full_name']}}</h4>
+              <p>{{project['description']}}</p>
+              <p>
+                <a href="/dashboards/{{project['short_name']}}" class="btn btn-success">Explore</a>
+              </p>
+            </div>
           </div>
         </div>
-      </div>
-
-      <div class="col-md-3 col-sm-6 hero-feature">
-        <div class="thumbnail">
-          <div class="caption">
-            <h3>Feature Label</h3>
-            <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit.</p>
-            <p>
-              <a href="#" class="btn btn-primary">Buy Now!</a> <a href="#" class="btn btn-default">More Info</a>
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-md-3 col-sm-6 hero-feature">
-        <div class="thumbnail">
-          <div class="caption">
-            <h3>Feature Label</h3>
-            <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit.</p>
-            <p>
-              <a href="#" class="btn btn-primary">Buy Now!</a> <a href="#" class="btn btn-default">More Info</a>
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-md-3 col-sm-6 hero-feature">
-        <div class="thumbnail">
-          <div class="caption">
-            Link 1
-          </div>
-        </div>
-      </div>
-
+      {% endfor %}
     </div>
     <!-- /.row -->
 

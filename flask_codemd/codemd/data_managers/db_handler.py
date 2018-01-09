@@ -17,6 +17,8 @@ class DBHandler(object):
         - fetching data for circle packing metrics
     """
 
+    META_DATA_COL_NAME = 'meta-data'
+
     def __init__(self, project_name):
         """
         :param mongo_collection: A references the the pymongo collection
@@ -67,6 +69,13 @@ class DBHandler(object):
         return project_name in mongo.db.collection_names()
 
     @classmethod
+    def projects_data(cls):
+        """
+        Returns a list of dictionaries containing info for all stored projects
+        """
+        return list(mongo.db['meta-data'].find())
+
+    @classmethod
     def last_revision_date(cls, project_name):
         """
         Returns the date of the last revision in the project
@@ -90,7 +99,7 @@ class DBHandler(object):
         """
         TODO -- docstring
         """
-        mongo.db['meta-data'].insert_one({'short_name': self.project_name,
+        mongo.db[self.META_DATA_COL_NAME].insert_one({'short_name': self.project_name,
                                           'full_name': full_name,
                                           'description': description,
                                           'image_url': image_url})
