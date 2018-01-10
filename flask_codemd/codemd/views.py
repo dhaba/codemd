@@ -101,7 +101,6 @@ def fetchdata():
     if not DBHandler.project_exists(project_name):
         log.info("Data for project " + project_name + " not found. Fetching data...")
         repo = RepoAnalyser(git_url, full_name=full_name, description=project_desc)
-        repo.persist_meta_data()
         repo.persist_commits_data()
 
         # Save viz/circle packing data for fast loading times
@@ -111,6 +110,9 @@ def fetchdata():
         log.debug("Saving checkpoint data...")
         metrics.save_circle_packing_data()
         log.debug("Done saving project data.")
+        log.debug("Persisting meta data.")
+        repo.persist_meta_data()
+        log.debug("Done mining and precomputing project data.")
     else:
         log.info("Data for git project " + project_name + " found.")
 
