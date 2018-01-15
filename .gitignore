@@ -3,3 +3,11 @@
 flask_codemd/*.pyc
 *.log
 /flask_codemd/codemd/keys.py
+
+
+secret_key.py
+
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
