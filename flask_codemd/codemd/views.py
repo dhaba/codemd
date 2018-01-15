@@ -24,6 +24,12 @@ def build_cp_data(project_name):
     return "Done!"
 
 
+# Debug -- for testing deployment without DB
+@app.route("/test")
+def test_page():
+    return "Hello World!"
+
+
 # Debug -- for uploading statics
 @app.route("/upload")
 def upload_statics():
