@@ -25,5 +25,5 @@ def config_app(app):
     formatter = logging.Formatter('%(asctime)s %(name)-5s %(levelname)-8s %(message)s')
     file_handler.setFormatter(formatter)
     stream_handler.setFormatter(formatter)
-    log.addHandler(file_handler)
+    # log.addHandler(file_handler)
     log.addHandler(stream_handler)
