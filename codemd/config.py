@@ -11,8 +11,8 @@ def config_app(app):
     app.config['FLASKS3_BUCKET_NAME'] = keys.STATIC_BUCKET_NAME
 
     # Set db configuration options
-    app.config['MONGO_DBNAME'] = 'codemd'
-    # app.config['MONGO_URI'] = 'mongodb://default:hireme@ds021434.mlab.com:21434/codemd'
+    # app.config['MONGO_DBNAME'] = 'codemd'
+    app.config['MONGO_URI'] = keys.MONGO_URI
 
     # Setup logging
     timestr = time.strftime("%Y%m%d-%H%M%S")
