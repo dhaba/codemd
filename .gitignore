@@ -1,9 +1,9 @@
 .idea
+.DS_Store
 *.pyc
-flask_codemd/*.pyc
+codemd/*.pyc
 *.log
-/flask_codemd/codemd/keys.py
-
+codemd/keys.py
 
 secret_key.py
 
