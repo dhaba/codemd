@@ -25,13 +25,13 @@ Users can interactively select an interval of commits between two dates, and vis
 
 Top contributors allows users to understand which developers are writing the most code in a given time period. This metric can be particularly useful in open source projects where there are usually a select few developers contributing a majority of the code, and many other developers contributing small pieces.
 
-# Bug Frequency
+### Bug Frequency
 
 [![IMAGE ALT TEXT](http://img.youtube.com/vi/LOMac9hMVRQ/0.jpg)](http://www.youtube.com/watch?v=LOMac9hMVRQ "Bug Frequency")
 
 Bug frequency shows developers how many bugs were present in across a project's lifecycle. Coupled with other metrics, bug frequency can be very useful to get an overview of the social factors that may induce bugs. Is there a sharp increase in bugs after a particular sprint or deadline? Is there a decrease in bugs after a large refactoring? Visualizing the distribution of bugs can help answer questions like these.
 
-# Code Churn
+### Code Churn
 
 [![IMAGE ALT TEXT](http://img.youtube.com/vi/_MWYrwxpGLc/0.jpg)](http://www.youtube.com/watch?v=_MWYrwxpGLc "Code Churn")
 
@@ -61,7 +61,7 @@ The metrics are scoped to the selected temporal interval (which can be seen in t
 
 Bug score helps developers understand which files are causing the most bugs and are deserving of particular care. It works by counts the number of bugs associated with each file, and then using a sigmoid function that weighs recent bugs higher than older bugs to highlight the most problematic areas. These "hotspots" are colored in red, where darker shades indicate more severity.
 
- The intuition that drives this algorithm is simple: if a file keeps requiring bug fixes, it is likely a problematic area worthy of special attention because developers are clearly struggling with it. The intention here is not to provide some kind of objective function for bug prediction, but rather to provide developers with data driven insights that can compliment their own intuitions. To facilitate exploration of different trends specific to different periods in a project's lifecycle, the computation of this algorithm is scoped to the selected temporal interval (which can be seen in the top right of the page).
+The intuition that drives this algorithm is simple: if a file keeps requiring bug fixes, it is likely a problematic area worthy of special attention because developers are clearly struggling with it. The intention here is not to provide some kind of objective function for bug prediction, but rather to provide developers with data driven insights that can compliment their own intuitions. To facilitate exploration of different trends specific to different periods in a project's lifecycle, the computation of this algorithm is scoped to the selected temporal interval (which can be seen in the top right of the page).
 
 The algorithm uses the scoring function
 ![Bug Score Equation](https://i.imgur.com/07AjftA.png)
