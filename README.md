@@ -10,6 +10,8 @@ Below is a summary of the features Code.MD has to offer. Click on the images to 
 
 ## Interactive Dashboard
 
+[![IMAGE ALT TEXT](http://img.youtube.com/vi/OJ0czxnvvAQ/0.jpg)](http://www.youtube.com/watch?v=OJ0czxnvvAQ "Top Contributors")
+
 The interactive dashboard provides developers and project managers with a means of quickly exploring the evolutionary history of their project. This can be used to help with release planning, pin-pointing patterns that cause an increase in bugs, and identifying the most prolific developers.
 
 Users can interactively select an interval of commits between two dates, and visualize data pertinent to those selected commits, including:
@@ -36,6 +38,8 @@ Bug frequency shows developers how many bugs were present in across a project's 
 Tackling technical debt and refactoring can often play a large part in how many bugs turn up in future releases. Visualizing the total insertions and deletions to a code base, as well as the fluctuations in total lines of code can help developers access the effects of refactors, as well as the effects of new features.
 
 ## Circle Packing
+
+[![IMAGE ALT TEXT](http://img.youtube.com/vi/yM-rzkDHHFY/0.jpg)](http://www.youtube.com/watch?v=yM-rzkDHHFY"Knowledge Map")
 
 Once users have selected an interval of commits that they are interested in, they can generate a code packing visualization to get a closer look at file-specific data. Circle packing works by analyzing the file hierarchy of the project, and drawing a circle of each module in the project. Nested circle represent subcomponents of modules, and the size of the circles correspond to the total number of lines of code in each module. Finally, the innermost circles represent the actual objects in the system, which users can then mouse-over to view various file statistics.
 
