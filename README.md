@@ -1,7 +1,6 @@
-# codemd
-Final Project
-
 ## Code.MD
+
+[![IMAGE ALT TEXT](http://img.youtube.com/vi/oVAtiZzeMo4/0.jpg)](http://www.youtube.com/watch?v=oVAtiZzeMo4 "Dashboard Demo")
 
 ### 1. Motivation
 
