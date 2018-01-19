@@ -39,13 +39,13 @@ Tackling technical debt and refactoring can often play a large part in how many 
 
 ## Circle Packing
 
-[![IMAGE ALT TEXT](http://img.youtube.com/vi/yM-rzkDHHFY/0.jpg)](http://www.youtube.com/watch?v=yM-rzkDHHFY"Knowledge Map")
+[![IMAGE ALT TEXT](http://img.youtube.com/vi/yM-rzkDHHFY/0.jpg)](http://www.youtube.com/watch?v=yM-rzkDHHFY "Knowledge Map")
 
 Once users have selected an interval of commits that they are interested in, they can generate a code packing visualization to get a closer look at file-specific data. Circle packing works by analyzing the file hierarchy of the project, and drawing a circle of each module in the project. Nested circle represent subcomponents of modules, and the size of the circles correspond to the total number of lines of code in each module. Finally, the innermost circles represent the actual objects in the system, which users can then mouse-over to view various file statistics.
 
 # Knowledge Map
 
-[![IMAGE ALT TEXT](http://img.youtube.com/vi/yM-rzkDHHFY/0.jpg)](http://www.youtube.com/watch?v=yM-rzkDHHFY"Knowledge Map")
+[![IMAGE ALT TEXT](http://img.youtube.com/vi/yM-rzkDHHFY/0.jpg)](http://www.youtube.com/watch?v=yM-rzkDHHFY "Knowledge Map")
 
 Coordination is vital to the success of a large-scale software project. Knowledge map sheds light onto the distribution of knowledge throughout the system by identifying the top 3 developers who wrote the most code for each file.
 
