@@ -71,7 +71,7 @@ where n is the number of bug-fixing revisions, and t_i is the timestamp of the i
 
 Temporal coupling helps developers spot bad architecture by measuring the tendency of files to change together. This can greatly assist in spotting unintentional dependencies between files, helping developers to diagnose problems early before they become too unwieldy and too expensive to fix.
 
-The different colors here represent different cliques of coupled files, where a graph is drawn using the files as verteces and mutual changes as edges. The intensity of the color is proportional to the temporal coupling score.
+The different colors here represent different cliques of coupled files, where a graph is drawn using the files as vertices and mutual changes as edges. The intensity of the color is proportional to the temporal coupling score.
 
 Under the reasonable assumption that one particular revision implements a single feature or functionality, it should be relatively innocuous for files belonging to the same module to change together. This is because files belonging to the same module should implement complementary functionalities. However, files which belong to separate modules should seldom change together because they likely implement very different functionalities.
 
