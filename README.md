@@ -1,6 +1,6 @@
 # Overview
 
-Code.MD is a web-based tool for interactively visualizing software using its version control data. Our version control systems contain a rich database of social information, detailing every change to the codebase, as well as each unique developer responsible for those changes. By mining potentially millions of commits and file modifications, Code.MD is able to provide developers and managers with data driven insights to allow them to make highly informed design decisions, and diagnose problematic areas in their codebase before they become too unwieldy to fix.
+Code.MD is a web-based tool for interactively visualizing software using version control data. Our version control systems contain a rich database of social information, detailing every change to the codebase, as well as each unique developer responsible for those changes. By mining potentially millions of commits and file modifications, Code.MD is able to provide developers and managers with data driven insights to allow them to make highly informed design decisions, and diagnose problematic areas in their codebase before they become too unwieldy to fix.
 
 The visualizations are built using a mixture of D3 and Crossfilter, run on a Flask framework and served using AWS.
 
